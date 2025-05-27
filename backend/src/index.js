@@ -1,11 +1,10 @@
-const express = require('express');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const cookie = require('cookie');
-const bcrypt = require('bcryptjs');
-const PrismaClient = require('@prisma/client').PrismaClient;
-const prisma = new PrismaClient();
-
+import express from 'express';
+import cors from 'cors';
+import jwt from 'jsonwebtoken';
+import cookie from 'cookie';
+import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
 
 const secret = "mysecret";
 
@@ -53,6 +52,7 @@ app.get('/logout', (req, res) => {
 );
 
 app.post('/signup',async (req, res) => {
+    console.log(req.body);
     const User = req.body;
     const token = jwt.sign(User, secret, { expiresIn: '1h' });
     res.setHeader('Set-Cookie', cookie.serialize('token', token, {
@@ -65,14 +65,16 @@ app.post('/signup',async (req, res) => {
     const hashedPassword = bcrypt.hashSync(User.password, 10);
 
     const newUser = {
-        Username : User.Username,
+        username : User.username,
         email: User.email,
         password: hashedPassword,
     }
 
-    await prisma.user.create({
+    const data = await prisma.user.create({
         data : newUser
     });
+
+    console.log(data);
 
     res.json({
         msg: "Signup successful",
