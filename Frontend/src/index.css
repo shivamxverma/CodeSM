@@ -1,0 +1,50 @@
+.login{
+  align-self: center;
+  padding: 20px;
+  display: block;
+  width: 100%;
+  background-color: azure;
+  align-items: center;
+  text-align: center;
+  font-weight: 5em;
+}
+
+.signup{
+  padding: 20px;
+  display: block;
+  width: 100%;
+  background-color: azure;
+  align-items: center;
+  text-align: center;
+  font-weight: 5em;
+  
+}
+.login-fields{
+  text-align: center;
+  width: 70%;
+  align-items: center;
+  padding: 10px;
+  margin: 20px;
+}
+.signup-fields{
+  text-align: center;
+  width: 70%;
+  align-items: center;
+  padding: 10px;
+  margin: 20px;
+}
+.submit-button:hover{
+background-color: antiquewhite;
+}
+.submit-button{
+  cursor: pointer;
+  padding: 10px;
+  margin: 20px;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  width: 73%;
+  background-color: aquamarine;
+  font-weight: 5em;
+  
+}
