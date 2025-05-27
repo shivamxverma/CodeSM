@@ -3,8 +3,12 @@ import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import cookie from 'cookie';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient()
+// import { PrismaClient } from '@prisma/client';
+import mongoose from 'mongoose';
+
+mongoose.connect('mongodb://localhost:27017/mydatabase');
+
+import User from '../model/user'; 
 
 const secret = "mysecret";
 
@@ -38,7 +42,7 @@ app.get('/login', (req, res) => {
 });
 
 
-app.get('/logout', (req, res) => {
+app.get('/logout', (_, res) => {
     res.setHeader('Set-Cookie', cookie.serialize('token', '', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -53,8 +57,8 @@ app.get('/logout', (req, res) => {
 
 app.post('/signup',async (req, res) => {
     console.log(req.body);
-    const User = req.body;
-    const token = jwt.sign(User, secret, { expiresIn: '1h' });
+    const userData = req.body;
+    const token = jwt.sign(userData, secret, { expiresIn: '1h' });
     res.setHeader('Set-Cookie', cookie.serialize('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -70,8 +74,8 @@ app.post('/signup',async (req, res) => {
         password: hashedPassword,
     }
 
-    const data = await prisma.user.create({
-        data : newUser
+    const data = await User.create({
+        data: newUser
     });
 
     console.log(data);
