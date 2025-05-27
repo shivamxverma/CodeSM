@@ -48,3 +48,13 @@ background-color: antiquewhite;
   font-weight: 5em;
   
 }
+
+.newproblem{
+  padding: 20px;
+  display: block;
+  width: 100%;
+  background-color: azure;
+  align-items: center;
+  text-align: center;
+  font-weight: 5em;
+}

@@ -13,7 +13,7 @@ function SignUpCard(){
             return ;
         }
         
-        const response = await axios.post('http://localhost:8000/signup',{email,username,password});
+        const response = await axios.post('http://localhost:5173/signup',{email,username,password});
         console.log(response);
     }
 
