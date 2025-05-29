@@ -11,15 +11,15 @@ const problemSchema = new Schema({
         type: String,
         required: true
     },
-    constraint: {
+    description : {
         type: String,
         required: true
     },
-    outputFormat: {
+    memoryContraint: {
         type: String,
         required: true
     },
-    constraints: {
+    timeConstraint: {
         type: String,
         required: true
     },
