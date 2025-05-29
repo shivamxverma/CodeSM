@@ -12,18 +12,41 @@ function SignUpCard(){
         if(password !== cpassword){
             return ;
         }
-        
-        const response = await axios.post('http://localhost:5173/signup',{email,username,password});
+        const response = await axios.post('http://localhost:8000/api/signup',{email,username,password});
         console.log(response);
     }
 
     return(
         <div className="signup">
             <h1>SignUp Page</h1>
-            <input className="signup-fields" type="email" placeholder="Email id" />
-            <input className="signup-fields" type="text" placeholder="Username" />
-            <input className="signup-fields" type="password" placeholder="Password"/>
-            <input className="signup-fields" type="password" placeholder="Confirm Password"/>
+            <input 
+              className="signup-fields" 
+              type="email" 
+              placeholder="Email id"
+              value={email}
+              onChange={(e)=>SetEmail(e.target.value)}
+            />
+            <input 
+              className="signup-fields" 
+              type="text" 
+              placeholder="Username" 
+              value={username}
+              onChange={(e) => SetUsername(e.target.value)}
+            />
+            <input 
+              className="signup-fields" 
+              type="password" 
+              placeholder="Password" 
+              value={password}
+              onChange={(e) => SetPassword(e.target.value)}
+            />
+            <input 
+              className="signup-fields" 
+              type="password" 
+              placeholder="Confirm Password" 
+              value={cpassword}
+              onChange={(e) => SetCpassword(e.target.value)}
+            />
             <button className="submit-button" onClick={onSubmit}>Submit</button>
         </div>
     );
