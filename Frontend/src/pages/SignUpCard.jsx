@@ -52,7 +52,7 @@ function SignUpCard(){
     );
 }
 
-export default SignUpCard
+export default SignUpCard;
 
 
 

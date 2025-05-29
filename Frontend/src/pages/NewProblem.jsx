@@ -22,4 +22,4 @@ function NewProblem(){
     );
 }
 
-export default NewProblem
+export default NewProblem;
