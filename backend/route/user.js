@@ -3,7 +3,7 @@ import cookie from 'cookie';
 import bcrypt from 'bcryptjs';
 import User from '../model/user.js'; 
 import express from 'express';
-const secret = "myseret";
+const secret = "mysecret";
 import dotenv from 'dotenv';
 dotenv.config();
 
