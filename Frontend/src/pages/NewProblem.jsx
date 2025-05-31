@@ -13,12 +13,12 @@ function NewProblem() {
         type="text"
         placeholder="A Clear Stement for What is expected  "
       />
-      {/* <h3>Problem Description</h3>
+      <h3>Problem Description</h3>
       <input
         className="login-fields"
         type="text"
         placeholder="Provide All the data inputs related to the Question"
-      /> */}
+      />
       <h3>Give Constraints</h3>
       <input
         className="login-fields"

@@ -1,3 +1,20 @@
+.error-popup {
+  color: #fff;
+  background-color: #e74c3c;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+.success-popup {
+  color: #fff;
+  background-color: #2ecc71;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+
 .login{
   align-self: center;
   padding: 20px;

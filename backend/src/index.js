@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import Connect from '../utils/db.js';
 import userRotuer from '../route/user.js';
+// import ProblemRouter from '../route/problem.js';
 
 Connect();
 
@@ -14,6 +15,7 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
+// app.use('/user', ProblemRouter);
 app.use('/api', userRotuer);
 
 app.listen(8000,()=>{
