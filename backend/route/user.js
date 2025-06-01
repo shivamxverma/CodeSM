@@ -11,10 +11,7 @@ const router = express();
 
 router.post('/login',async (req, res) => {
     const { Username, Password } = req.body;
-    // console.log("Login request received:", req.body);
     const user = await User.findOne({ username: Username });
-
-    // console.log("User:", user);
 
     if (!user) {
         return res.status(401).json({
@@ -29,8 +26,6 @@ router.post('/login',async (req, res) => {
         maxAge: 3600,
         sameSite: 'strict',
     }));
-
-    // console.log("Token set in cookie:", token);
 
     const isPasswordValid = bcrypt.compareSync(Password, user.password);
     if (!isPasswordValid) {
@@ -55,8 +50,7 @@ router.get('/logout', (_, res) => {
     res.json({
         msg: "Logout successful"
     });
-}
-);
+});
 
 router.post('/signup',async (req, res) => {
     console.log(req.body);
