@@ -17,7 +17,7 @@ function LoginCard(){
                 'Content-Type': 'application/json'
               }
             });
-        // console.log(response);
+        console.log(response);
         navigate("/");
 
         } catch (error) {

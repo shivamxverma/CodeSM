@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import z from "zod";
+import { useNavigate } from "react-router-dom";
 
 const emailSchema = z.string().email();
 const usernameSchema = z.string().min(3, "Username must be at least 3 characters long");
@@ -23,6 +24,7 @@ const validateForm = (email, username, password, cpassword) => {
 };
 
 function SignUpCard() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -55,6 +57,7 @@ function SignUpCard() {
       setUsername("");
       setPassword("");
       setCpassword("");
+      navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");
     } finally {

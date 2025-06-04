@@ -1,34 +1,22 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LoginCard from "./pages/LoginCard";
-import SignUpCard from './pages/SignUpCard';
-import DashBoard from './pages/DashBoard';
-import NewProblem from './pages/NewProblem';
-import ProblemPage from './pages/ProblemPage';
-import ProtectedRoute from './component/ProtectedRoute';
-import DashBoardTest from './pages/DashBoardTest';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import LoginCard from "./pages/users/LoginCard";
+import SignUpCard from "./pages/users/SignUpCard";
+import ProblemPage from "./pages/admin/ProblemPage";
+import Dashboard from "./pages/dashboard/DashBoard";
+import Problems from "./pages/users/problem";
+import NewNav from "./component/NewNav";
 
 function App() {
   return (
     <BrowserRouter>
+      <NewNav />
       <Routes>
         <Route path="/login" element={<LoginCard />} />
         <Route path="/signup" element={<SignUpCard />} />
-        <Route path="/dashtest" element={<DashBoardTest/>}/>
-        <Route path="/" element={
-          <ProtectedRoute>
-            <DashBoard />
-          </ProtectedRoute>
-        } />
-        <Route path="/new_problem" element={
-          <ProtectedRoute>
-            <NewProblem />
-          </ProtectedRoute>
-        } />
-        <Route path="/problempage" element={
-          <ProtectedRoute>
-            <ProblemPage />
-          </ProtectedRoute>
-        } />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/problems" element={<Problems />} />
+        <Route path="/problempage" element={<ProblemPage />} />
+        <Route path="/new_problem" element={<NewProblem />} />
       </Routes>
     </BrowserRouter>
   );

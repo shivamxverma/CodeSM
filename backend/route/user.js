@@ -11,10 +11,7 @@ const router = express();
 
 router.post('/login',async (req, res) => {
     const { Username, Password } = req.body;
-    // console.log("Login request received:", req.body);
     const user = await User.findOne({ username: Username });
-
-    // console.log("User:", user);
 
     if (!user) {
         return res.status(401).json({
@@ -30,7 +27,7 @@ router.post('/login',async (req, res) => {
         sameSite: 'strict',
     }));
 
-    // console.log("Token set in cookie:", token);
+    console.log("User found:", token);
 
     const isPasswordValid = bcrypt.compareSync(Password, user.password);
     if (!isPasswordValid) {
@@ -55,13 +52,14 @@ router.get('/logout', (_, res) => {
     res.json({
         msg: "Logout successful"
     });
-}
-);
+});
 
 router.post('/signup',async (req, res) => {
-    console.log(req.body);
+    // console.log(req.body);
     const userData = req.body;
     const token = jwt.sign(userData, secret, { expiresIn: '1h' });
+
+    console.log("User data:", token);
     res.setHeader('Set-Cookie', cookie.serialize('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
