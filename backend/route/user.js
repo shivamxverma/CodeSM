@@ -27,6 +27,8 @@ router.post('/login',async (req, res) => {
         sameSite: 'strict',
     }));
 
+    console.log("User found:", token);
+
     const isPasswordValid = bcrypt.compareSync(Password, user.password);
     if (!isPasswordValid) {
         return res.status(401).json({
@@ -53,9 +55,11 @@ router.get('/logout', (_, res) => {
 });
 
 router.post('/signup',async (req, res) => {
-    console.log(req.body);
+    // console.log(req.body);
     const userData = req.body;
     const token = jwt.sign(userData, secret, { expiresIn: '1h' });
+
+    console.log("User data:", token);
     res.setHeader('Set-Cookie', cookie.serialize('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
