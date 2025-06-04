@@ -5,6 +5,7 @@ import ProblemPage from "./pages/admin/ProblemPage";
 import Dashboard from "./pages/dashboard/DashBoard";
 import Problems from "./pages/users/problem";
 import NewNav from "./component/NewNav";
+import NewProblem from'./pages/admin/NewProblem'
 
 function App() {
   return (
