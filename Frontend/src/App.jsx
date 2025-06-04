@@ -1,20 +1,25 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LoginCard from "./pages/LoginCard";
-import SignUpCard from './pages/SignUpCard';
-import DashBoard from './pages/DashBoard';
-import NewProblem from './pages/NewProblem';
-import ProblemPage from './pages/ProblemPage';
-import ProtectedRoute from './component/ProtectedRoute';
-import DashBoardTest from './pages/DashBoardTest';
+import LoginCard from "./pages/users/LoginCard";
+import SignUpCard from './pages/users/SignUpCard';
+// import DashBoard from './pages/DashBoard';
+// import NewProblem from './pages/NewProblem';
+import ProblemPage from './pages/admin/ProblemPage';
+// import ProtectedRoute from './component/ProtectedRoute';
+import DashBoardTest from './pages/dashboard/DashBoardTest';
+import Problems from './pages/users/problem';
+import NewNav from './component/NewNav';
 
 function App() {
   return (
     <BrowserRouter>
+      <NewNav />
       <Routes>
         <Route path="/login" element={<LoginCard />} />
         <Route path="/signup" element={<SignUpCard />} />
         <Route path="/dashtest" element={<DashBoardTest/>}/>
-        <Route path="/" element={
+        <Route path="/problems" element={<Problems />} />
+
+        {/* <Route path="/" element={
           <ProtectedRoute>
             <DashBoard />
           </ProtectedRoute>
@@ -24,10 +29,11 @@ function App() {
             <NewProblem />
           </ProtectedRoute>
         } />
+        */}
         <Route path="/problempage" element={
-          <ProtectedRoute>
+          // <ProtectedRoute>
             <ProblemPage />
-          </ProtectedRoute>
+          // </ProtectedRoute>
         } />
       </Routes>
     </BrowserRouter>
