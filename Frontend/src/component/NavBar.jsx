@@ -1,34 +1,43 @@
-import React from "react";
+import { Avatar, AvatarFallback } from "./ui/avatar"
+import { Link } from 'react-router-dom';
 
-const Navbar = () => {
+function NewNav() {
   return (
-    <nav className="bg-white shadow-md py-3 px-6 flex justify-between items-center rounded-b-2xl border-b-4 border-blue-500">
-      <div className="flex items-center space-x-3">
-        <img
-          src="/logo.png"
-          alt="Website Logo"
-          className="w-10 h-10 rounded-full shadow-md hover:scale-105 transition-transform duration-300"
-        />
-        <h1 className="text-xl font-bold text-blue-600 tracking-wide hover:text-blue-800 transition-colors duration-300">
-          CodeCrush
-        </h1>
-      </div>
-
-      <div className="relative group">
-        <img
-          src="/user-avatar.jpg"
-          alt="User"
-          className="w-10 h-10 rounded-full border-2 border-blue-400 shadow-sm cursor-pointer hover:scale-105 transition-transform duration-300"
-        />
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg p-4 hidden group-hover:block z-10">
-          <p className="font-semibold text-gray-700">Shivam Kumar</p>
-          <button className="mt-2 w-full bg-blue-500 text-white py-1 px-3 rounded-lg hover:bg-blue-600">
-            Logout
-          </button>
+    <div className="bg-gray-50">
+      <nav className="bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <span className="text-2xl font-bold tracking-tight">CodeSM</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link
+                to="/"
+                className="px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-500 transition-colors duration-200"
+              >
+                Home
+              </Link>
+              <Link
+                to="/problems"
+                className="px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-500 transition-colors duration-200"
+              >
+                Problems
+              </Link>
+              <button className="px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-500 transition-colors duration-200">
+                Compete
+              </button>
+              <button className="px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-500 transition-colors duration-200">
+                Learn
+              </button>
+              <Avatar className="h-10 w-10 bg-gray-200 flex items-center justify-center rounded-full">
+                <AvatarFallback className="text-blue-600 font-semibold">U</AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
-};
+}
 
-export default Navbar;
+export default NewNav;

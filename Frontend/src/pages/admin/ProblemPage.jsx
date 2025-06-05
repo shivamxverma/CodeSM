@@ -25,10 +25,6 @@ const ProblemPage = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 font-sans">
-      {/* Header */}
-      <header className="bg-gray-800 text-white p-4 shadow-md">
-        <h1 className="text-2xl font-semibold">Code Challenge Platform</h1>
-      </header>
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">

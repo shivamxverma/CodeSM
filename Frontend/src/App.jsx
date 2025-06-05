@@ -4,13 +4,13 @@ import SignUpCard from "./pages/users/SignUpCard";
 import ProblemPage from "./pages/admin/ProblemPage";
 import Dashboard from "./pages/dashboard/DashBoard";
 import Problems from "./pages/users/problem";
-import NewNav from "./component/NewNav";
+import NavBar from "./component/NavBar";
 import NewProblem from'./pages/admin/NewProblem'
 
 function App() {
   return (
     <BrowserRouter>
-      <NewNav />
+      <NavBar />
       <Routes>
         <Route path="/login" element={<LoginCard />} />
         <Route path="/signup" element={<SignUpCard />} />
