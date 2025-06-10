@@ -70,15 +70,18 @@ const userSchema = new Schema(
     links: {
       github: {
         type: String,
-        trim: true,
+        default: null,
+        trim: true
       },
       linkedin: {
         type: String,
-        trim: true,
+        default: null,
+        trim: true
       },
       website: {
         type: String,
-        trim: true,
+        default: null,
+        trim: true
       },
     },
   },
