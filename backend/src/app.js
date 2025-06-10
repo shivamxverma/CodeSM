@@ -14,7 +14,9 @@ app.use(CookieParser());
 app.use(expressstatic('public'));
 
 import userRoutes from './route/user.route.js';
+import problemRoutes from './route/problem.route.js';
 
 app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/problem", problemRoutes);
 
 export default app;

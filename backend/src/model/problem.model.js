@@ -6,6 +6,10 @@ const problemSchema = new Schema({
         required : true,
         unique : true
     },
+    difficulty: {
+        type: Number,
+        required: true
+    },
     description: {
         type: String,
         required: true
@@ -51,4 +55,8 @@ const problemSchema = new Schema({
         ref: 'Submission'
     }]
 },{timestamps: true});
+
+const Problem = mongoose.model('Problem', problemSchema);
+
+export default Problem;
 
