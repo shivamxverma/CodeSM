@@ -1,6 +1,6 @@
-const { exec } = require("child_process");
-const fs = require("fs");
-const path = require("path");
+import { exec } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 const runCppCodeWithInput = async (cppCode, inputText) => {
   const codeDir = path.join(__dirname, "code");

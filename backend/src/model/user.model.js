@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const userSchema = new Schema(
   {
@@ -12,10 +13,7 @@ const userSchema = new Schema(
     },
     rating : {
       type: Number,
-      default: NaN,
-      min: 0,
-      max: 3000,
-
+      default: 0
     },
     rank : {
       type: String,
@@ -89,7 +87,7 @@ const userSchema = new Schema(
 );
 
 userSchema.pre("save", async function (next) {
-  if (!this.modified("password")) {
+  if (!this.isModified("password")) {
     return next();
   }
   this.password = await bcrypt.hashSync(this.password, 10);
@@ -130,4 +128,4 @@ userSchema.methods.generateRefreshToken = function () {
 
 const User = mongoose.model("User", userSchema);
 
-export default User;
+export {User};

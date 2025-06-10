@@ -16,6 +16,8 @@ const uploadTestCaseFileToCloudinary = async (filePath) => {
         const response = await cloudinary.uploader.upload(filePath,{
             resourceType: "raw",
         })
+        
+        console.log("Response from Cloudinary:", response);
 
         // fs.unlinkSync(filePath); 
 
