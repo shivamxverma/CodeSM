@@ -46,7 +46,7 @@ function SignUpCard() {
 
     try {
       setLoading(true);
-      const response = await axios.post("http://localhost:8000/api/signup", {
+      const response = await axios.post("/api/signup", {
         email,
         username,
         password,

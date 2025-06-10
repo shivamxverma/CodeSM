@@ -9,7 +9,7 @@ function LoginCard(){
 
     const onsubmit = async()=> {
         try {
-            const response = await axios.post("http://localhost:8000/api/login", {
+            const response = await axios.post("/api/login", {
               Username,
               Password
             }, {
