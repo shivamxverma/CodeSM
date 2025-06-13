@@ -1,49 +1,42 @@
-import { ApiError } from "../utils/ApiError";
-import Problem from "../models/problem.model.js";
+import  {ApiError}  from "../utils/ApiError.js";
+import Problem from "../model/problem.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { uploadTestcasesToCloudinary } from "../utils/cloudinary.js";
+import { uploadTestCaseFileToCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
-const sampleProblemData = {
-    title: "Sum of Two Numbers",
-    difficulty: 1,
-    description: "Given two integers, find their sum.",
-    memoryLimit: 256,
-    timeLimit: 1000,
-    inputFormat: "The first line contains two integers A and B separated by a single space.",
-    outputFormat: "Output a single integer, the sum of A and B.",
-    sampleInput: "5 3",
-    sampleOutput: "8",
-    constraints: "-10^9 <= A, B <= 10^9",
-    tags: ["math", "basic", "addition"],
-    testcases: "https://res.cloudinary.com/your-cloud-name/raw/upload/v1234567890/testcases/sum_two_numbers.txt",
-    submission: []
-};
-
-
 const createProblem = asyncHandler(async (req, res) => {
+    console.log("Creating Problem");
+    console.log("Request Body: ", req.body);
     const {title , difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, constraints, testcases: testcasesBody} = req.body;
-    if(
-        [title, difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, constraints, testcases]
-        .some(field => !field.trim() === "")
-    )
-    {
-        throw new ApiError(400, "All fields are required");
-    }
+
+    // const tags = req.body.tags.split(',').map(tag => tag.trim());
+    // if(
+    //     [title, difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, constraints, testcasesBody]
+    //     .some(field => !field.trim() === "")
+    // )
+    // {
+    //     throw new ApiError(400, "All fields are required");
+    // }
 
     const existingProblem = await Problem.findOne({ title });
+
+    console.log("Existing Problem: ", existingProblem);
 
     if (existingProblem) {
         throw new ApiError(400, "Problem with this title already exists");
     }
 
-    const testcasesFilePath = req.files?.avatar[0]?.path;
+    // const testcasesFilePath = req.file?.avatar[0]?.path;
 
-    if(!testcases){
-            throw new ApiError(400, "Testcases are required");
-        }
+    // console.log("Testcases File Path: ", req.file);
+
+    // const testcases = req.body.testcases;
+
+    // if(!testcases){
+    //         throw new ApiError(400, "Testcases are required");
+    //     }
     
-    const testcasesCloudinaryUrl = await uploadTestcasesToCloudinary(testcasesFilePath);
+    // const testcasesCloudinaryUrl = await uploadTestcasesToCloudinary(testcasesFilePath);
 
 
     const newProblem = await Problem.create({
@@ -57,7 +50,7 @@ const createProblem = asyncHandler(async (req, res) => {
         sampleInput,
         sampleOutput,
         constraints,
-        tags,
+        // tags,
         testcases : testcasesBody || testcasesCloudinaryUrl || null
     });
 
