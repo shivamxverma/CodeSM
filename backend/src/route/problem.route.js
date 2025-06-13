@@ -1,8 +1,9 @@
 import { Router } from "express";
-// import { upload } from "../middlewares/multer.middleware.js";
-import { createProblem } from "../controllers/problem.controller.js";
+import {uploadFile}  from "../middlewares/multer.middleware.js";
+import { createProblem ,getProblemById} from "../controllers/problem.controller.js";
 const router = Router();
 
-router.post("/createproblem", createProblem);
+router.post("/createproblem", uploadFile.single('testcases'), createProblem);
+router.get("/:id", getProblemById);
 
 export default router;

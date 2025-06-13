@@ -8,24 +8,33 @@ cloudinary.config({
 })
 
 const uploadTestCaseFileToCloudinary = async (filePath) => {
-    try{
-        if(!filePath) {
+    try {
+        // console.log("File Path:", filePath);
+
+        if (!filePath || !fs.existsSync(filePath)) {
+            console.warn("Invalid file path.");
             return null;
         }
 
-        const response = await cloudinary.uploader.upload(filePath,{
-            resourceType: "raw",
-        })
-        
-        console.log("Response from Cloudinary:", response);
+        // console.log("Uploading file to Cloudinary...");
 
-        // fs.unlinkSync(filePath); 
+        const response = await cloudinary.uploader.upload(filePath, {
+            resource_type: "raw",
+        });
+
+        // console.log("Cloudinary upload successful:", response);
+
+        // Clean up local file after upload
+        await fs.promises.unlink(filePath);
 
         return response;
     } catch (error) {
-        if (filePath) {
-            fs.unlinkSync(filePath);
+        console.error("Error uploading to Cloudinary:", error);
+
+        if (filePath && fs.existsSync(filePath)) {
+            await fs.promises.unlink(filePath);
         }
+
         return null;
     }
 }
@@ -51,4 +60,4 @@ const uploadImageToCloudinary = async (filePath) => {
     }   
 }
 
-export { uploadTestCaseFileToCloudinary , uploadImageToCloudinary };
+export { uploadTestCaseFileToCloudinary, uploadImageToCloudinary };

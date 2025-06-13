@@ -29,18 +29,25 @@ function CreateProblem() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:8000/api/v1/problem/createproblem", formData, {
-        headers: { "Content-Type": "application/json" },
+      const data = new FormData();
+      for (let key in formData) {
+        data.append(key, formData[key]);
+      }
+
+      // console.log(data);
+
+      const res = await axios.post("http://localhost:8000/api/v1/problem/createproblem", data, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-  
-      console.log(res.data);
+
+      // console.log(res.data);
+
       alert("Problem created successfully!");
     } catch (err) {
       console.error(err);
       alert("Failed to create problem.");
     }
   };
-  
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-xl rounded-2xl mt-10">

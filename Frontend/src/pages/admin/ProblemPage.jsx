@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import axios from "axios";
 
-const ProblemPage = ({ problemId = "12345", submissionId = "67890" }) => {
+const ProblemPage = () => {
   const [problem, setProblem] = useState(null);
   const [code, setCode] = useState("// Write your code here");
   const [language, setLanguage] = useState("javascript");
@@ -27,17 +27,20 @@ const ProblemPage = ({ problemId = "12345", submissionId = "67890" }) => {
     },
   ]);
 
+  const problemId = "684c6686a36f07135b2a7dd3";
   useEffect(() => {
+
     const fetchProblem = async () => {
       try {
         const response = await axios.get(`http://localhost:8000/api/v1/problem/${problemId}`);
-        setProblem(response.data);
+        console.log(response.data.message);
+        setProblem(response.data.message);
       } catch (error) {
         setSubmissionResult({ status: "error", message: "Failed to load problem." });
       }
     };
     fetchProblem();
-  }, [problemId]);
+  }, []);
 
   useEffect(() => {
     const selectedBoilerplate = boilerplateCode.find((item) => item.language === language);
@@ -86,7 +89,7 @@ const ProblemPage = ({ problemId = "12345", submissionId = "67890" }) => {
               <p className="text-base text-gray-300 mb-4">{problem.description}</p>
               <h4 className="text-lg font-medium text-white mb-2">Difficulty</h4>
               <p className="text-gray-300 mb-4">
-                {problem.difficulty === 1 ? "Easy" : problem.difficulty === 2 ? "Medium" : "Hard"}
+                {problem.difficulty}
               </p>
               <h4 className="text-lg font-medium text-white mb-2">Constraints</h4>
               <p className="text-gray-300 mb-4">{problem.constraints}</p>
@@ -114,7 +117,7 @@ const ProblemPage = ({ problemId = "12345", submissionId = "67890" }) => {
                   </span>
                 ))}
               </div>
-              <h4 className="text-lg font-medium text-white mb-2">Test Cases</h4>
+              {/* <h4 className="text-lg font-medium text-white mb-2">Test Cases</h4>
               <a
                 href={problem.testcases}
                 target="_blank"
@@ -122,7 +125,7 @@ const ProblemPage = ({ problemId = "12345", submissionId = "67890" }) => {
                 className="text-blue-400 hover:underline"
               >
                 Download test cases (.txt)
-              </a>
+              </a> */}
             </>
           ) : (
             <p className="text-gray-400">Loading problem details...</p>
