@@ -58,9 +58,10 @@ const ProblemPage = () => {
     setIsSubmitting(true);
     setSubmissionResult(null);
     try {
-      const response = await axios.post(`http://localhost:8000/api/v1/problem/${submissionId}`, {
+      const response = await axios.post(`http://localhost:8000/api/v1/submission/submit`, {
         code,
         language,
+        problemId,    
       });
       setSubmissionResult({
         status: "success",

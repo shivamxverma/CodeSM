@@ -17,8 +17,10 @@ app.use(express.static('public'));
 
 import userRoutes from './route/user.route.js';
 import problemRoutes from './route/problem.route.js';
+import submissionRoutes from './route/submission.route.js';
 
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/problem", problemRoutes);
+app.use("/api/v1/submission", submissionRoutes);
 
 export default app;
