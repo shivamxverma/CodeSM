@@ -2,7 +2,7 @@ import {ApiError} from "../utils/ApiError.js";
 import Submission from "../model/submission.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { runCppCodeWithInput } from "../utils/runCode.js"; 
+import { runCppCodeWithInput} from "../utils/runCode.js"; 
 
 const createSubmission = asyncHandler(async (req, res) => {
     const { code, language , problemId } = req.body;
@@ -25,16 +25,16 @@ const createSubmission = asyncHandler(async (req, res) => {
 
     // console.log("New submission created:", newSubmission);
 
-    await runCppCodeWithInput(code, "5\n2 3\n4 5\n6 7\n9 20\n11 18");
+    const output = await runCppCodeWithInput(code, "5\n2 3\n4 5\n6 7\n9 20\n11 18");
 
-    // console.log("Code execution result:", runCode);
+    console.log("Code execution result:",output);
 
     if (!newSubmission) {
         throw new ApiError(500, "Something went wrong creating submission");
     }
 
 
-    console.log("New submission created:", newSubmission);
+    // console.log("New submission created:", newSubmission);
 
 
     // console.log("Submission details:", { problemId, userId, language });

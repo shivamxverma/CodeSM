@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import axios from "axios";
+import { useParams } from 'react-router-dom';
+
 
 const ProblemPage = () => {
   const [problem, setProblem] = useState(null);
@@ -26,9 +28,11 @@ const ProblemPage = () => {
       code: `class Solution {\n    public String solve(String s) {\n        StringBuilder sb = new StringBuilder();\n        for (int i = s.length() - 1; i >= 0; i--) {\n            sb.append(s.charAt(i));\n        }\n        return sb.toString();\n    }\n}`,
     },
   ]);
+  const { id } = useParams();
+    const problemId = id;
 
-  const problemId = "684c6686a36f07135b2a7dd3";
   useEffect(() => {
+    
 
     const fetchProblem = async () => {
       try {

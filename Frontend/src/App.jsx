@@ -8,7 +8,7 @@ import NavBar from "./component/NavBar";
 import NewProblem from "./pages/admin/NewProblem";
 
 const ProtectedRoute = ({ element }) => {
-  const token = localStorage.getItem("token"); 
+  const token = localStorage.getItem("userId"); 
   return token ? element : <Navigate to="/login" replace />;
 };
 
@@ -21,7 +21,7 @@ function App() {
         <Route path="/signup" element={<SignUpCard />} />
 
         <Route
-          path="/problempage"
+          path="/problems/:id"
           element={<ProtectedRoute element={<ProblemPage />} />}
         />
         <Route
