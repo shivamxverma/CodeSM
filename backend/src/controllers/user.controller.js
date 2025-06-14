@@ -31,6 +31,14 @@ const registerUser = asyncHandler(async (req, res) => {
     const {username, fullName, email, password} = req.body;
 
     console.log(req.body);
+
+    const {links} = req.body;
+
+    // if(!links || !links["github"] || !links["linkedin"] || !links["website"]) {
+    //     throw new ApiError(400, "All links are required");
+    // }
+
+    console.log(req.body);
     if (
         [username, fullName, email, password].some(field => !field.trim() === '')
     ) {
@@ -66,13 +74,25 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
 
+    let parsedLinks;
+    try {
+        parsedLinks = JSON.parse(links);
+    } catch (error) {
+        throw new ApiError(400, "Invalid links format. Must be a valid JSON string.");
+    }
+
     const user = await User.create({
         username,
         email,
         fullName,
         password,
-        avatar: avatar.url
-    })
+        avatar: avatar.url,
+        links: {
+            github: parsedLinks.github,
+            linkedin: parsedLinks.linkedin,
+            website: parsedLinks.website  
+        }
+    });
 
     const CreatedUser = await User.findById(user._id).select(
         "-password -refreshToken"
@@ -157,7 +177,7 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const LogoutUser = asyncHandler(async (req,res) => {
-    console.log(req.user);
+    // console.log(req.user);
     await User.findByIdAndUpdate(
         req.user._id,
         {
@@ -179,8 +199,6 @@ const LogoutUser = asyncHandler(async (req,res) => {
 
     return res
     .status(200)
-    .clearCookie("AccessToken", AccessToken, options)
-    .clearCookie("RefreshToken", RefreshToken, options)
     .json(new ApiResponse(200,{},"User logged out"));
 })
 

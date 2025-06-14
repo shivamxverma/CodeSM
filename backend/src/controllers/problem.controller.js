@@ -78,5 +78,13 @@ const getProblemById = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, problem, "Problem fetched successfully"));    
 });
 
+const getAllProblems = asyncHandler(async (req, res) => {
+    const problems = await Problem.find().select("-testcases -description -memoryLimit -timeLimit -inputFormat -outputFormat -sampleInput -sampleOutput -constraints").sort({ createdAt: -1 });
+    if (!problems || problems.length === 0) {
+        throw new ApiError(404, "No problems found");
+    }
+    res.status(200).json(new ApiResponse(200, problems, "Problems fetched successfully"));
+});
 
-export { createProblem , getProblemById};
+
+export { createProblem, getProblemById, getAllProblems };
