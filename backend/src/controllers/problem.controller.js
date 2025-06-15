@@ -1,17 +1,16 @@
 import  {ApiError}  from "../utils/ApiError.js";
 import Problem from "../model/problem.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { uploadTestCaseFileToCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import createProblemDirectory from "../../services/createproblem.services.js";
 
 const createProblem = asyncHandler(async (req, res) => {
-    // console.log("Creating Problem");
     // console.log("Request Body: ", req.body);
-    const {title , difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, constraints,tags} = req.body;
+    const {title , difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, testcases, constraints, tags} = req.body;
 
     const tagsArray = tags.split(',').map(tag => tag.trim());
     if(
-        [title, difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, constraints]
+        [title, difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, testcases,constraints]
         .some(field => !field.trim() === "")
     )
     {
@@ -20,30 +19,11 @@ const createProblem = asyncHandler(async (req, res) => {
 
     const existingProblem = await Problem.findOne({ title });
 
-    // console.log("Existing Problem: ", existingProblem);
-
     if (existingProblem) {
         throw new ApiError(400, "Problem with this title already exists");
     }
 
-    // console.log(req.file);
-
-    const testcasesFilePath = req.file?.path;
-
-    // console.log("Testcases File Path: ", testcasesFilePath);
-
-    // const testcases = req.body.testcases;
-
-    // if(!testcases){
-    //         throw new ApiError(400, "Testcases are required");
-    //     }
-    
-    const testcasesCloudinaryUrl = await uploadTestCaseFileToCloudinary(testcasesFilePath);
-    // console.log("Testcases Cloudinary URL: ", testcasesCloudinaryUrl.url);
-
-    // const authorId = "68483f7d391860b5e5e9d460";
-
-    // console.log('')
+    await createProblemDirectory({problemTitle: title, testcases});
 
 
     const newProblem = await Problem.create({
@@ -57,8 +37,7 @@ const createProblem = asyncHandler(async (req, res) => {
         sampleInput,
         sampleOutput,
         constraints,
-        tags : tagsArray,
-        testcases: testcasesCloudinaryUrl.url || null
+        tags : tagsArray
     });
 
     if (!newProblem) {
@@ -79,7 +58,7 @@ const getProblemById = asyncHandler(async (req, res) => {
 });
 
 const getAllProblems = asyncHandler(async (req, res) => {
-    const problems = await Problem.find().select("-testcases -description -memoryLimit -timeLimit -inputFormat -outputFormat -sampleInput -sampleOutput -constraints").sort({ createdAt: -1 });
+    const problems = await Problem.find().select("-description -memoryLimit -timeLimit -inputFormat -outputFormat -sampleInput -sampleOutput -constraints").sort({ createdAt: -1 });
     if (!problems || problems.length === 0) {
         throw new ApiError(404, "No problems found");
     }

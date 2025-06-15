@@ -3,7 +3,6 @@ import Editor from "@monaco-editor/react";
 import axios from "axios";
 import { useParams } from 'react-router-dom';
 
-
 const ProblemPage = () => {
   const [problem, setProblem] = useState(null);
   const [code, setCode] = useState("// Write your code here");
@@ -29,7 +28,7 @@ const ProblemPage = () => {
     },
   ]);
   const { id } = useParams();
-    const problemId = id;
+  const problemId = id;
 
   useEffect(() => {
     
@@ -122,15 +121,6 @@ const ProblemPage = () => {
                   </span>
                 ))}
               </div>
-              {/* <h4 className="text-lg font-medium text-white mb-2">Test Cases</h4>
-              <a
-                href={problem.testcases}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:underline"
-              >
-                Download test cases (.txt)
-              </a> */}
             </>
           ) : (
             <p className="text-gray-400">Loading problem details...</p>

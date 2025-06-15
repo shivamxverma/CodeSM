@@ -13,16 +13,37 @@ function CreateProblem() {
     sampleInput: "",
     sampleOutput: "",
     constraints: "",
-    tags: [],
-    testcases: null,
+    tags: "",
+    testcases: [{ input: "", output: "" }],
   });
 
-  const handleChange = (e) => {
-    const { name, value, type, files } = e.target;
-    if (type === "file") {
-      setFormData({ ...formData, [name]: files[0] });
+  const handleChange = (e, index) => {
+    const { name, value } = e.target;
+    if (name.startsWith("testcaseInput") || name.startsWith("testcaseOutput")) {
+      const newTestcases = [...formData.testcases];
+      const idx = parseInt(name.split("-")[1]);
+      if (name.startsWith("testcaseInput")) {
+        newTestcases[idx].input = value;
+      } else {
+        newTestcases[idx].output = value;
+      }
+      setFormData({ ...formData, testcases: newTestcases });
     } else {
       setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const addTestcase = () => {
+    setFormData({
+      ...formData,
+      testcases: [...formData.testcases, { input: "", output: "" }],
+    });
+  };
+
+  const removeTestcase = (index) => {
+    if (formData.testcases.length > 1) {
+      const newTestcases = formData.testcases.filter((_, i) => i !== index);
+      setFormData({ ...formData, testcases: newTestcases });
     }
   };
 
@@ -31,16 +52,16 @@ function CreateProblem() {
     try {
       const data = new FormData();
       for (let key in formData) {
-        data.append(key, formData[key]);
+        if (key === "testcases") {
+          data.append(key, JSON.stringify(formData.testcases));
+        } else {
+          data.append(key, formData[key]);
+        }
       }
-
-      // console.log(data);
 
       const res = await axios.post("http://localhost:8000/api/v1/problem/createproblem", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      // console.log(res.data);
 
       alert("Problem created successfully!");
     } catch (err) {
@@ -128,19 +149,53 @@ function CreateProblem() {
         </div>
 
         <div>
-          <label className="block text-lg text-gray-700 mb-2">
-            Upload Testcases File (.txt)
-          </label>
-          <input
-            type="file"
-            name="testcases"
-            accept=".txt"
-            onChange={handleChange}
-            className="file:mr-4 file:py-2 file:px-4
-              file:rounded-full file:border-0 file:text-sm file:font-semibold
-              file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
-            required
-          />
+          <label className="block text-lg text-gray-700 mb-2">Testcases</label>
+          {formData.testcases.map((testcase, index) => (
+            <div key={index} className="mb-4 p-4 border border-gray-200 rounded-xl">
+              <div>
+                <label className="block text-md text-gray-600">
+                  Testcase {index + 1} Input
+                </label>
+                <textarea
+                  name={`testcaseInput-${index}`}
+                  value={testcase.input}
+                  onChange={(e) => handleChange(e, index)}
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-xl mb-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-md text-gray-600">
+                  Testcase {index + 1} Output
+                </label>
+                <textarea
+                  name={`testcaseOutput-${index}`}
+                  value={testcase.output}
+                  onChange={(e) => handleChange(e, index)}
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-xl"
+                  required
+                />
+              </div>
+              {formData.testcases.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeTestcase(index)}
+                  className="mt-2 px-4 py-2 bg-red-500 text-white text-sm rounded-xl hover:bg-red-600 transition"
+                >
+                  Remove Testcase
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addTestcase}
+            className="mt-2 px-4 py-2 bg-green-500 text-white text-sm rounded-xl hover:bg-green-600 transition"
+          >
+            + Add Testcase
+          </button>
         </div>
 
         <button
