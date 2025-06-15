@@ -1,6 +1,5 @@
 import mongoose,{Schema} from "mongoose";
 import Problem from './problem.model.js';
-import { runCppCodeWithInput } from "../utils/runCode.js";
 import { ApiError } from "../utils/ApiError.js";
 
 const submissionSchema = new Schema({
