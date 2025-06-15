@@ -9,6 +9,7 @@ const ProblemPage = () => {
   const [language, setLanguage] = useState("javascript");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState(null);
+  const [testCaseResults, setTestCaseResults] = useState([]); // New state for test case results
   const [boilerplateCode] = useState([
     {
       language: "javascript",
@@ -31,8 +32,6 @@ const ProblemPage = () => {
   const problemId = id;
 
   useEffect(() => {
-    
-
     const fetchProblem = async () => {
       try {
         const response = await axios.get(`http://localhost:8000/api/v1/problem/${problemId}`);
@@ -60,23 +59,33 @@ const ProblemPage = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setSubmissionResult(null);
+    setTestCaseResults([]); // Clear previous test case results
     try {
-      const response = await axios.post(`http://localhost:8000/api/v1/submission/submit`, {
+      const response = await axios.post(`http://localhost:8000/api/v1/submission/${problemId}`, {
         code,
         language,
-        problemId,    
+        userId: localStorage.getItem("userId")   
       });
+
+      console.log(response.data.message.status);
       setSubmissionResult({
         status: "success",
-        message: response.data.message || "Code submitted successfully!",
+        message: response.data.message.output.status || "Code submitted successfully!",
       });
+      // Set test case results from response
+      if (response.data.message.output.execution) {
+        setTestCaseResults(response.data.message.output.execution);
+      }
     } catch (error) {
+      console.error("Submission error: ", error);
       setSubmissionResult({
         status: "error",
         message: error.response?.data?.message || "Failed to submit code.",
       });
+      alert("Failed to submit code. Please try again.");
     } finally {
       setIsSubmitting(false);
+      alert("Code submitted successfully!");
     }
   };
 
@@ -92,9 +101,7 @@ const ProblemPage = () => {
               <h2 className="text-xl font-semibold text-white mb-4">{problem.title}</h2>
               <p className="text-base text-gray-300 mb-4">{problem.description}</p>
               <h4 className="text-lg font-medium text-white mb-2">Difficulty</h4>
-              <p className="text-gray-300 mb-4">
-                {problem.difficulty}
-              </p>
+              <p className="text-gray-300 mb-4">{problem.difficulty}</p>
               <h4 className="text-lg font-medium text-white mb-2">Constraints</h4>
               <p className="text-gray-300 mb-4">{problem.constraints}</p>
               <h4 className="text-lg font-medium text-white mb-2">Input Format</h4>
@@ -160,36 +167,71 @@ const ProblemPage = () => {
           />
         </div>
       </div>
-      <div className="p-4 bg-gray-800 border-t border-gray-700 flex justify-between items-center">
-        {submissionResult && (
-          <div
-            className={`text-sm px-4 py-2 rounded-md ${
-              submissionResult.status === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
+      <div className="p-4 bg-gray-800 border-t border-gray-700 flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          {submissionResult && (
+            <div
+              className={`text-sm px-4 py-2 rounded-md ${
+                submissionResult.status === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
+              }`}
+            >
+              {submissionResult.message}
+            </div>
+          )}
+          <button
+            className={`px-6 py-3 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 flex items-center gap-2 ${
+              isSubmitting ? "opacity-50 cursor-not-allowed" : ""
             }`}
+            onClick={handleSubmit}
+            disabled={isSubmitting}
           >
-            {submissionResult.message}
+            {isSubmitting && (
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+              </svg>
+            )}
+            {isSubmitting ? "Submitting..." : "Submit Code"}
+          </button>
+        </div>
+        {testCaseResults.length > 0 && (
+          <div className="mt-4">
+            <h4 className="text-lg font-medium text-white mb-2">Test Case Results</h4>
+            <div className="flex flex-wrap gap-4">
+              {testCaseResults.map((result, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <span className="text-gray-300">Test Case {index + 1}:</span>
+                  {result ? (
+                    <svg
+                      className="h-6 w-6 text-green-500"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="h-6 w-6 text-red-500"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
-        <button
-          className={`px-6 py-3 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 flex items-center gap-2 ${
-            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-        >
-          {isSubmitting && (
-            <svg
-              className="animate-spin h-5 w-5 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-            </svg>
-          )}
-          {isSubmitting ? "Submitting..." : "Submit Code"}
-        </button>
       </div>
     </div>
   );

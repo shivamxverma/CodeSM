@@ -5,55 +5,39 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import runCppCodeWithInput from "../utils/runCode.js"; 
 import { downloadFile } from "../utils/downloadfile.js";
 import Problem from "../model/problem.model.js";
+import {User} from "../model/user.model.js";
 
 const createSubmission = asyncHandler(async (req, res) => {
-    const { code, language , problemId } = req.body;
-    const user = "68483f7d391860b5e5e9d460";
+    const { code, language , userId } = req.body;
+    const { problemId } = req.params;
 
-    if ([problemId, user, code, language].some(field => !field.trim())) {
+    console.log("Request Body: ", req.body);
+    if ([problemId, userId, code, language].some(field => !field.trim())) {
         throw new ApiError(400, "All fields are required");
     }
 
     const problem = await Problem.findById(problemId);
+    const user = await User.findById(userId).select("-password -refreshToken");
 
     if(!problem){
         throw new ApiError(404, "Problem not found");
     }
 
-    // console.log("Problem found:", problem);
-
-    // console.log('testcases: ',problem.testcases);
-
-    // const testcases = problem.testcases;
-
-    // await downloadFile(testcases);
-
-    // const newSubmission = await Submission.create({
-    //     // user,
-    //     // problemId,
-    //     code,
-    //     // language
-    // });
-
-    // console.log("New submission created:", newSubmission);
-
     const output = await runCppCodeWithInput(code, problem.title);
 
-    console.log("Code execution output:", output);
+    const newSubmission = await Submission.create({
+        user,
+        problem,
+        code,
+        language,
+        status: output.status
+    });
 
-    // console.log("Code execution result:", output);
+    if( !newSubmission) {
+        throw new ApiError(500, "Failed to create submission");
+    }
 
-    // if (!newSubmission) {
-    //     throw new ApiError(500, "Something went wrong creating submission");
-    // }
-
-
-    // console.log("New submission created:", newSubmission);
-
-
-    // console.log("Submission details:", { problemId, userId, language });
-
-    res.status(201).json(new ApiResponse(201, {}, "Submission created successfully"));
+    res.status(201).json(new ApiResponse(201, { output }, "Submission created successfully"));
 })
 
 export { createSubmission };

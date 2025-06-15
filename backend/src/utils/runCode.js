@@ -40,6 +40,7 @@ const runCppCodeWithInput = async (cppCode, problemTitle) => {
   }
 
   console.log("🚀 Running test cases...");
+  const execution = [];
 
   for (const file of inputFiles) {
     const testCaseNumber = file.replace('.txt', '');
@@ -69,6 +70,11 @@ const runCppCodeWithInput = async (cppCode, problemTitle) => {
       }
 
       console.log("✅ Output matches expected output.");
+      execution.push({
+        isPassed: true,
+        output: stdout.trim(),
+        testCaseNumber: testCaseNumber,
+      });
 
     } catch (err) {
       console.error("❌ Execution failed:\n", err.stderr || err.message);
@@ -76,7 +82,19 @@ const runCppCodeWithInput = async (cppCode, problemTitle) => {
     }
   }
 
-  return 'accepted';
+  for(const result of execution){
+    if(!result.isPassed){
+      return {
+        status: "rejected",
+        execution
+      };
+    }
+  }
+
+  return {
+    status: "accepted",
+    execution
+  };
 };
 
 export default runCppCodeWithInput;
