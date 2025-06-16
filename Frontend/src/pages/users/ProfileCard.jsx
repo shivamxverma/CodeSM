@@ -3,24 +3,19 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Trophy, Target, Star, Flame } from "lucide-react";
 
 export default function UserProfile() {
-  // Generate streak calendar data (7 columns x 12 rows - columnar by day)
   const generateStreakData = () => {
     const columns = [];
     const today = new Date();
     const totalWeeks = 12;
 
-    // Create 7 columns (one for each day of the week)
     for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
       const columnData = [];
 
-      // For each week, add the corresponding day
       for (let week = totalWeeks - 1; week >= 0; week--) {
         const currentDate = new Date(today);
-        // Go back to the start of current week, then back by 'week' weeks, then forward by dayOfWeek days
         const startOfWeek = currentDate.getDate() - currentDate.getDay();
         currentDate.setDate(startOfWeek - week * 7 + dayOfWeek);
 
-        // Don't show future dates
         if (currentDate > today) {
           columnData.push({
             date: currentDate.getDate(),
@@ -31,8 +26,7 @@ export default function UserProfile() {
             isFuture: true,
           });
         } else {
-          // Simulate streak data - active days have problems solved
-          const isActive = Math.random() > 0.3; // 70% chance of being active
+          const isActive = Math.random() > 0.3;
           const problemsSolved = isActive
             ? Math.floor(Math.random() * 5) + 1
             : 0;
@@ -56,16 +50,14 @@ export default function UserProfile() {
 
   const streakColumns = generateStreakData();
   const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const currentStreak = 15; // Current streak in days
+  const currentStreak = 15;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Main Profile Section */}
         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <CardContent className="p-8">
             <div className="grid grid-cols-1 gap-8 items-start">
-              {/* User Info & Profile Image */}
               <div className="space-y-6">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                   {/* User Info */}
@@ -99,7 +91,6 @@ export default function UserProfile() {
                     </div>
                   </div>
 
-                  {/* Profile Image */}
                   <div className="flex justify-center md:justify-end flex-shrink-0">
                     <div className="relative">
                       <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-xl bg-gradient-to-br from-orange-400 to-red-500">
@@ -115,8 +106,6 @@ export default function UserProfile() {
                     </div>
                   </div>
                 </div>
-
-                {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <Card className="border border-slate-200 shadow-sm">
                     <CardContent className="p-4">
@@ -183,7 +172,6 @@ export default function UserProfile() {
                   </Card>
                 </div>
 
-                {/* Bio Section */}
                 <Card className="border border-slate-200 shadow-sm">
                   <CardContent className="p-4">
                     <h3 className="font-semibold text-slate-800 mb-2">About</h3>
@@ -222,13 +210,10 @@ export default function UserProfile() {
               </div>
             </div>
 
-            {/* Mini Calendar Streak */}
             <div>
               <h4 className="font-semibold text-slate-700 text-sm mb-2">
                 Last 8 Weeks Activity
               </h4>
-
-              {/* Day Labels */}
               <div className="grid grid-cols-7 gap-0.5 mb-1">
                 {dayLabels.map((day) => (
                   <div
@@ -240,7 +225,6 @@ export default function UserProfile() {
                 ))}
               </div>
 
-              {/* Calendar Grid - Columnar Layout */}
               <div className="grid grid-cols-7 gap-0.5">
                 {streakColumns.slice(0, 7).map((column, columnIndex) => (
                   <div key={columnIndex} className="flex flex-col gap-px">
@@ -284,7 +268,6 @@ export default function UserProfile() {
                 ))}
               </div>
 
-              {/* Legend */}
               <div className="flex items-center justify-center space-x-2 mt-2 text-xs text-slate-600 flex-wrap gap-y-1">
                 <div className="flex items-center space-x-1">
                   <div className="w-2 h-2 bg-slate-100 border border-slate-200 rounded-sm"></div>
