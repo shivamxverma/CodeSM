@@ -69,14 +69,14 @@ function NewNav() {
                   </div>
                 </Link>
               </div>
-              <div className="absolute right-20 mt-2 w-20 bg-white rounded-md shadow-lg text-gray-500 z-7">
+              {/* <div className="absolute right-20 mt-2 w-20 bg-white rounded-md shadow-lg text-gray-500 z-7">
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm hover:bg-red-100 transition-colors duration-200"
                     >
                       Logout
                     </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
