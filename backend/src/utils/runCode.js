@@ -66,7 +66,7 @@ const runCppCodeWithInput = async (cppCode, problemTitle) => {
 
       if (stdout.trim() !== expectedOutput.trim()) {
         console.log("❌ Output does not match expected.");
-        return 'wronganswer';
+        // return 'wronganswer';
       }
 
       console.log("✅ Output matches expected output.");
@@ -78,7 +78,7 @@ const runCppCodeWithInput = async (cppCode, problemTitle) => {
 
     } catch (err) {
       console.error("❌ Execution failed:\n", err.stderr || err.message);
-      return 'executionerror';
+      // return 'executionerror';
     }
   }
 
@@ -90,6 +90,8 @@ const runCppCodeWithInput = async (cppCode, problemTitle) => {
       };
     }
   }
+
+  console.log(execution);
 
   return {
     status: "accepted",

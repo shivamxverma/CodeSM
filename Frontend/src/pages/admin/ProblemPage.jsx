@@ -59,7 +59,7 @@ const ProblemPage = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setSubmissionResult(null);
-    setTestCaseResults([]); // Clear previous test case results
+    setTestCaseResults([]);
     try {
       const response = await axios.post(`http://localhost:8000/api/v1/submission/${problemId}`, {
         code,
@@ -72,9 +72,9 @@ const ProblemPage = () => {
         status: "success",
         message: response.data.message.output.status || "Code submitted successfully!",
       });
-      // Set test case results from response
-      if (response.data.message.output.execution) {
+      if (response.data.message.output.status) {
         setTestCaseResults(response.data.message.output.execution);
+        alert("Test case results updated successfully!");
       }
     } catch (error) {
       console.error("Submission error: ", error);
