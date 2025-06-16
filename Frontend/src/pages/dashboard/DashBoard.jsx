@@ -1,22 +1,29 @@
 import React,{useState,useEffect} from "react";
 import { Link } from 'react-router-dom';
+import HeroSectionOne from "@/components/hero-section-demo-1";
+import { SparklesCore } from "@/components/ui/sparkles";
 // import Cookies from 'js-cookie';
 
 function DashBoard(){
     
-    // const [userId, setUserId] = useState("");
-
-  // useEffect(() => {
-  //   // Read userId cookie
-  //   const id = Cookies.get("userId");
-  //   console.log("User ID from cookie:", id);
-  //   setUserId(id || "No user ID found");
-  // }, []);
-
     return(
         <>
           <div>
-            <h1 className="text-2xl font-bold mb-4 text-center">Welcome to the Dashboard</h1>
+            {/* <h1 className="text-2xl font-bold mb-4 text-center">Welcome to the Dashboard</h1> */}
+            <SparklesCore
+             id="tsparticlesfullpage"
+             background="transparent"
+             minSize={0.6}
+             maxSize={1.4}
+             particleDensity={100}
+             className="w-full h-full"
+             particleColor="#FFFFFF" 
+            />
+            <div className="flex justify-center items-center h-screen">
+              <h1 className="text-4xl font-bold text-gray-800">Welcome to the Dashboard</h1>
+            </div>
+            <div className="mt-4"> {/* Added this div for spacing */} </div>
+            <HeroSectionOne />
             <div className="flex justify-center space-x-4">
               <Link to="/problems" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">View Problems</Link>
               <Link to="/newproblem" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Add New Problem</Link>

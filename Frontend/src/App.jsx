@@ -6,6 +6,7 @@ import Dashboard from "./pages/dashboard/DashBoard";
 import Problems from "./pages/users/problem";
 import NavBar from "./component/NavBar";
 import NewProblem from "./pages/admin/NewProblem";
+import ProfileCard from "./pages/users/ProfileCard";
 
 const ProtectedRoute = ({ element }) => {
   const token = localStorage.getItem("userId"); 
@@ -19,6 +20,11 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginCard />} />
         <Route path="/signup" element={<SignUpCard />} />
+        <Route path="/profile" element={<ProfileCard />} />
+        <Route
+          path="/:username"
+          element={<ProtectedRoute element={<ProfileCard />} />}
+        />
 
         <Route
           path="/problems/:id"

@@ -11,13 +11,22 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
+    "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/vite": "^4.1.8",
+    "@tsparticles/engine": "^3.8.1",
+    "@tsparticles/react": "^3.0.0",
+    "@tsparticles/slim": "^3.8.1",
     "axios": "^1.9.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "codemirror": "^6.0.1",
     "js-cookie": "^3.0.5",
+    "lucide-react": "^0.515.0",
+    "motion": "^12.18.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.1",
+    "tailwind-merge": "^3.3.1",
     "z": "^1.0.1",
     "zod": "^3.25.42"
   },
@@ -33,6 +42,7 @@
     "globals": "^16.0.0",
     "postcss": "^8.5.4",
     "tailwindcss": "^4.1.8",
+    "tw-animate-css": "^1.3.4",
     "vite": "^6.3.5"
   }
 }
