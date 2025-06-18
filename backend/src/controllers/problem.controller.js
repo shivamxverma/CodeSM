@@ -5,13 +5,12 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import createProblemDirectory from "../../services/createproblem.services.js";
 
 const createProblem = asyncHandler(async (req, res) => {
-    // console.log("Request Body: ", req.body);
     const {title , difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, testcases, constraints, tags} = req.body;
 
     const tagsArray = tags.split(',').map(tag => tag.trim());
     if(
         [title, difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, testcases,constraints]
-        .some(field => !field.trim() === "")
+        .some(field => !field.trim())
     )
     {
         throw new ApiError(400, "All fields are required");

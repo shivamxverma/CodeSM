@@ -7,7 +7,6 @@ function NewNav() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
-    // await axios.get('http://localhost:8000/api/v1/users/logout', { withCredentials: true });
     localStorage.removeItem('userId');
     localStorage.removeItem('token');
     navigate('/login');
