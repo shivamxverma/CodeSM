@@ -47,7 +47,7 @@ function LoginCard() {
 
     try {
       setLoading(true);
-      const response = await axios.post("http://localhost:8000/api/v1/users/login", {
+      const response = await axios.post("https://codesm-1.onrender.com/api/v1/users/login", {
         email: formData.email,
         username: formData.username,
         password: formData.password,

@@ -59,7 +59,7 @@ function CreateProblem() {
         }
       }
 
-      const res = await axios.post("http://localhost:8000/api/v1/problem/createproblem", data, {
+      const res = await axios.post("https://codesm-1.onrender.com/api/v1/problem/createproblem", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

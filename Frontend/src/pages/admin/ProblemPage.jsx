@@ -61,7 +61,7 @@ const ProblemPage = () => {
     setSubmissionResult(null);
     setTestCaseResults([]);
     try {
-      const response = await axios.post(`http://localhost:8000/api/v1/submission/${problemId}`, {
+      const response = await axios.post(`https://codesm-1.onrender.com/api/v1/submission/${problemId}`, {
         code,
         language,
         userId: localStorage.getItem("userId")   
