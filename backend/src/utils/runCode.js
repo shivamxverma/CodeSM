@@ -1,100 +1,71 @@
 import { exec } from 'child_process';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { promisify } from 'util';
+import { fetchTestcasesFromS3 } from '../services/aws.service.js';
+import dotenv from 'dotenv';
 
+dotenv.config();
 const execAsync = promisify(exec);
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../../');
+const runnerDir = path.join(projectRoot, 'code');
 
 const runCppCodeWithInput = async (cppCode, problemTitle) => {
-  const codeDir = path.join(projectRoot, 'problems');
-  const runnerDir = path.join(projectRoot, 'code');
   const problemName = problemTitle.replace(/\s+/g, '').toLowerCase();
-  const problemPath = path.join(codeDir, problemName);
   const codePath = path.join(runnerDir, 'user_code.cpp');
 
-  if(!fs.existsSync(runnerDir)){
-    fs.mkdirSync(runnerDir, { recursive: true });
-  }
+  await fs.mkdir(runnerDir, { recursive: true });
+  await fs.writeFile(codePath, cppCode);
 
-  fs.writeFileSync(codePath, cppCode);
 
-  const inputDir = path.join(problemPath, 'input');
-  const outputDir = path.join(problemPath, 'output');
-
-  const inputFiles = fs.readdirSync(inputDir)
-    .filter(f => f.endsWith('.txt'))
-    .sort((a, b) => parseInt(a) - parseInt(b));
-
+  let testcases;
   try {
-    console.log("🛠️ Building Docker image...");
-    await execAsync(`docker build -t cpp-runner .`, { cwd: projectRoot });
-    console.log("✅ Docker image built.");
+    testcases = await fetchTestcasesFromS3(problemName);
   } catch (err) {
-    console.error("❌ Docker build failed:\n", err.stderr || err.message);
-    return 'builderror';
+    return { status: "testcase_fetch_error", error: err.message };
   }
 
-  console.log("🚀 Running test cases...");
-  const execution = [];
+  // try {
+  //   await execAsync(`docker build -t cpp-runner .`, { cwd: projectRoot });
+  // } catch (err) {
+  //   return { status: 'builderror', error: err.stderr || err.message };
+  // }
 
-  for (const file of inputFiles) {
-    const testCaseNumber = file.replace('.txt', '');
-    const inputPath = path.join(inputDir, file);
-    const outputPath = path.join(outputDir, `${testCaseNumber}.txt`);
+  const execution = await Promise.all(
+    testcases.map(async ({ input, output }, index) => {
+      const inputFile = path.join(runnerDir, `input_${index + 1}.txt`);
+      await fs.writeFile(inputFile, input);
 
-    const inputText = fs.readFileSync(inputPath, 'utf-8');
-    const expectedOutput = fs.readFileSync(outputPath, 'utf-8');
+      try {
+        const { stdout } = await execAsync(
+          `docker run --rm -v ${runnerDir}:/app cpp-runner bash -c "timeout 2s ./user_program < input_${index + 1}.txt"`,
+          { cwd: projectRoot }
+        );
 
-    const tempInputPath = path.join(runnerDir, 'input.txt');
-    fs.writeFileSync(tempInputPath, inputText);
+        const isPassed = stdout.trim() === output.trim();
+        return {
+          isPassed,
+          output: stdout.trim(),
+          testCaseNumber: `${index + 1}`,
+        };
 
-    console.log(`\n🧪 Test case ${testCaseNumber}`);
-    console.log("Input:\n" + inputText);
-
-    try {
-      const { stdout } = await execAsync(
-        `docker run --rm -v ${runnerDir}:/app cpp-runner`,
-        { cwd: projectRoot }
-      );
-
-      console.log("Output:\n" + stdout);
-
-      if (stdout.trim() !== expectedOutput.trim()) {
-        console.log("❌ Output does not match expected.");
-        // return 'wronganswer';
+      } catch (err) {
+        return {
+          isPassed: false,
+          output: err.stderr?.trim() || err.message || "Runtime Error",
+          testCaseNumber: `${index + 1}`,
+        };
       }
+    })
+  );
 
-      console.log("✅ Output matches expected output.");
-      execution.push({
-        isPassed: true,
-        output: stdout.trim(),
-        testCaseNumber: testCaseNumber,
-      });
-
-    } catch (err) {
-      console.error("❌ Execution failed:\n", err.stderr || err.message);
-      // return 'executionerror';
-    }
-  }
-
-  for(const result of execution){
-    if(!result.isPassed){
-      return {
-        status: "rejected",
-        execution
-      };
-    }
-  }
-
-  console.log(execution);
+  const allPassed = execution.every(e => e.isPassed);
 
   return {
-    status: "accepted",
+    status: allPassed ? "accepted" : "rejected",
     execution
   };
 };

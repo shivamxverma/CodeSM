@@ -2,7 +2,7 @@ import  {ApiError}  from "../utils/ApiError.js";
 import Problem from "../model/problem.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import createProblemDirectory from "../../services/createproblem.services.js";
+import { uploadTestCaseFileToS3 } from "../../services/aws.service.js";
 
 const createProblem = asyncHandler(async (req, res) => {
     const {title , difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, testcases, constraints, tags} = req.body;
@@ -22,8 +22,9 @@ const createProblem = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Problem with this title already exists");
     }
 
-    await createProblemDirectory({problemTitle: title, testcases});
+    const problemName = title.toLowerCase().replace(/\s+/g, '');
 
+    await uploadTestCaseFileToS3("testcases.json", problemName, testcases);
 
     const newProblem = await Problem.create({
         title,
