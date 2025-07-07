@@ -3,7 +3,6 @@ import Submission from "../model/submission.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import runCppCodeWithInput from "../utils/runCode.js"; 
-import { downloadFile } from "../utils/downloadfile.js";
 import Problem from "../model/problem.model.js";
 import {User} from "../model/user.model.js";
 

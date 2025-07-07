@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { promisify } from 'util';
-import { fetchTestcasesFromS3 } from '../services/aws.service.js';
+// import { fetchTestcasesFromS3 } from '../services/aws.service.js';
 import dotenv from 'dotenv';
 
 dotenv.config();

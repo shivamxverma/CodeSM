@@ -59,8 +59,17 @@ function CreateProblem() {
         }
       }
 
-      const res = await axios.post("https://codesm-1.onrender.com/api/v1/problem/createproblem", data, {
+      const res = await axios.post("http://localhost:8000/api/v1/problem/createproblem", data, {
         headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      console.log(res.data);
+
+      const url = res.data.message;
+      const problemName = formData.title.toLowerCase().replace(/\s+/g, '');
+      const testcasesFile = new Blob([JSON.stringify(formData.testcases)], { type: "application/json" });
+      const uploadRes = await axios.put(url, testcasesFile, {
+        headers: { "Content-Type": "application/json" },
       });
 
       alert("Problem created successfully!");
