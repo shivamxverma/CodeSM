@@ -42,11 +42,11 @@ CodeSM is a multi-role platform that enables creators to design coding problems 
    Create a `.env` file in the root directory with the following:
    ```env
    PORT=8000
-   MONGODB_URI=mongodb+srv://hitesh:your-password@cluster0.lxl3fsq.mongodb.net
+   MONGODB_URI=mongodb+srv://user:pasword@cluster0.wecd3fsq.mongodb.net
    CORS_ORIGIN=*
-   ACCESS_TOKEN_SECRET=chai-aur-code
+   ACCESS_TOKEN_SECRET="Shivam-verma"
    ACCESS_TOKEN_EXPIRY=1d
-   REFRESH_TOKEN_SECRET=chai-aur-backend
+   REFRESH_TOKEN_SECRET="Shivam_Verma"
    REFRESH_TOKEN_EXPIRY=10d
     
    CLOUDINARY_CLOUD_NAME=
@@ -73,4 +73,5 @@ CodeSM is a multi-role platform that enables creators to design coding problems 
 - **Creators**: Log in with creator credentials, access the problem authoring dashboard, create coding problems, and upload test cases to AWS S3.
 - **Users**: Sign up or log in, browse coding problems, submit solutions, and view results after secure execution in Docker containers.
 - **Profile Management**: Update user details, upload profile images, and track coding streaks via the profile page.
-```
+
+# Building Now 
