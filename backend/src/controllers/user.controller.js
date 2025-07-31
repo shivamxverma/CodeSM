@@ -74,7 +74,7 @@ const registerUser = asyncHandler(async (req, res) => {
         username: username,
         email,
         fullName,
-        password : hadhedPassword,
+        password: hadhedPassword,
     })
 
     const CreatedUser = await User.findById(user._id).select(
@@ -91,59 +91,59 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
+    const { username, email, password } = req.body;
 
-  console.log('Body:', req.body);
+    console.log('Body:', req.body);
 
-  if (!username && !email) {
-    throw new ApiError(400, 'Username or Email is Required');
-  }
+    if (!username && !email) {
+        throw new ApiError(400, 'Username or Email is Required');
+    }
 
-  const user = await User.findOne({
-    $or: [{ username }, { email }],
-  });
+    const user = await User.findOne({
+        $or: [{ username }, { email }],
+    });
 
-  if (!user) {
-    throw new ApiError(404, "User doesn't Exist");
-  }
+    if (!user) {
+        throw new ApiError(404, "User doesn't Exist");
+    }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    throw new ApiError(401, 'Invalid password');
-  }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+        throw new ApiError(401, 'Invalid password');
+    }
 
-  const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id);
+    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id);
 
-  if (!accessToken || !refreshToken) {
-    throw new ApiError(500, 'Failed to generate tokens');
-  }
+    if (!accessToken || !refreshToken) {
+        throw new ApiError(500, 'Failed to generate tokens');
+    }
 
-  const loggedInUser = await User.findById(user._id).select('-password -refreshToken');
+    const loggedInUser = await User.findById(user._id).select('-password -refreshToken');
 
-//   const options = {
-//     maxAge: 120,
-//   };
 
-//   const refreshTokenOptions = {
-//     maxAge: 120,
-//   };
+    const options = {
+        httpOnly: true,
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'Strict',
+    }
 
-  res
-    .status(200)
-    .cookie('accessToken', accessToken)
-    .cookie('refreshToken', refreshToken)
+    res
+        .status(200)
+        .cookie('accessToken', accessToken, options)
+        .cookie('refreshToken', refreshToken, options)
 
-  return res.json(
-    new ApiResponse(
-      200,
-      {
-        user: loggedInUser,
-        accessToken,
-        refreshToken,
-      },
-      'User Logged In Successfully'
-    )
-  );
+    return res.json(
+        new ApiResponse(
+            200,
+            {
+                user: loggedInUser,
+                accessToken,
+                refreshToken,
+            },
+            'User Logged In Successfully'
+        )
+    );
 });
 
 const LogoutUser = asyncHandler(async (req, res) => {
@@ -159,15 +159,17 @@ const LogoutUser = asyncHandler(async (req, res) => {
         }
     );
 
-    // const options = {
-    //     httpOnly: false,
-    //     secure: false
-    // };
+    const options = {
+        httpOnly: true,
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'Strict',
+    }
 
     return res
         .status(200)
-        .clearCookie("accessToken")
-        .clearCookie("refreshToken")
+        .clearCookie("accessToken",options)
+        .clearCookie("refreshToken",options)
         .json(new ApiResponse(200, {}, "User logged out"));
 });
 
@@ -191,19 +193,19 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             throw new ApiError(403, "Invalid Refresh Token");
         }
 
-        // const options = {
-        //     httpOnly: false,
-        //     secure: false,
-        //     maxAge: 24 * 60 * 60 * 1000
-        // }
+        const options = {
+            httpOnly: false,
+            secure: false,
+            maxAge: 24 * 60 * 60 * 1000
+        }
 
         const { AccesToken, newRefreshToken } = await generateAccessTokenAndRefreshToken(user._id);
 
 
         return res
             .status(200)
-            .cookie("AccessToken", AccesToken)
-            .cookie("RefreshToken", newRefreshToken)
+            .cookie("AccessToken", AccesToken,options)
+            .cookie("RefreshToken", newRefreshToken,options)
             .json(
                 new ApiResponse(
                     200,
