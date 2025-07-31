@@ -53,11 +53,11 @@ function LoginCard() {
         password: formData.password,
       },{withCredentials: true});
 
-      // console.log();
+      console.log(response.data);
 
-      const userId = response.data.message.user._id;
+      const token = response.data.message.accessToken;
 
-      localStorage.setItem("userId", userId);
+      localStorage.setItem("accessToken", token);
 
       setSuccess("Login successful! Redirecting to dashboard...");
       setTimeout(() => {

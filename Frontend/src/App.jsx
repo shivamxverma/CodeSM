@@ -9,7 +9,7 @@ import NewProblem from "./pages/admin/NewProblem";
 import ProfileCard from "./pages/users/ProfileCard";
 
 const ProtectedRoute = ({ element }) => {
-  const token = localStorage.getItem("userId"); 
+  const token = localStorage.getItem("accessToken"); 
   return token ? element : <Navigate to="/login" replace />;
 };
 
@@ -35,7 +35,7 @@ function App() {
           element={<ProtectedRoute element={<NewProblem />} />}
         />
         <Route
-          path="/dashboard"
+          path="/"
           element={<ProtectedRoute element={<Dashboard />} />}
         />
         <Route
@@ -43,7 +43,7 @@ function App() {
           element={<ProtectedRoute element={<Problems />} />}
         />
         <Route
-          path="/"
+          path="/problems"
           element={<ProtectedRoute element={<Problems />} />}
         />
       </Routes>

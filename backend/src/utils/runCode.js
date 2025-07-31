@@ -13,7 +13,7 @@ const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../../');
-const runnerDir   = path.join(projectRoot, 'backend', 'code');    // ← here
+const runnerDir   = path.join(projectRoot, '/', 'code');
 const codePath    = path.join(runnerDir, 'user_code.cpp');
 
 async function buildDockerImage() {
@@ -24,15 +24,21 @@ function runTestInContainer(input) {
   return new Promise((resolve, reject) => {
     const proc = spawn('docker', [
       'run', '--rm', '-i',
+      // ← resource limits start here
+      '--memory=256m',      // cap container at 256 MB RAM
+      '--cpus=0.5',          // allow up to half a CPU core
+      '--pids-limit=100',    // (optional) max 100 processes
+      // you can also add ulimits, e.g. '--ulimit', 'nofile=64:64'
+      // ← resource limits end here
       '-v', `${runnerDir}:/host_code:ro`,
       'cpp-runner',
       'bash', '-c',
-        [
-          'cp /host_code/user_code.cpp /tmp',
-          'cd /tmp',
-          'g++ user_code.cpp -O2 -std=c++17 -o user_program',
-          'timeout 2s ./user_program'
-        ].join(' && ')
+      [
+        'cp /host_code/user_code.cpp /tmp',
+        'cd /tmp',
+        'g++ user_code.cpp -O2 -std=c++17 -o user_program',
+        'timeout 2s ./user_program'
+      ].join(' && ')
     ], { cwd: projectRoot });
 
     let stdout = '', stderr = '';

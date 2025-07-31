@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function CreateProblem() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
     difficulty: 800,
@@ -60,7 +62,11 @@ function CreateProblem() {
       }
 
       const res = await axios.post("http://localhost:8000/api/v1/problem/createproblem", data, {
-        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`  
+        },
       });
 
       console.log(res.data.message);
@@ -75,7 +81,10 @@ function CreateProblem() {
 
       console.log("Testcases uploaded successfully:", uploadRes.data);
 
-      alert("Problem created successfully!");
+      // alert("Problem created successfully!");
+      setTimeout(() => {
+        navigate("/problems");
+      }, 1000);
     } catch (err) {
       console.error(err);
       alert("Failed to create problem.");
