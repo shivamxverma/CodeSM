@@ -5,6 +5,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
+import { Readable } from "stream";
 dotenv.config();
 
 const s3Client = new S3Client({
@@ -20,13 +21,38 @@ async function generateUploadURL(problemName) {
   const params = new PutObjectCommand({
     Bucket: "codesm-cf",
     Key: `/uploads/${problemName}/testcases.json`,
-    Expires: 3600,
     ContentType: "application/json",
   });
-  console.log("S3 Params:", params);
-  const url = await getSignedUrl(s3Client, params);
-  console.log("Generated URL:", url);
+  // console.log("S3 Params:", params);
+  const url = await getSignedUrl(s3Client, params,{ expiresIn: 3600 });
+  // console.log("Generated URL:", url);
   return url;
 }
 
-export { generateUploadURL };
+const streamToString = (stream) =>
+  new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("error", reject);
+    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
+  });
+
+async function fetchTestcasesFromS3(problemName) {
+  try {
+    const command = new GetObjectCommand({
+      Bucket: "codesm-cf",
+      Key: `/uploads/${problemName}/testcases.json`,
+    });
+
+    const response = await s3Client.send(command);
+    const jsonString = await streamToString(response.Body);
+    const data = JSON.parse(jsonString);
+    console.log("Testcases fetched from S3:", data);
+    return data;
+  } catch (err) {
+    console.error("Error fetching testcases:", err);
+    return null;
+  }
+}
+
+export { generateUploadURL , fetchTestcasesFromS3};

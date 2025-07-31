@@ -63,14 +63,17 @@ function CreateProblem() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log(res.data);
+      console.log(res.data.message);
 
       const url = res.data.message;
       const problemName = formData.title.toLowerCase().replace(/\s+/g, '');
+      console.log("Upload URL:", problemName);
       const testcasesFile = new Blob([JSON.stringify(formData.testcases)], { type: "application/json" });
       const uploadRes = await axios.put(url, testcasesFile, {
         headers: { "Content-Type": "application/json" },
       });
+
+      console.log("Testcases uploaded successfully:", uploadRes.data);
 
       alert("Problem created successfully!");
     } catch (err) {

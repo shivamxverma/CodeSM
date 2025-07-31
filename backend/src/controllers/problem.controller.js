@@ -1,5 +1,5 @@
 import  {ApiError}  from "../utils/ApiError.js";
-import Problem from "../model/problem.model.js";
+import Problem from "../models/problem.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { generateUploadURL } from "../../services/aws.service.js";
@@ -18,21 +18,21 @@ const createProblem = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required");
     }
 
-    console.log(tagsArray);
+    // console.log(tagsArray);
 
     const existingProblem = await Problem.findOne({ title });
 
-    console.log(existingProblem);
+    // console.log(existingProblem);
 
     if (existingProblem) {
         throw new ApiError(400, "Problem with this title already exists");
     }
 
-    // const problemName = title.toLowerCase().replace(/\s+/g, '');
+    const problemName = title.toLowerCase().replace(/\s+/g, '');
 
-    const uploadURL = await generateUploadURL();
+    const uploadURL = await generateUploadURL(problemName);
 
-    console.log(uploadURL);
+    // console.log(uploadURL);
 
     const newProblem = await Problem.create({
         title,

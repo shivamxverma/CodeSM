@@ -20,7 +20,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginCard />} />
         <Route path="/signup" element={<SignUpCard />} />
-        <Route path="/profile" element={<ProfileCard />} />
+        {/* <Route path="/profile" element={<ProfileCard />} /> */}
         <Route
           path="/:username"
           element={<ProtectedRoute element={<ProfileCard />} />}

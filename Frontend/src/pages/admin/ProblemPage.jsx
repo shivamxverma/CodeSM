@@ -35,7 +35,7 @@ const ProblemPage = () => {
     const fetchProblem = async () => {
       try {
         const response = await axios.get(`http://localhost:8000/api/v1/problem/${problemId}`);
-        console.log(response.data.message);
+        // console.log(response.data.message);
         setProblem(response.data.message);
       } catch (error) {
         setSubmissionResult({ status: "error", message: "Failed to load problem." });
@@ -61,19 +61,22 @@ const ProblemPage = () => {
     setSubmissionResult(null);
     setTestCaseResults([]);
     try {
-      const response = await axios.post(`https://codesm-1.onrender.com/api/v1/submission/${problemId}`, {
+      const response = await axios.post(`http://localhost:8000/api/v1/submission/${problemId}`, {
         code,
         language,
         userId: localStorage.getItem("userId")   
       });
 
-      console.log(response.data.message.status);
+      console.log("Submission response: ", response.data);
+
+      const result = response.data.message.output.execution;
+      const status = response.data.message.output.status;
       setSubmissionResult({
         status: "success",
         message: response.data.message.output.status || "Code submitted successfully!",
       });
       if (response.data.message.output.status) {
-        setTestCaseResults(response.data.message.output.execution);
+        setTestCaseResults(result.map(tc => tc.isPassed));
         alert("Test case results updated successfully!");
       }
     } catch (error) {

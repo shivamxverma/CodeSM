@@ -40,7 +40,7 @@ function NewNav() {
                 Problems
               </Link>
               <button className="px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-500 transition-colors duration-200">
-                Compete
+                <Link to="/newproblem">Create Problem</Link>
               </button>
               <button className="px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-500 transition-colors duration-200">
                 Learn
