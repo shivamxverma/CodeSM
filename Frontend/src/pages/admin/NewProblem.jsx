@@ -69,11 +69,11 @@ function CreateProblem() {
         },
       });
 
-      console.log(res.data.message);
+      const problemId = res.data.message.newProblem._id;
 
-      const url = res.data.message;
-      const problemName = formData.title.toLowerCase().replace(/\s+/g, '');
-      console.log("Upload URL:", problemName);
+      const url = res.data.message.uploadURL;
+      console.log("Problem created successfully:", url);
+      console.log("Upload URL:", problemId);
       const testcasesFile = new Blob([JSON.stringify(formData.testcases)], { type: "application/json" });
       const uploadRes = await axios.put(url, testcasesFile, {
         headers: { "Content-Type": "application/json" },

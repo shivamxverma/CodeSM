@@ -28,12 +28,6 @@ const createProblem = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Problem with this title already exists");
     }
 
-    const problemName = title.toLowerCase().replace(/\s+/g, '');
-
-    const uploadURL = await generateUploadURL(problemName);
-
-    // console.log(uploadURL);
-
     const newProblem = await Problem.create({
         title,
         difficulty,
@@ -51,7 +45,15 @@ const createProblem = asyncHandler(async (req, res) => {
     if (!newProblem) {
         throw new ApiError(500, "SomeThing Went Wrong Creating Problem");
     }
-    res.status(201).json(new ApiResponse(201, uploadURL, "Problem Created Successfully"));
+
+    const uploadURL = await generateUploadURL(newProblem._id);
+
+    if(!uploadURL){
+        throw new ApiError(500,"Somthing Went Wrong With Upload Url");
+    }
+
+
+    res.status(201).json(new ApiResponse(201, {newProblem,uploadURL}, "Problem Created Successfully"));
 })
 
 

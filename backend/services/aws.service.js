@@ -16,11 +16,11 @@ const s3Client = new S3Client({
   },
 });
 
-async function generateUploadURL(problemName) {
-  // console.log("Generating upload URL for problem:", problemName);
+async function generateUploadURL(problemId) {
+  // console.log("Generating upload URL for problem:", problemId);
   const params = new PutObjectCommand({
-    Bucket: "codesm-cf",
-    Key: `/uploads/${problemName}/testcases.json`,
+    Bucket: process.env.AWS_BUCKET_NAME,
+    Key: `/problems/${problemId}/testcases.json`,
     ContentType: "application/json",
   });
   // console.log("S3 Params:", params);
@@ -37,11 +37,11 @@ const streamToString = (stream) =>
     stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
   });
 
-async function fetchTestcasesFromS3(problemName) {
+async function fetchTestcasesFromS3(problemId) {
   try {
     const command = new GetObjectCommand({
-      Bucket: "codesm-cf",
-      Key: `/uploads/${problemName}/testcases.json`,
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: `/problems/${problemId}/testcases.json`,
     });
 
     const response = await s3Client.send(command);

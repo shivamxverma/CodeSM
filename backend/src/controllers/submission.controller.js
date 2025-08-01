@@ -21,7 +21,7 @@ const createSubmission = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Problem not found");
     }
 
-    const output = await runCppCodeWithInput(code, problem.title);
+    const output = await runCppCodeWithInput(code, problem._id);
 
     console.log("Output from runCppCodeWithInput: ", output);
 

@@ -1,5 +1,5 @@
 import { redisClient } from '../utils/redis.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
 const CAPACITY   = 10;          
 const WINDOW     = 60;           

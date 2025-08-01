@@ -14,16 +14,13 @@ const ProblemPage = () => {
   const boilerplateCode = [
     {
       language: "cpp",
-      code: `#include <string>
-#include <iostream>
+      code: `
+#include <bits/stdc++.h>
 using namespace std;
 
-string Solve(string s) {
-  string result = "";
-  for (int i = s.size() - 1; i >= 0; i--) {
-    result += s[i];
-  }
-  return result;
+int main() {
+  // Write your code here
+  return 0;
 }`,
     },
   ];

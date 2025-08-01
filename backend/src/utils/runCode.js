@@ -56,14 +56,14 @@ function runTestInContainer(input) {
   });
 }
 
-const runCppCodeWithInput = async (cppCode, problemTitle) => {
+const runCppCodeWithInput = async (cppCode, problemId) => {
   await fs.mkdir(runnerDir, { recursive: true });
   await fs.writeFile(codePath, cppCode);
 
   let testcases;
   try {
     testcases = await fetchTestcasesFromS3(
-      problemTitle.replace(/\s+/g, '').toLowerCase()
+      problemId
     );
   } catch (err) {
     return { status: 'testcase_fetch_error', error: err.message };
@@ -93,7 +93,7 @@ const runCppCodeWithInput = async (cppCode, problemTitle) => {
       });
     }
   }
-
+  await fs.rm(runnerDir, { recursive: true, force: true });
   return {
     status: execution.every(r => r.isPassed) ? 'accepted' : 'rejected',
     execution
