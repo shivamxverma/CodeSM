@@ -6,4 +6,4 @@ RUN apt-get update && \
 
 WORKDIR /app
 COPY code/user_code.cpp .
-CMD ["bash","-lc","g++ -std=c++17 user_code.cpp -o user_program && ./user_program"]
+CMD ["bash","-lc","g++ -std=c++17 user_code.cpp -o user_program && ./user_program < input.txt"]
