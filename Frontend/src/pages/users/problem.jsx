@@ -1,12 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
 
-function ProblemPage() {
+export default function ProblemPage() {
   const [problems, setProblems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // UI state
+  const [search, setSearch] = useState("");
+  const [difficulty, setDifficulty] = useState("All"); 
+  const [sortBy, setSortBy] = useState("A-Z"); 
 
   useEffect(() => {
-    const fetchProblems = async () => {
+    const controller = new AbortController();
+
+    async function fetchProblems() {
       try {
+        setLoading(true);
+        setError("");
         const response = await fetch('http://localhost:8000/api/v1/problem');
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -14,40 +26,209 @@ function ProblemPage() {
         const data = await response.json();
         console.log(data.message); 
         setProblems(Array.isArray(data.message) ? data.message : []);
-      } catch (error) {
-        console.error('Error fetching problems:', error);
-        setProblems([]); 
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        console.error("Error fetching problems:", err);
+        setError("Could not load problems. Please try again.");
+        setProblems([]);
+      } finally {
+        setLoading(false);
       }
-    };
+    }
+
     fetchProblems();
+    return () => controller.abort();
   }, []);
 
+  const DIFF_ORDER = { Easy: 1, Medium: 2, Hard: 3 };
+
+  const filteredSorted = useMemo(() => {
+    let list = [...problems];
+    const q = search.trim().toLowerCase();
+
+    if (difficulty !== "All") {
+      list = list.filter((p) => (p?.difficulty || "").toLowerCase() === difficulty.toLowerCase());
+    }
+
+    if (q) {
+      list = list.filter((p) => {
+        const title = (p?.title || "").toLowerCase();
+        const desc = (p?.description || "").toLowerCase();
+        const tags = Array.isArray(p?.tags) ? p.tags.join(" ").toLowerCase() : "";
+        return title.includes(q) || desc.includes(q) || tags.includes(q);
+      });
+    }
+
+    switch (sortBy) {
+      case "A-Z":
+        list.sort((a, b) => (a?.title || "").localeCompare(b?.title || ""));
+        break;
+      case "Z-A":
+        list.sort((a, b) => (b?.title || "").localeCompare(a?.title || ""));
+        break;
+      case "Easiest":
+        list.sort((a, b) => (DIFF_ORDER[a?.difficulty] || 99) - (DIFF_ORDER[b?.difficulty] || 99));
+        break;
+      case "Hardest":
+        list.sort((a, b) => (DIFF_ORDER[b?.difficulty] || -99) - (DIFF_ORDER[a?.difficulty] || -99));
+        break;
+      default:
+        break;
+    }
+
+    return list;
+  }, [problems, search, difficulty, sortBy]);
+
+  const diffPill = (d) => {
+    const base = "inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs";
+    // if ((d || "").toLowerCase() === "easy") return `${base} bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-400/20`;
+    // if ((d || "").toLowerCase() === "medium") return `${base} bg-amber-500/10 text-amber-300 ring-1 ring-amber-400/20`;
+    // if ((d || "").toLowerCase() === "hard") return `${base} bg-rose-500/10 text-rose-300 ring-1 ring-rose-400/20`;
+    return `${base} bg-slate-500/10 text-slate-300 ring-1 ring-slate-400/20`;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-10 tracking-tight">
-          Problem List
-        </h1>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {problems.map((item) => (
-            <div
-              key={item._id} // Use _id as the unique key
-              className="bg-white p-6 rounded-xl shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100"
-            >
-              <h2 className="text-xl font-semibold text-gray-900 mb-3 capitalize">{item.title}</h2>
-              <p className="text-gray-600 text-sm">Difficulty: {item.difficulty}</p>
-              <Link
-                to={`/problems/${item._id}`} // Use _id for routing
-                className="mt-4 inline-block text-blue-600 font-medium hover:text-blue-800 transition-colors duration-200"
-              >
-                Solve Now →
-              </Link>
-            </div>
-          ))}
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 py-10 text-slate-100">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Problems</h1>
+            <p className="mt-1 text-sm text-slate-400">Search, filter by difficulty, and dive in.</p>
+          </div>
+          <Link
+            to="/newproblem"
+            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-600/20 transition hover:bg-indigo-500"
+          >
+            + Create Problem
+          </Link>
         </div>
+
+        {/* Controls */}
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔎</span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search title, description, tags…"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-9 py-2 text-sm text-white placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-1">
+            {(["All", "Easy", "Medium", "Hard"]).map((d) => (
+              <button
+                key={d}
+                onClick={() => setDifficulty(d)}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm transition ${
+                  difficulty === d ? "bg-white/10 text-white ring-1 ring-white/10" : "text-slate-300 hover:bg-white/5"
+                }`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+
+          <div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+            >
+              <option value="A-Z">Sort: A–Z</option>
+              <option value="Z-A">Sort: Z–A</option>
+              <option value="Easiest">Sort: Easiest</option>
+              <option value="Hardest">Sort: Hardest</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mb-6 rounded-xl border border-rose-400/20 bg-rose-500/10 p-4 text-rose-100">
+            {error}
+          </div>
+        )}
+
+        {/* Loading skeleton */}
+        {loading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="animate-pulse rounded-2xl border border-white/10 bg-white/5 p-5">
+                <div className="mb-3 h-5 w-2/3 rounded bg-white/10" />
+                <div className="mb-6 h-3 w-1/3 rounded bg-white/10" />
+                <div className="h-10 w-28 rounded bg-white/10" />
+              </div>
+            ))}
+          </div>
+        ) : filteredSorted.length === 0 ? (
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center">
+            <div className="mx-auto mb-3 size-12 rounded-full bg-white/10" />
+            <div className="text-lg font-medium">No problems found</div>
+            <div className="mt-1 text-sm text-slate-400">Try changing filters or create a new one.</div>
+            <Link
+              to="/newproblem"
+              className="mt-4 inline-flex rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+            >
+              Create Problem
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredSorted.map((item) => (
+              <div
+                key={item._id}
+                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.06)] transition hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                {/* Accent corner */}
+                <div className="pointer-events-none absolute -right-10 -top-10 size-24 rounded-full bg-indigo-500/10 blur-2xl transition group-hover:bg-indigo-400/20" />
+
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <h2 className="text-lg font-semibold leading-tight text-white">
+                    {item?.title || "Untitled"}
+                  </h2>
+                  <span className={diffPill(item?.difficulty)}>{item?.difficulty || "—"}</span>
+                </div>
+
+                {item?.description ? (
+                  <p className="mb-6 text-sm text-slate-300">
+                    {String(item.description).length > 120
+                      ? `${String(item.description).slice(0, 120)}…`
+                      : String(item.description)}
+                  </p>
+                ) : (
+                  <p className="mb-6 text-sm text-slate-400">No description provided.</p>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <Link
+                    to={`/problems/${item._id}`}
+                    className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+                  >
+                    Solve Now
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="ml-1">
+                      <path d="M9 18l6-6-6-6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </Link>
+
+                  {Array.isArray(item?.tags) && item.tags.length > 0 ? (
+                    <div className="hidden gap-1 sm:flex">
+                      {item.tags.slice(0, 2).map((t) => (
+                        <span key={t} className="rounded-lg bg-white/5 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 ring-1 ring-white/10">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-slate-500"> </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-export default ProblemPage;

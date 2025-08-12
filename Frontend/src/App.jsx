@@ -4,7 +4,7 @@ import SignUpCard from "./pages/users/SignUpCard";
 import ProblemPage from "./pages/admin/ProblemPage.jsx";
 import Dashboard from "./pages/dashboard/DashBoard";
 import Problems from "./pages/users/problem";
-import NavBar from "./component/NavBar";
+import NavBar from "./components/NavBar";
 import NewProblem from "./pages/admin/NewProblem";
 import ProfileCard from "./pages/users/ProfileCard";
 
