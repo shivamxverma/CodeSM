@@ -1,4 +1,4 @@
-import mongoose,{Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const submissionSchema = new Schema({
     user: {
@@ -27,7 +27,7 @@ const submissionSchema = new Schema({
         type: String,
         default: 'pending'
     }
-},{timestamps: true});
+}, { timestamps: true });
 
 const Submission = mongoose.model('Submission', submissionSchema);
 export default Submission;

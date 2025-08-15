@@ -53,6 +53,7 @@ export default function NewNav() {
     { to: "/", label: "Home" },
     { to: "/problems", label: "Problems" },
     { to: "/newproblem", label: "Create Problem" },
+    { to: "/contests", label: "Contests" },
   ];
 
   const linkBase =

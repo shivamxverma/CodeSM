@@ -9,6 +9,9 @@ import Problems from "./pages/users/problem";
 import NavBar from "./components/NavBar";
 import NewProblem from "./pages/admin/NewProblem";
 import ProfileCard from "./pages/users/ProfileCard";
+import ContestListPage from "./pages/ContestListPage";
+import ContestCreatePage from "./pages/ContestCreatePage";
+import ContestLobbyAndRun from "./pages/ContestLobbyAndRun";
 
 import { AuthProvider } from "./auth/AuthContext";   
 import RequireRole from "./auth/RequireRole";        
@@ -70,6 +73,31 @@ export default function App() {
               </RequireRole>
             }
           />
+
+          <Route
+            path="/contests"
+            element={
+                <ContestListPage />
+            }
+          />
+          <Route
+            path="/contests/create"
+            element={
+              <ProtectedRoute>
+                <ContestCreatePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/contest/:id"
+            element={
+              <ProtectedRoute>
+                <ContestLobbyAndRun />
+              </ProtectedRoute>
+            }
+          />
+          
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

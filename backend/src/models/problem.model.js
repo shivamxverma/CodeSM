@@ -1,10 +1,10 @@
-import mongoose,{Schema} from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
 const problemSchema = new Schema({
-    title :{
-        type : String,
-        required : true,
-        unique : true
+    title: {
+        type: String,
+        required: true,
+        unique: true
     },
     difficulty: {
         type: Number,
@@ -50,12 +50,12 @@ const problemSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Submission'
     }],
-    author : {
-        type : Schema.Types.ObjectId,
-        ref : 'Author',
+    author: {
+        type: Schema.Types.ObjectId,
+        ref: 'Author',
         required: true
     },
-    editorial : {
+    editorial: {
         type: String,
         required: false
     },
@@ -63,11 +63,11 @@ const problemSchema = new Schema({
         type: String,
         required: false
     },
-    solution : {
-        type : String,
+    solution: {
+        type: String,
         required: true
     }
-},{timestamps: true});
+}, { timestamps: true });
 
 const Problem = mongoose.model('Problem', problemSchema);
 
