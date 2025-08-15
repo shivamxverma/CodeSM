@@ -1,55 +1,58 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 
 export default function ProblemPage() {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  // UI state
   const [search, setSearch] = useState("");
-  const [difficulty, setDifficulty] = useState("All"); 
-  const [sortBy, setSortBy] = useState("A-Z"); 
+  const [difficulty, setDifficulty] = useState("All");
+  const [sortBy, setSortBy] = useState("A-Z");
+
+  const RATING_RANGES = {
+    Easy: [800, 1200],
+    Medium: [1300, 1700],
+    Hard: [1800, 3000],
+  };
 
   useEffect(() => {
     const controller = new AbortController();
-
     async function fetchProblems() {
       try {
         setLoading(true);
         setError("");
-        const response = await fetch('http://localhost:8000/api/v1/problem');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        console.log(data.message); 
-        setProblems(Array.isArray(data.message) ? data.message : []);
+        const res = await fetch("http://localhost:8000/api/v1/problem", { signal: controller.signal });
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+        console.log(data);
+        setProblems(Array.isArray(data?.message) ? data.message : []);
       } catch (err) {
-        if (err.name === "AbortError") return;
-        console.error("Error fetching problems:", err);
-        setError("Could not load problems. Please try again.");
-        setProblems([]);
+        if (err.name !== "AbortError") {
+          setError("Could not load problems. Please try again.");
+          setProblems([]);
+        }
       } finally {
         setLoading(false);
       }
     }
-
     fetchProblems();
     return () => controller.abort();
   }, []);
 
-  const DIFF_ORDER = { Easy: 1, Medium: 2, Hard: 3 };
+  const getRating = (p) => {
+    const raw = p?.difficulty;
+    if (typeof raw === "number") return raw;
+    if (raw == null) return NaN;
+    const cleaned = String(raw).trim();
+    const match = cleaned.match(/-?\d+(\.\d+)?/);
+    const num = match ? Number(match[0]) : NaN;
+    return Number.isFinite(num) ? num : NaN;
+  };
 
   const filteredSorted = useMemo(() => {
     let list = [...problems];
+
     const q = search.trim().toLowerCase();
-
-    if (difficulty !== "All") {
-      list = list.filter((p) => (p?.difficulty || "").toLowerCase() === difficulty.toLowerCase());
-    }
-
     if (q) {
       list = list.filter((p) => {
         const title = (p?.title || "").toLowerCase();
@@ -59,18 +62,43 @@ export default function ProblemPage() {
       });
     }
 
+    if (difficulty !== "All") {
+      const [min, max] = RATING_RANGES[difficulty] || [];
+      list = list.filter((p) => {
+        const r = getRating(p);
+        return Number.isFinite(r) && r >= min && r <= max;
+      });
+    }
+
+    const cmpAZ = (a, b) => (a?.title || "").localeCompare(b?.title || "");
+    const cmpZA = (a, b) => (b?.title || "").localeCompare(a?.title || "");
+    const cmpRatingAsc = (a, b) => {
+      const ra = getRating(a), rb = getRating(b);
+      if (!Number.isFinite(ra) && !Number.isFinite(rb)) return 0;
+      if (!Number.isFinite(ra)) return 1;
+      if (!Number.isFinite(rb)) return -1;
+      return ra - rb;
+    };
+    const cmpRatingDesc = (a, b) => {
+      const ra = getRating(a), rb = getRating(b);
+      if (!Number.isFinite(ra) && !Number.isFinite(rb)) return 0;
+      if (!Number.isFinite(ra)) return 1;
+      if (!Number.isFinite(rb)) return -1;
+      return rb - ra;
+    };
+
     switch (sortBy) {
       case "A-Z":
-        list.sort((a, b) => (a?.title || "").localeCompare(b?.title || ""));
+        list.sort(cmpAZ);
         break;
       case "Z-A":
-        list.sort((a, b) => (b?.title || "").localeCompare(a?.title || ""));
+        list.sort(cmpZA);
         break;
       case "Easiest":
-        list.sort((a, b) => (DIFF_ORDER[a?.difficulty] || 99) - (DIFF_ORDER[b?.difficulty] || 99));
+        list.sort(cmpRatingAsc);
         break;
       case "Hardest":
-        list.sort((a, b) => (DIFF_ORDER[b?.difficulty] || -99) - (DIFF_ORDER[a?.difficulty] || -99));
+        list.sort(cmpRatingDesc);
         break;
       default:
         break;
@@ -81,20 +109,16 @@ export default function ProblemPage() {
 
   const diffPill = (d) => {
     const base = "inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs";
-    // if ((d || "").toLowerCase() === "easy") return `${base} bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-400/20`;
-    // if ((d || "").toLowerCase() === "medium") return `${base} bg-amber-500/10 text-amber-300 ring-1 ring-amber-400/20`;
-    // if ((d || "").toLowerCase() === "hard") return `${base} bg-rose-500/10 text-rose-300 ring-1 ring-rose-400/20`;
     return `${base} bg-slate-500/10 text-slate-300 ring-1 ring-slate-400/20`;
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 py-10 text-slate-100">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Problems</h1>
-            <p className="mt-1 text-sm text-slate-400">Search, filter by difficulty, and dive in.</p>
+            <p className="mt-1 text-sm text-slate-400">Search, filter by difficulty, and sort by rating.</p>
           </div>
           <Link
             to="/newproblem"
@@ -104,7 +128,6 @@ export default function ProblemPage() {
           </Link>
         </div>
 
-        {/* Controls */}
         <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔎</span>
@@ -117,13 +140,22 @@ export default function ProblemPage() {
           </div>
 
           <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-1">
-            {(["All", "Easy", "Medium", "Hard"]).map((d) => (
+            {["All", "Easy", "Medium", "Hard"].map((d) => (
               <button
                 key={d}
                 onClick={() => setDifficulty(d)}
                 className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm transition ${
                   difficulty === d ? "bg-white/10 text-white ring-1 ring-white/10" : "text-slate-300 hover:bg-white/5"
                 }`}
+                title={
+                  d === "Easy"
+                    ? "800–1200"
+                    : d === "Medium"
+                    ? "1300–1700"
+                    : d === "Hard"
+                    ? "1800–3000"
+                    : "No rating filter"
+                }
               >
                 {d}
               </button>
@@ -138,20 +170,18 @@ export default function ProblemPage() {
             >
               <option value="A-Z">Sort: A–Z</option>
               <option value="Z-A">Sort: Z–A</option>
-              <option value="Easiest">Sort: Easiest</option>
-              <option value="Hardest">Sort: Hardest</option>
+              <option value="Easiest">Sort: Easiest (low→high rating)</option>
+              <option value="Hardest">Sort: Hardest (high→low rating)</option>
             </select>
           </div>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mb-6 rounded-xl border border-rose-400/20 bg-rose-500/10 p-4 text-rose-100">
             {error}
           </div>
         )}
 
-        {/* Loading skeleton */}
         {loading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -176,56 +206,62 @@ export default function ProblemPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredSorted.map((item) => (
-              <div
-                key={item._id}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.06)] transition hover:-translate-y-0.5 hover:shadow-lg"
-              >
-                {/* Accent corner */}
-                <div className="pointer-events-none absolute -right-10 -top-10 size-24 rounded-full bg-indigo-500/10 blur-2xl transition group-hover:bg-indigo-400/20" />
-
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <h2 className="text-lg font-semibold leading-tight text-white">
-                    {item?.title || "Untitled"}
-                  </h2>
-                  <span className={diffPill(item?.difficulty)}>{item?.difficulty || "—"}</span>
-                </div>
-
-                {item?.description ? (
-                  <p className="mb-6 text-sm text-slate-300">
-                    {String(item.description).length > 120
-                      ? `${String(item.description).slice(0, 120)}…`
-                      : String(item.description)}
-                  </p>
-                ) : (
-                  <p className="mb-6 text-sm text-slate-400">No description provided.</p>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <Link
-                    to={`/problems/${item._id}`}
-                    className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/10"
-                  >
-                    Solve Now
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="ml-1">
-                      <path d="M9 18l6-6-6-6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </Link>
-
-                  {Array.isArray(item?.tags) && item.tags.length > 0 ? (
-                    <div className="hidden gap-1 sm:flex">
-                      {item.tags.slice(0, 2).map((t) => (
-                        <span key={t} className="rounded-lg bg-white/5 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 ring-1 ring-white/10">
-                          {t}
-                        </span>
-                      ))}
-                    </div>
+            {filteredSorted.map((item) => {
+              const rating = getRating(item);
+              return (
+                <div
+                  key={item._id}
+                  className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.06)] transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  <div className="pointer-events-none absolute -right-10 -top-10 size-24 rounded-full bg-indigo-500/10 blur-2xl transition group-hover:bg-indigo-400/20" />
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <h2 className="text-lg font-semibold leading-tight text-white">
+                      {item?.title || "Untitled"}
+                    </h2>
+                    <span className={diffPill(item?.difficulty)}>
+                      {item?.difficulty || "—"}
+                    </span>
+                  </div>
+                  <div className="mb-2 text-xs text-slate-400">
+                    {Number.isFinite(rating) ? `Rating: ${rating}` : "Rating: —"}
+                  </div>
+                  {item?.description ? (
+                    <p className="mb-6 text-sm text-slate-300">
+                      {String(item.description).length > 120
+                        ? `${String(item.description).slice(0, 120)}…`
+                        : String(item.description)}
+                    </p>
                   ) : (
-                    <span className="text-xs text-slate-500"> </span>
+                    <p className="mb-6 text-sm text-slate-400">No description provided.</p>
                   )}
+                  <div className="flex items-center justify-between">
+                    <Link
+                      to={`/problems/${item._id}`}
+                      className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+                    >
+                      Solve Now
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="ml-1">
+                        <path d="M9 18l6-6-6-6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </Link>
+                    {Array.isArray(item?.tags) && item.tags.length > 0 ? (
+                      <div className="hidden gap-1 sm:flex">
+                        {item.tags.slice(0, 2).map((t) => (
+                          <span
+                            key={t}
+                            className="rounded-lg bg-white/5 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 ring-1 ring-white/10"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-500"> </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

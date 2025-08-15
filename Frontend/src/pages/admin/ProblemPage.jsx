@@ -1,59 +1,149 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import axios from "axios";
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import { set } from "zod";
 
-const ProblemPage = () => {
+const TABS = ["Description", "Editorial", "Submissions", "Solutions"];
+
+// Map rating -> difficulty + color
+function getDifficultyFromRating(rating) {
+  if (!rating) return { label: "Unknown", style: "bg-[#1d2736] text-gray-300 border-[#2a3750]" };
+  if (rating >= 800 && rating <= 1200)
+    return { label: "Easy", style: "bg-[#0e2a1d] text-green-300 border-[#1e5d3b]" };
+  if (rating >= 1300 && rating <= 1700)
+    return { label: "Medium", style: "bg-[#3a2a0e] text-yellow-300 border-[#6a531e]" };
+  return { label: "Hard", style: "bg-[#2a1313] text-red-300 border-[#5d1e1e]" };
+}
+
+// Turn a YouTube URL into an embeddable URL
+function getYouTubeEmbed(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    // youtube.com/watch?v=... or youtube.com/shorts/...
+    if (u.hostname.includes("youtube.com")) {
+      const id = u.searchParams.get("v");
+      if (id) return `https://www.youtube.com/embed/${id}`;
+      // shorts
+      if (u.pathname.startsWith("/shorts/")) {
+        const shortId = u.pathname.split("/shorts/")[1]?.split(/[/?#]/)[0];
+        if (shortId) return `https://www.youtube.com/embed/${shortId}`;
+      }
+    }
+    // youtu.be/...
+    if (u.hostname.includes("youtu.be")) {
+      const id = u.pathname.replace("/", "");
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+  } catch {}
+  return null;
+}
+
+export default function ProblemPage() {
   const [problem, setProblem] = useState(null);
+  const [activeTab, setActiveTab] = useState("Description");
   const [language] = useState("cpp");
   const [code, setCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionResult, setSubmissionResult] = useState(null);
-  const [testCaseResults, setTestCaseResults] = useState([]);
+  const [isRunning, setIsRunning] = useState(false);
 
-  const boilerplateCode = [
-    {
-      language: "cpp",
-      code: `
-#include <bits/stdc++.h>
-using namespace std;
+  const [statusBadge, setStatusBadge] = useState(null);
+  const [submissions, setSubmissions] = useState([]);
+  const [consoleOutput, setConsoleOutput] = useState("");
+  const consoleRef = useRef(null);
 
-int main() {
-  // Write your code here
-  return 0;
-}`,
-    },
-  ];
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null);
   const { id: problemId } = useParams();
 
   useEffect(() => {
-    // Fetch problem details
-    axios.get(`http://localhost:8000/api/v1/problem/${problemId}`)
-      .then(response => setProblem(response.data.message))
-      .catch(() => setSubmissionResult({ status: "error", message: "Failed to load problem." }));
+    async function fetchProblem() {
+      try {
+        const res = await axios.get(`http://localhost:8000/api/v1/problem/${problemId}`);
+
+        console.log("Fetched problem data:", res.data.message);
+        setProblem(res.data.message);
+      } catch (error) {
+        setProblem(null);
+      }
+    }
+    fetchProblem();
   }, [problemId]);
 
   useEffect(() => {
-    // Load C++ boilerplate
-    const template = boilerplateCode.find(item => item.language === language);
-    setCode(template ? template.code : "");
+    setCode(`#include <bits/stdc++.h>
+using namespace std;
+int main(){
+  return 0;
+}`);
   }, [language]);
 
-  const handleEditorChange = (value) => setCode(value || "");
+  useEffect(() => {
+    if (consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [consoleOutput]);
 
-  const handleResetCode = () => {
-    const template = boilerplateCode.find(item => item.language === language);
-    setCode(template ? template.code : "");
+  const handleEditorChange = (value) => setCode(value || "");
+  const onEditorMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    setSubmissionResult(null);
-    setTestCaseResults([]);
+  function showCompileErrors(errors) {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) return;
+    const model = editor.getModel();
+    const markers = errors.map((e) => ({
+      startLineNumber: Number(e.line) || 1,
+      startColumn: Number(e.column) || 1,
+      endLineNumber: Number(e.line) || 1,
+      endColumn: (Number(e.column) || 1) + 1,
+      message: e.message || "Compilation failed",
+      severity: e.severity === "warning" ? monaco.MarkerSeverity.Warning : monaco.MarkerSeverity.Error,
+    }));
+    if (model) monaco.editor.setModelMarkers(model, "compile", markers);
+
+    setStatusBadge({ type: "error", text: "Compilation Error" });
+    setConsoleOutput(
+      (errors && errors.length
+        ? errors.map((e) => `❌ ${e.message}${e.line ? ` (Line ${e.line})` : ""}`).join("\n")
+        : "❌ Compilation failed") + "\n"
+    );
+  }
+
+  function clearMarkers() {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) return;
+    const model = editor.getModel();
+    if (model) monaco.editor.setModelMarkers(model, "compile", []);
+  }
+
+  const resetCode = () => {
+    setCode(`#include <bits/stdc++.h>
+using namespace std;
+int main(){
+  return 0;
+}`);
+    clearMarkers();
+    setStatusBadge(null);
+    setConsoleOutput("");
+  };
+
+  async function execute({ asSubmit }) {
+    const setBusy = asSubmit ? setIsSubmitting : setIsRunning;
+    setBusy(true);
+    setStatusBadge(null);
+    setConsoleOutput((prev) => (prev ? prev + "\n" : "") + (asSubmit ? "▶️ Submitting...\n" : "▶️ Running...\n"));
+    clearMarkers();
     try {
       const { data } = await axios.post(
-        `http://localhost:8000/api/v1/submission/${problemId}`,
-        { code, language },
+        `http://localhost:8000/api/v1/submission/${problemId}${asSubmit ? "" : "?dryRun=true"}`,
+        { code, language, mode: asSubmit ? "submit" : "run" },
         {
           withCredentials: true,
           headers: {
@@ -63,119 +153,365 @@ int main() {
         }
       );
 
-      const { execution, status } = data.message.output;
-      setSubmissionResult({ status: "success", message: status || "Submitted successfully!" });
-      setTestCaseResults(execution.map(tc => tc.isPassed));
+      const payload = data?.message?.output || data?.message || {};
+
+      // console.log(payload);
+      const { status, execution = [], errors = [], stderr, stdout } = payload;
+
+      if (status === "compile_error") {
+        showCompileErrors(errors || [{ message: stderr || "Compilation failed" }]);
+        return;
+      }
+
+      const lines = [];
+      if (stdout && typeof stdout === "string") lines.push(stdout.trim());
+      execution.forEach((tc, i) => {
+        if (tc?.isTLE || /exited/i.test(String(tc?.output || ""))) {
+          lines.push(`⚠️ Test Case ${i + 1}: Time Limit Exceeded`);
+        } else if (tc?.isPassed) {
+          lines.push(`✅ Test Case ${i + 1}: Passed`);
+        } else {
+          lines.push(`❌ Test Case ${i + 1}: Failed`);
+        }
+        if (tc?.output) {
+          lines.push(`Output: ${String(tc.output).trim()}`);
+        }
+      });
+
+      if (!execution.length && !stdout && !stderr) {
+        lines.push("ℹ️ No test results returned.");
+      }
+      if (stderr) lines.push(`stderr: ${String(stderr).trim()}`);
+
+      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + lines.join("\n"));
+
+      const allPassed = execution.length > 0 && execution.every((t) => !!t?.isPassed);
+      const hasTLE = execution.some((t) => t?.isTLE || /exited/i.test(String(t?.output || "")));
+
+      if (hasTLE) setStatusBadge({ type: "warn", text: "Time Limit Exceeded" });
+      else if (allPassed) setStatusBadge({ type: "success", text: asSubmit ? "Accepted" : "All tests passed" });
+      else setStatusBadge({ type: "error", text: execution.length ? "Wrong Answer" : "Finished" });
     } catch (err) {
-      setSubmissionResult({ status: "error", message: err.response?.data?.message || "Submission failed." });
+      const msg = err?.response?.data?.message || err?.message || "Execution failed";
+      setStatusBadge({ type: "error", text: "Error" });
+      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + `❌ ${msg}`);
     } finally {
-      setIsSubmitting(false);
+      setBusy(false);
     }
-  };
+  }
+
+  const handleRun = () => execute({ asSubmit: false });
+  const handleSubmit = () => execute({ asSubmit: true });
+
+  const { label: diffLabel, style: diffClass } = getDifficultyFromRating(problem?.difficulty);
+
+  const statusClass =
+    statusBadge?.type === "success"
+      ? "bg-[#0e2a1d] border-[#1e5d3b] text-green-300"
+      : statusBadge?.type === "warn"
+      ? "bg-[#3a2a0e] border-[#6a531e] text-yellow-300"
+      : statusBadge?.type === "error"
+      ? "bg-[#2a1313] border-[#5d1e1e] text-red-300"
+      : "bg-[#182432] border-[#233046] text-gray-300";
+
+  // Precompute editorial embed
+  const embedUrl = getYouTubeEmbed(problem?.editorialLink);
+
+  const getAllSubmission = async () => {
+    try {
+      const res = await axios.get(`http://localhost:8000/api/v1/submission/problem/${problemId}`, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+      });
+      setSubmissions(res.data.message || []);
+      console.log("Fetched submissions:", res.data.message);
+    }catch (error) {
+      console.error("Error fetching submissions:", error);
+    }
+  }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900 text-gray-200">
-      <header className="bg-gray-800 p-4 shadow-md">
-        <h1 className="text-2xl font-bold">{problem ? problem.title : "Loading..."}</h1>
-      </header>
-      <div className="flex flex-1 overflow-hidden">
-        {/* Problem Display Area */}
-        <div className="w-1/2 p-6 bg-gray-800 overflow-y-auto">
-          {problem ? (
-            <>
-              <h2 className="text-xl font-semibold mb-4">{problem.title}</h2>
-              <p className="mb-4">{problem.description}</p>
-              <div className="mb-4">
-                <h4 className="font-medium mb-1">Difficulty</h4>
-                <p>{problem.difficulty}</p>
-              </div>
-              <div className="mb-4">
-                <h4 className="font-medium mb-1">Constraints</h4>
-                <p>{problem.constraints}</p>
-              </div>
-              <div className="mb-4">
-                <h4 className="font-medium mb-1">Input Format</h4>
-                <pre className="bg-gray-700 p-3 rounded text-sm font-mono">{problem.inputFormat}</pre>
-              </div>
-              <div className="mb-4">
-                <h4 className="font-medium mb-1">Output Format</h4>
-                <pre className="bg-gray-700 p-3 rounded text-sm font-mono">{problem.outputFormat}</pre>
-              </div>
-              <div className="mb-4">
-                <h4 className="font-medium mb-1">Sample Input</h4>
-                <pre className="bg-gray-700 p-3 rounded text-sm font-mono">{problem.sampleInput}</pre>
-              </div>
-              <div className="mb-4">
-                <h4 className="font-medium mb-1">Sample Output</h4>
-                <pre className="bg-gray-700 p-3 rounded text-sm font-mono">{problem.sampleOutput}</pre>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {problem.tags.map((tag, idx) => (
-                  <span key={idx} className="bg-blue-600 px-2 py-1 rounded text-sm">{tag}</span>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p>Loading problem details...</p>
-          )}
+    <div className="flex h-screen w-screen bg-[#0b0f13] text-gray-200">
+      {/* LEFT: Problem panel */}
+      <div className="hidden xl:flex w-2/5 min-w-[480px] max-w-[720px] flex-col border-r border-[#1b2330]">
+        <div className="px-5 py-3 bg-[#0f141b] border-b border-[#1b2330] flex items-center gap-3">
+          <Link to="/problems" className="text-sm hover:underline">Back to Problems</Link>
+          <div className="ml-auto flex items-center gap-2">
+            {diffLabel && (
+              <span className={`text-xs px-2 py-1 rounded-full border ${diffClass}`}>{diffLabel}</span>
+            )}
+            {problem?.acceptance != null && (
+              <span className="text-xs px-2 py-1 rounded-full bg-[#10202a] border border-[#1e3a4b]">
+                Acceptance: {problem.acceptance}%
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Code Editor Area */}
-        <div className="w-1/2 flex flex-col bg-gray-900">
-          <div className="flex justify-between items-center p-2 bg-gray-800 border-b border-gray-700">
-            <span>Language: C++</span>
-            <button onClick={handleResetCode} className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-700">
-              Reset Code
+        <div className="px-5 pt-4">
+          <h1 className="text-xl font-semibold">{problem ? problem.title : "Loading..."}</h1>
+          <div className="mt-1 text-xs text-gray-400">
+            {problem?.rating ? `Rating: ${problem.rating}` : null}
+          </div>
+        </div>
+
+        <div className="mt-3 px-2">
+          <div className="flex gap-2 px-3">
+            {TABS.map((t) => (
+              <button
+                key={t}
+                onClick={() => setActiveTab(t)}
+                className={`px-3 py-2 text-sm rounded-t ${
+                  activeTab === t ? "bg-[#121923] border-x border-t border-[#233046]" : "text-gray-400 hover:text-gray-200"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          <div className="border border-[#233046] rounded-b rounded-tr bg-[#0f141b] p-5 h-[calc(100vh-170px)] overflow-y-auto">
+            {activeTab === "Description" && (
+              <div className="space-y-6">
+                <p className="leading-7 whitespace-pre-line">{problem?.description}</p>
+
+                {problem?.examples?.length ? (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold">Examples</h3>
+                    {problem.examples.map((ex, i) => (
+                      <div key={i} className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm">
+                        <div className="text-gray-300 mb-2">Input: <code className="font-mono">{ex.input}</code></div>
+                        <div className="text-gray-300 mb-2">Output: <code className="font-mono">{ex.output}</code></div>
+                        {ex.explanation && <div className="text-gray-400">Explanation: {ex.explanation}</div>}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {problem?.constraints && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Constraints</h3>
+                    <div className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm whitespace-pre-line">
+                      {problem.constraints}
+                    </div>
+                  </div>
+                )}
+
+                {problem?.inputFormat && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Input Format</h3>
+                    <pre className="rounded border border-[#233046] bg-[#0c1219] p-3 text-sm overflow-x-auto">
+                      {problem.inputFormat}
+                    </pre>
+                  </div>
+                )}
+
+                {problem?.outputFormat && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Output Format</h3>
+                    <pre className="rounded border border-[#233046] bg-[#0c1219] p-3 text-sm overflow-x-auto">
+                      {problem.outputFormat}
+                    </pre>
+                  </div>
+                )}
+
+                {(problem?.tags || []).length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {problem.tags.map((tag, i) => (
+                      <span key={i} className="text-xs px-2 py-1 rounded-full bg-[#13202b] border border-[#224056]">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {activeTab === "Editorial" && (
+              <div className="space-y-4">
+                {embedUrl && (
+                  <div className="aspect-video w-full overflow-hidden rounded-lg border border-[#233046] bg-black">
+                    <iframe
+                      title="Editorial Video"
+                      src={embedUrl}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      className="w-full h-full"
+                    />
+                  </div>
+                )}
+                {problem?.editorialLink && !embedUrl && (
+                  <a
+                    href={problem.editorialLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-blue-300 hover:underline"
+                  >
+                    Open editorial link
+                  </a>
+                )}
+                {problem?.editorial ? (
+                  <div className="prose prose-invert max-w-none prose-pre:bg-[#0c1219] prose-code:text-gray-200">
+                    <ReactMarkdown>{problem.editorial}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-400">No editorial provided.</div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "Submissions" && (
+              <div className="h-full overflow-y-auto">
+                <button
+                  className="mb-3 px-3 py-1 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750] text-xs"
+                  onClick={getAllSubmission}
+                >
+                  Refresh Submissions
+                </button>
+                {submissions.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-sm text-gray-400">
+                    No submissions found.
+                  </div>
+                ) : (
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[#121923]">
+                        <th className="border border-[#233046] px-2 py-1">#</th>
+                        <th className="border border-[#233046] px-2 py-1">Username</th>
+                        <th className="border border-[#233046] px-2 py-1">Status</th>
+                        <th className="border border-[#233046] px-2 py-1">Language</th>
+                        <th className="border border-[#233046] px-2 py-1">Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {submissions.map((sub, idx) => (
+                        <tr key={sub._id || idx} className="bg-[#0c1219]">
+                          <td className="border border-[#233046] px-2 py-1">{idx + 1}</td>
+                          <td className="border border-[#233046] px-2 py-1">{sub.username || "N/A"}</td>
+                          <td className="border border-[#233046] px-2 py-1">{sub.status || "N/A"}</td>
+                          <td className="border border-[#233046] px-2 py-1">{sub.language || "N/A"}</td>
+                          <td className="border border-[#233046] px-2 py-1">{sub.createdAt ? new Date(sub.createdAt).toLocaleString() : "N/A"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+
+            {activeTab === "Solutions" && (
+              <div className="space-y-3">
+                {problem?.solution? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-1 rounded bg-[#182432] border border-[#233046]">
+                        Language: C++
+                      </span>
+                      <span className="text-xs px-2 py-1 rounded bg-[#10202a] border border-[#1e3a4b]">
+                        Official Solution
+                      </span>
+                    </div>
+                    <pre className="rounded-lg border border-[#233046] bg-[#0c1219] p-4 text-sm overflow-x-auto">
+{problem.solution}
+                    </pre>
+                  </>
+                ) : (
+                  <div className="text-sm text-gray-400">No official solution available.</div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT: Editor + header + persistent console */}
+      <div className="relative flex-1 flex flex-col">
+        <div className="px-5 py-3 bg-[#0f141b] border-b border-[#1b2330] flex items-center gap-3">
+          <div className="xl:hidden text-sm truncate">{problem?.title || "Loading..."}</div>
+          <div className="ml-auto flex items-center gap-2">
+            {statusBadge && (
+              <span className={`text-xs px-2 py-1 rounded border ${statusClass}`}>
+                Console: {statusBadge.text}
+              </span>
+            )}
+            {problem?.acceptance != null && (
+              <span className="text-xs px-2 py-1 rounded bg-[#10202a] border border-[#1e3a4b]">
+                Acceptance: {problem.acceptance}%
+              </span>
+            )}
+            {diffLabel && <span className={`text-xs px-2 py-1 rounded border ${diffClass}`}>{diffLabel}</span>}
+            <span className="text-xs px-2 py-1 rounded bg-[#182432] border border-[#233046]">Language: C++</span>
+            <button onClick={resetCode} className="text-xs px-3 py-1.5 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750]">
+              Reset
             </button>
           </div>
+        </div>
+
+        <div className="flex-1 bg-[#0b0f13]">
           <Editor
             height="100%"
             language="cpp"
             value={code}
             theme="vs-dark"
             onChange={handleEditorChange}
-            options={{ fontSize: 14, minimap: { enabled: false }, automaticLayout: true }}
+            onMount={onEditorMount}
+            options={{
+              fontSize: 14,
+              minimap: { enabled: false },
+              automaticLayout: true,
+              scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+            }}
           />
         </div>
-      </div>
 
-      {/* Submission & Results */}
-      <div className="p-4 bg-gray-800 border-t border-gray-700">
-        <div className="flex justify-between items-center mb-4">
-          {submissionResult && (
-            <div className={`${submissionResult.status === 'success' ? 'bg-green-600' : 'bg-red-600'} px-4 py-2 rounded text-white`}>{submissionResult.message}</div>
-          )}
+        <div className="bg-[#0f141b] border-t border-[#1b2330]">
+          <div className="px-5 py-2 text-xs text-gray-400 flex items-center justify-between">
+            <span className="font-medium text-gray-300">Console</span>
+            <div className="flex items-center gap-2">
+              <button
+                className="text-[11px] px-2 py-1 rounded border border-[#233046] hover:bg-[#162134]"
+                onClick={() => setConsoleOutput("")}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+          <div
+            ref={consoleRef}
+            className="h-44 overflow-y-auto px-5 pb-4 font-mono text-sm whitespace-pre-wrap bg-[#0c1219]"
+          >
+            {consoleOutput || "Console output will appear here..."}
+          </div>
+        </div>
+
+        <div className="pointer-events-none absolute right-4 bottom-4 flex gap-2">
+          <button
+            onClick={handleRun}
+            disabled={isRunning}
+            className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${
+              isRunning
+                ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
+                : "bg-[#1e3046] hover:bg-[#264060] border-[#2a4a73]"
+            }`}
+          >
+            {isRunning ? "Running..." : "Run"}
+          </button>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className={`px-6 py-2 bg-blue-600 rounded text-white flex items-center gap-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${
+              isSubmitting
+                ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
+                : "bg-[#0c5bd5] hover:bg-[#0a4fb9] border-[#0c5bd5]"
+            }`}
           >
-            {isSubmitting ? (
-              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
-            ) : 'Submit Code'}
+            {isSubmitting ? "Submitting..." : "Submit"}
           </button>
         </div>
-
-        {testCaseResults.length > 0 && (
-          <div>
-            <h4 className="font-medium mb-2">Test Case Results</h4>
-            <div className="flex flex-wrap gap-4">
-              {testCaseResults.map((passed, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span>Test Case {i + 1}:</span>
-                  {passed ? (
-                    <svg className="h-6 w-6 text-green-500" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  ) : (
-                    <svg className="h-6 w-6 text-red-500" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
-};
-
-export default ProblemPage;
+}

@@ -12,8 +12,7 @@ export default function NewNav() {
   const mobileRef = useRef(null);
 
   const handleLogout = () => {
-    localStorage.removeItem("userId");
-    localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
     setIsDropdownOpen(false);
     setIsMobileOpen(false);
     navigate("/login");
@@ -54,7 +53,6 @@ export default function NewNav() {
     { to: "/", label: "Home" },
     { to: "/problems", label: "Problems" },
     { to: "/newproblem", label: "Create Problem" },
-    { to: "/learn", label: "Learn" },
   ];
 
   const linkBase =
@@ -146,13 +144,13 @@ export default function NewNav() {
                   isDropdownOpen ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-1 opacity-0"
                 }`}
               >
-                <Link
+                {/* <Link
                   to="/profile"
                   role="menuitem"
                   className="block rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-white/10"
                 >
                   Your Profile
-                </Link>
+                </Link> */}
                 <button
                   onClick={handleLogout}
                   role="menuitem"

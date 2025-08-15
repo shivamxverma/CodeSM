@@ -1,5 +1,6 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import User from '../models/user.model.js';
+import Author from '../models/author.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js'
 import jwt from 'jsonwebtoken';
@@ -7,15 +8,26 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 dotenv.config();
 
-const generateAccessTokenAndRefreshToken = async (userId) => {
+const generateAccessTokenAndRefreshToken = async (userId, role) => {
     try {
-        const user = await User.findById(userId);
+        let user;
+        if (role && role.toLowerCase() === "author") {
+            user = await Author.findById(userId);
+        } else {
+            user = await User.findById(userId);
+        }
+
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+
         const accessToken = jwt.sign(
             {
                 _id: user._id,
                 username: user.username,
                 email: user.email,
                 fullName: user.fullName,
+                role: role || (user.role ? user.role : undefined),
             },
             process.env.ACCESS_TOKEN_SECRET,
             {
@@ -25,6 +37,7 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
         const refreshToken = jwt.sign(
             {
                 _id: user._id,
+                role: role || (user.role ? user.role : undefined),
             },
             process.env.REFRESH_TOKEN_SECRET,
             {
@@ -33,7 +46,6 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
         );
 
         user.refreshToken = refreshToken;
-
         await user.save({ validateBeforeSave: false });
 
         return { accessToken, refreshToken };
@@ -44,24 +56,34 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
 }
 
 const registerUser = asyncHandler(async (req, res) => {
-    const { fullName, email, username, password } = req.body;
+    const { role,fullName, email, username, password } = req.body;
 
     if (
-        [fullName, email, password, username].some((field) => field?.trim() === "")
+        [role,fullName, email, password, username].some((field) => field?.trim() === "")
     ) {
         throw new ApiError(400, "All fields are required");
     }
 
-    const ExistedUser = await User.findOne({
+    let ExistedUser = "";
+
+    if (role.toLowerCase() === "author") {
+        ExistedUser = await Author.findOne(
+            { $or: [{ username }, { email }] }
+        );
+    } else if(role.toLowerCase() === "user") {
+        ExistedUser = await User.findOne({
         $or: [
             { username: username },
             { email: email }
         ]
     })
+    } else {
+        throw new ApiError(400, "Invalid role");
+    }
 
-    const hadhedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (!hadhedPassword) {
+    if (!hashedPassword) {
         throw new ApiError(500, "Something Went Wrong While Hashing Password");
     }
 
@@ -70,16 +92,23 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
 
-    const user = await User.create({
-        username: username,
-        email,
-        fullName,
-        password: hadhedPassword,
-    })
+    const user = role.toLowerCase() === "author"
+        ? await Author.create({
+            username: username,
+            email,
+            fullName,
+            password: hashedPassword,
+        })
+        : await User.create({
+            username: username,
+            email,
+            fullName,
+            password: hashedPassword,
+        });
 
-    const CreatedUser = await User.findById(user._id).select(
-        "-password -refreshToken"
-    );
+    const CreatedUser = role.toLowerCase() === "author"
+        ? await Author.findById(user._id).select("-password -refreshToken")
+        : await User.findById(user._id).select("-password -refreshToken");
 
     if (!CreatedUser) {
         throw new ApiError(500, "SomeThing Went Wrong Registering User");
@@ -91,17 +120,23 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-    const { username, email, password } = req.body;
-
-    console.log('Body:', req.body);
+    const {role, username, email, password } = req.body;
 
     if (!username && !email) {
         throw new ApiError(400, 'Username or Email is Required');
     }
+    if (!role) {
+        throw new ApiError(400, 'Role is required');
+    }
 
-    const user = await User.findOne({
-        $or: [{ username }, { email }],
-    });
+    let user;
+    if (role.toLowerCase() === "author") {
+        user = await Author.findOne({ $or: [{ username }, { email }] });
+    } else if (role.toLowerCase() === "user") {
+        user = await User.findOne({ $or: [{ username }, { email }] });
+    } else {
+        throw new ApiError(400, 'Invalid role');
+    }
 
     if (!user) {
         throw new ApiError(404, "User doesn't Exist");
@@ -112,14 +147,15 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(401, 'Invalid password');
     }
 
-    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id);
+    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id, role);
 
     if (!accessToken || !refreshToken) {
         throw new ApiError(500, 'Failed to generate tokens');
     }
 
-    const loggedInUser = await User.findById(user._id).select('-password -refreshToken');
-
+    const loggedInUser = role.toLowerCase() === "author"
+        ? await Author.findById(user._id).select('-password -refreshToken')
+        : await User.findById(user._id).select('-password -refreshToken');
 
     const options = {
         httpOnly: true,
@@ -131,7 +167,7 @@ const loginUser = asyncHandler(async (req, res) => {
     res
         .status(200)
         .cookie('accessToken', accessToken, options)
-        .cookie('refreshToken', refreshToken, options)
+        .cookie('refreshToken', refreshToken, options);
 
     return res.json(
         new ApiResponse(

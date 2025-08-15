@@ -4,6 +4,7 @@ import axios from "axios";
 import z from "zod";
 
 const formSchema = z.object({
+  role: z.string(),
   fullName: z.string().min(3, "Full name must be at least 3 characters"),
   email: z.string().email("Invalid e-mail address"),
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -13,6 +14,7 @@ const formSchema = z.object({
 function SignUpCard() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    role: "",
     fullName: "",
     email: "",
     username: "",
@@ -72,6 +74,26 @@ function SignUpCard() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+            Role
+          </label>
+          <select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            required
+            className="mt-1 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="" disabled>
+              Select role
+            </option>
+            <option value="Author">Author</option>
+            <option value="User">User</option>
+          </select>
+        </div>
+
         {[
           { id: "fullName", label: "Full Name", type: "text", placeholder: "John Doe" },
           { id: "email", label: "Email", type: "email", placeholder: "you@example.com" },

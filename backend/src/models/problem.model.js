@@ -49,7 +49,24 @@ const problemSchema = new Schema({
     submission: [{
         type: Schema.Types.ObjectId,
         ref: 'Submission'
-    }]
+    }],
+    author : {
+        type : Schema.Types.ObjectId,
+        ref : 'Author',
+        required: true
+    },
+    editorial : {
+        type: String,
+        required: false
+    },
+    editorialLink: {
+        type: String,
+        required: false
+    },
+    solution : {
+        type : String,
+        required: true
+    }
 },{timestamps: true});
 
 const Problem = mongoose.model('Problem', problemSchema);

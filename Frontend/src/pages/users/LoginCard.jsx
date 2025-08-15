@@ -3,12 +3,14 @@ import axios from "axios";
 import z from "zod";
 import { useNavigate } from "react-router-dom";
 
+const role = "USER"; 
 const emailSchema = z.string().email("Invalid email address");
 const usernameSchema = z.string().min(3, "Username must be at least 3 characters long");
 const passwordSchema = z.string().min(8, "Password must be at least 8 characters long");
 
 const validateForm = ({ email, username, password }) => {
   try {
+
     emailSchema.parse(email);
     usernameSchema.parse(username);
     passwordSchema.parse(password);
@@ -21,6 +23,7 @@ const validateForm = ({ email, username, password }) => {
 function LoginCard() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    role: role,
     email: "",
     username: "",
     password: "",
@@ -48,6 +51,7 @@ function LoginCard() {
     try {
       setLoading(true);
       const response = await axios.post("http://localhost:8000/api/v1/users/login", {
+        role: formData.role,
         email: formData.email,
         username: formData.username,
         password: formData.password,
@@ -61,7 +65,7 @@ function LoginCard() {
 
       setSuccess("Login successful! Redirecting to dashboard...");
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate("/");
       }, 1500);
     } catch (err) {
       setError(err.response?.data?.message || "Invalid credentials");
@@ -88,6 +92,24 @@ function LoginCard() {
           {success}
         </div>
       )}
+
+      <form>
+        <div className="mb-4">
+          <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+            Role
+          </label>
+          <select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+          >
+            <option value="USER">User</option>
+            <option value="AUTHOR">Author</option>
+          </select>
+        </div>
+      </form>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
