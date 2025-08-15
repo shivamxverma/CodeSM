@@ -35,25 +35,19 @@ export default function App() {
           <Route
             path="/"
             element={
-              <ProtectedRoute>
                 <Dashboard />
-              </ProtectedRoute>
             }
           />
           <Route
             path="/problems"
             element={
-              <ProtectedRoute>
                 <Problems />
-              </ProtectedRoute>
             }
           />
           <Route
             path="/problems/:id"
             element={
-              <ProtectedRoute>
                 <ProblemPage />
-              </ProtectedRoute>
             }
           />
           <Route
@@ -83,18 +77,16 @@ export default function App() {
           <Route
             path="/contests/create"
             element={
-              <ProtectedRoute>
+              <RequireRole allowed={["AUTHOR", "ADMIN"]}>
                 <ContestCreatePage />
-              </ProtectedRoute>
+              </RequireRole>
             }
           />
 
           <Route
             path="/contest/:id"
             element={
-              <ProtectedRoute>
                 <ContestLobbyAndRun />
-              </ProtectedRoute>
             }
           />
           

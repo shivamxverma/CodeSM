@@ -120,12 +120,6 @@ export default function ProblemPage() {
             <h1 className="text-3xl font-bold tracking-tight">Problems</h1>
             <p className="mt-1 text-sm text-slate-400">Search, filter by difficulty, and sort by rating.</p>
           </div>
-          <Link
-            to="/newproblem"
-            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-600/20 transition hover:bg-indigo-500"
-          >
-            + Create Problem
-          </Link>
         </div>
 
         <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -197,12 +191,6 @@ export default function ProblemPage() {
             <div className="mx-auto mb-3 size-12 rounded-full bg-white/10" />
             <div className="text-lg font-medium">No problems found</div>
             <div className="mt-1 text-sm text-slate-400">Try changing filters or create a new one.</div>
-            <Link
-              to="/newproblem"
-              className="mt-4 inline-flex rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
-            >
-              Create Problem
-            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/auth/AuthContext";
 
 export default function NewNav() {
   const navigate = useNavigate();
@@ -49,10 +50,16 @@ export default function NewNav() {
     setIsMobileOpen(false);
   }, [location.pathname]);
 
+  const userRole = useAuth().user?.role;
   const navItems = [
     { to: "/", label: "Home" },
     { to: "/problems", label: "Problems" },
-    { to: "/newproblem", label: "Create Problem" },
+    ...(userRole === "AUTHOR"
+      ? [{ to: "/newproblem", label: "Create Problem" }]
+      : []),
+    ...(userRole === "AUTHOR"
+      ? [{ to: "/contests/create", label: "Create Problem" }]
+      : []),
     { to: "/contests", label: "Contests" },
   ];
 
@@ -106,63 +113,61 @@ export default function NewNav() {
                 className="w-64 rounded-xl border border-white/10 bg-white/5 px-9 py-2 text-sm text-white placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none"
               />
             </div>
-
-            {/* CTA */}
-            <Link to="/newproblem" className="ml-2">
-              <button className="relative inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-500">
-                <span className="relative z-10">New Problem</span>
-              </button>
-            </Link>
           </div>
 
-          {/* Right: Avatar + Burger */}
           <div className="flex items-center gap-3">
-            {/* Profile Dropdown */}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setIsDropdownOpen((s) => !s)}
-                aria-haspopup="menu"
-                aria-expanded={isDropdownOpen}
-                className="flex size-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 transition hover:bg-white/10"
-              >
-                {/* User icon */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  className="size-5 text-slate-300"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 8a4 4 0 11-8 0 4 4 0 018 0Z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7Z" />
-                </svg>
-              </button>
-
-              {/* Menu */}
-              <div
-                role="menu"
-                className={`absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-white/10 bg-slate-800/95 p-1 shadow-2xl backdrop-blur transition-all ${
-                  isDropdownOpen ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-1 opacity-0"
-                }`}
-              >
-                {/* <Link
-                  to="/profile"
-                  role="menuitem"
-                  className="block rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-white/10"
-                >
-                  Your Profile
-                </Link> */}
+            {/* Profile Dropdown or Auth Buttons */}
+            {useAuth().user ? (
+              <div className="relative" ref={dropdownRef}>
                 <button
-                  onClick={handleLogout}
-                  role="menuitem"
-                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-rose-200 hover:bg-rose-500/10"
+                  onClick={() => setIsDropdownOpen((s) => !s)}
+                  aria-haspopup="menu"
+                  aria-expanded={isDropdownOpen}
+                  className="flex size-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 transition hover:bg-white/10"
                 >
-                  Sign out
+                  {/* User icon */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    className="size-5 text-slate-300"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 8a4 4 0 11-8 0 4 4 0 018 0Z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7Z" />
+                  </svg>
                 </button>
-              </div>
-            </div>
 
-            {/* Mobile burger */}
+                {/* Menu */}
+                <div
+                  role="menu"
+                  className={`absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-white/10 bg-slate-800/95 p-1 shadow-2xl backdrop-blur transition-all ${isDropdownOpen ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-1 opacity-0"
+                    }`}
+                >
+                  <button
+                    onClick={handleLogout}
+                    role="menuitem"
+                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-rose-200 hover:bg-rose-500/10"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Link to="/login">
+                  <button className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500">
+                    Login
+                  </button>
+                </Link>
+                <Link to="/signup">
+                  <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-500">
+                    Sign Up
+                  </button>
+                </Link>
+              </div>
+            )}
+
             <button
               id="burger-btn"
               aria-label="Toggle menu"
@@ -188,8 +193,7 @@ export default function NewNav() {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `block rounded-xl px-4 py-3 text-sm ${
-                    isActive ? "bg-white/10 text-white" : "text-slate-200 hover:bg-white/5"
+                  `block rounded-xl px-4 py-3 text-sm ${isActive ? "bg-white/10 text-white" : "text-slate-200 hover:bg-white/5"
                   }`
                 }
               >

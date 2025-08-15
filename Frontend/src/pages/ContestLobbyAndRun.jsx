@@ -19,7 +19,6 @@ export default function ContestLobbyAndRun(){
   const { id } = useParams();
   const [contest, setContest] = useState(null);
   const [err, setErr] = useState("");
-  const [register, setregister] = useState(false);
   const [joining, setJoining] = useState(false);
   const [board, setBoard] = useState([]);
 
@@ -54,7 +53,6 @@ export default function ContestLobbyAndRun(){
     setJoining(true);
     try {
       await registerContest(id);
-      setregister(true);
       const { data } = await getContest(id);
       setContest(data.message);
     } catch(e) {
@@ -103,7 +101,11 @@ export default function ContestLobbyAndRun(){
               <p className="text-sm text-slate-300 whitespace-pre-line">{contest?.description || "—"}</p>
               {phase === "before" && (
                 <div className="mt-3">
-                  {isRegistered ? (
+                  {!user ? (
+                    <span className="text-xs px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">
+                      Please <Link to="/login" className="underline text-indigo-400">login</Link> to register
+                    </span>
+                  ) : isRegistered ? (
                     <span className="text-xs px-2 py-1 rounded bg-emerald-900/30 border border-emerald-800 text-emerald-200">Registered</span>
                   ) : (
                     <button onClick={handleJoin} disabled={joining}

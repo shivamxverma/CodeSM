@@ -18,7 +18,6 @@ export default function ContestListPage() {
       <div className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Contests</h1>
-          <Link to="/contests/create" className="rounded-lg bg-indigo-600 px-3 py-2 text-sm">+ Create Contest</Link>
         </div>
         <div className="mt-6 grid gap-3">
           {contests.map((c) => (

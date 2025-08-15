@@ -36,8 +36,7 @@ function DashBoard() {
                     <p className="text-gray-400">Choose an option below to begin your journey.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                    {/* View Problems Card */}
+                <div className="max-w-4xl mx-auto">
                     <Link to="/problems">
                         <div className="bg-gray-800 rounded-lg p-8 hover:bg-gray-700 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer">
                             <h3 className="text-2xl font-semibold mb-4">View Problems</h3>
@@ -47,15 +46,6 @@ function DashBoard() {
                         </div>
                     </Link>
 
-                    {/* Add New Problem Card */}
-                    <Link to="/newproblem">
-                        <div className="bg-gray-800 rounded-lg p-8 hover:bg-gray-700 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer">
-                            <h3 className="text-2xl font-semibold mb-4">Add New Problem</h3>
-                            <p className="text-gray-400">
-                                Contribute to the community by adding a new coding challenge.
-                            </p>
-                        </div>
-                    </Link>
                 </div>
             </div>
         </div>

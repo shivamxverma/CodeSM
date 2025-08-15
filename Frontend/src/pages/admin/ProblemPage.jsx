@@ -3,6 +3,7 @@ import Editor from "@monaco-editor/react";
 import axios from "axios";
 import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import { useAuth } from "@/auth/AuthContext";
 import { set } from "zod";
 
 const TABS = ["Description", "Editorial", "Submissions", "Solutions"];
@@ -234,11 +235,11 @@ int main(){
   }
 
   return (
-    <div className="flex h-screen w-screen bg-[#0b0f13] text-gray-200">
+    <div className="flex h-screen w-screen bg-gradient-to-br from-[#0b0f13] via-[#10151c] to-[#1a2230] text-gray-200">
       {/* LEFT: Problem panel */}
-      <div className="hidden xl:flex w-2/5 min-w-[480px] max-w-[720px] flex-col border-r border-[#1b2330]">
+      <div className="hidden xl:flex w-2/5 min-w-[480px] max-w-[720px] flex-col border-r border-[#1b2330] shadow-lg bg-[#10151c]/80">
         <div className="px-5 py-3 bg-[#0f141b] border-b border-[#1b2330] flex items-center gap-3">
-          <Link to="/problems" className="text-sm hover:underline">Back to Problems</Link>
+          <Link to="/problems" className="text-sm hover:underline transition-colors">Back to Problems</Link>
           <div className="ml-auto flex items-center gap-2">
             {diffLabel && (
               <span className={`text-xs px-2 py-1 rounded-full border ${diffClass}`}>{diffLabel}</span>
@@ -252,7 +253,7 @@ int main(){
         </div>
 
         <div className="px-5 pt-4">
-          <h1 className="text-xl font-semibold">{problem ? problem.title : "Loading..."}</h1>
+          <h1 className="text-xl font-bold tracking-tight">{problem ? problem.title : "Loading..."}</h1>
           <div className="mt-1 text-xs text-gray-400">
             {problem?.rating ? `Rating: ${problem.rating}` : null}
           </div>
@@ -264,8 +265,8 @@ int main(){
               <button
                 key={t}
                 onClick={() => setActiveTab(t)}
-                className={`px-3 py-2 text-sm rounded-t ${
-                  activeTab === t ? "bg-[#121923] border-x border-t border-[#233046]" : "text-gray-400 hover:text-gray-200"
+                className={`px-3 py-2 text-sm rounded-t font-medium transition-colors ${
+                  activeTab === t ? "bg-[#121923] border-x border-t border-[#233046] text-blue-300" : "text-gray-400 hover:text-gray-200"
                 }`}
               >
                 {t}
@@ -280,9 +281,9 @@ int main(){
 
                 {problem?.examples?.length ? (
                   <div className="space-y-4">
-                    <h3 className="font-semibold">Examples</h3>
+                    <h3 className="font-semibold text-blue-300">Examples</h3>
                     {problem.examples.map((ex, i) => (
-                      <div key={i} className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm">
+                      <div key={i} className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm shadow">
                         <div className="text-gray-300 mb-2">Input: <code className="font-mono">{ex.input}</code></div>
                         <div className="text-gray-300 mb-2">Output: <code className="font-mono">{ex.output}</code></div>
                         {ex.explanation && <div className="text-gray-400">Explanation: {ex.explanation}</div>}
@@ -293,7 +294,7 @@ int main(){
 
                 {problem?.constraints && (
                   <div>
-                    <h3 className="font-semibold mb-2">Constraints</h3>
+                    <h3 className="font-semibold mb-2 text-blue-300">Constraints</h3>
                     <div className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm whitespace-pre-line">
                       {problem.constraints}
                     </div>
@@ -302,7 +303,7 @@ int main(){
 
                 {problem?.inputFormat && (
                   <div>
-                    <h3 className="font-semibold mb-2">Input Format</h3>
+                    <h3 className="font-semibold mb-2 text-blue-300">Input Format</h3>
                     <pre className="rounded border border-[#233046] bg-[#0c1219] p-3 text-sm overflow-x-auto">
                       {problem.inputFormat}
                     </pre>
@@ -311,7 +312,7 @@ int main(){
 
                 {problem?.outputFormat && (
                   <div>
-                    <h3 className="font-semibold mb-2">Output Format</h3>
+                    <h3 className="font-semibold mb-2 text-blue-300">Output Format</h3>
                     <pre className="rounded border border-[#233046] bg-[#0c1219] p-3 text-sm overflow-x-auto">
                       {problem.outputFormat}
                     </pre>
@@ -321,7 +322,7 @@ int main(){
                 {(problem?.tags || []).length ? (
                   <div className="flex flex-wrap gap-2">
                     {problem.tags.map((tag, i) => (
-                      <span key={i} className="text-xs px-2 py-1 rounded-full bg-[#13202b] border border-[#224056]">
+                      <span key={i} className="text-xs px-2 py-1 rounded-full bg-[#13202b] border border-[#224056] text-blue-200">
                         {tag}
                       </span>
                     ))}
@@ -333,7 +334,7 @@ int main(){
             {activeTab === "Editorial" && (
               <div className="space-y-4">
                 {embedUrl && (
-                  <div className="aspect-video w-full overflow-hidden rounded-lg border border-[#233046] bg-black">
+                  <div className="aspect-video w-full overflow-hidden rounded-lg border border-[#233046] bg-black shadow">
                     <iframe
                       title="Editorial Video"
                       src={embedUrl}
@@ -487,30 +488,41 @@ int main(){
           </div>
         </div>
 
-        <div className="pointer-events-none absolute right-4 bottom-4 flex gap-2">
-          <button
-            onClick={handleRun}
-            disabled={isRunning}
-            className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${
-              isRunning
-                ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
-                : "bg-[#1e3046] hover:bg-[#264060] border-[#2a4a73]"
-            }`}
-          >
-            {isRunning ? "Running..." : "Run"}
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${
-              isSubmitting
-                ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
-                : "bg-[#0c5bd5] hover:bg-[#0a4fb9] border-[#0c5bd5]"
-            }`}
-          >
-            {isSubmitting ? "Submitting..." : "Submit"}
-          </button>
-        </div>
+        {useAuth().user ? (
+          <div className="pointer-events-none absolute right-4 bottom-4 flex gap-2">
+            <button
+              onClick={handleRun}
+              disabled={isRunning}
+              className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${
+                isRunning
+                  ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
+                  : "bg-[#1e3046] hover:bg-[#264060] border-[#2a4a73]"
+              }`}
+            >
+              {isRunning ? "Running..." : "Run"}
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${
+                isSubmitting
+                  ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
+                  : "bg-[#0c5bd5] hover:bg-[#0a4fb9] border-[#0c5bd5]"
+              }`}
+            >
+              {isSubmitting ? "Submitting..." : "Submit"}
+            </button>
+          </div>
+        ) : (
+          <div className="pointer-events-none absolute right-6 bottom-4 text-sm bg-[#f3f6fa]/80 text-gray-800">
+            <Link to = "/login">
+                 <button className="bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500">
+                    Please log in to run or submit code.
+                 </button>
+
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
