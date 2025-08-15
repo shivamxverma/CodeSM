@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
     if (!token) return setUser(null);
     try {
       const payload = jwtDecode(token);
-      setUser({ id: payload.sub, role: payload.role });
+      setUser({ id: payload._id, role: payload.role });
     } catch {
       setUser(null);
     }

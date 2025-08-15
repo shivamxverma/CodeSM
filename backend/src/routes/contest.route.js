@@ -1,4 +1,4 @@
-import {createContest,getAllContests,getContestById,getClock} from "../controllers/contest.controller.js"
+import {createContest,getAllContests,getContestById,getClock,getLeaderboard,registerContest} from "../controllers/contest.controller.js"
 import { Router } from 'express';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 
@@ -8,6 +8,7 @@ router.post("/", verifyJWT, createContest);
 router.get("/", getAllContests);
 router.get("/:contestId", getContestById); 
 router.get("/:contestId/clock",getClock);
-router.get("/:contestId/leaderboard", getContestById); // Assuming you have a controller for leaderboard
+router.get("/:contestId/leaderboard",verifyJWT, getLeaderboard); 
+router.post("/:contestId/register", verifyJWT,registerContest);
 
 export default router;

@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { getContest, registerContest, getLeaderboard } from "../api/api.js";
 import useContestClock from "../hooks/useContestClock";
 import { Link, useParams } from "react-router-dom";
+import { set } from "zod";
+import { useAuth } from "../auth/AuthContext.jsx";
 
 function msFmt(ms){
   if(ms == null) return "--:--:--";
@@ -13,9 +15,11 @@ function msFmt(ms){
 }
 
 export default function ContestLobbyAndRun(){
+  const { user } = useAuth();
   const { id } = useParams();
   const [contest, setContest] = useState(null);
   const [err, setErr] = useState("");
+  const [register, setregister] = useState(false);
   const [joining, setJoining] = useState(false);
   const [board, setBoard] = useState([]);
 
@@ -25,7 +29,7 @@ export default function ContestLobbyAndRun(){
     (async () => {
       try {
         const { data } = await getContest(id);
-        setContest(data.data);
+        setContest(data.message);
       } catch(e) { setErr("Failed to load contest"); }
     })();
   }, [id]);
@@ -35,6 +39,7 @@ export default function ContestLobbyAndRun(){
     async function pull(){
       try{
         const { data } = await getLeaderboard(id);
+        console.log(data.message);
         setBoard(data.message || []);
       }catch{}
     }
@@ -49,6 +54,7 @@ export default function ContestLobbyAndRun(){
     setJoining(true);
     try {
       await registerContest(id);
+      setregister(true);
       const { data } = await getContest(id);
       setContest(data.message);
     } catch(e) {
@@ -58,9 +64,13 @@ export default function ContestLobbyAndRun(){
     }
   };
 
+  const currentUserId = user?.id || "";
+
   const isRegistered = useMemo(() => {
-    return contest?.isRegistered === true;
-  }, [contest]);
+    
+    if (!contest || !contest.participants || !currentUserId) return false;
+    return contest.participants.includes(currentUserId);
+  }, [contest, currentUserId]);
 
   const headerBadge =
     phase === "before" ? "bg-amber-900/40 border-amber-800 text-amber-200" :

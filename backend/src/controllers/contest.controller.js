@@ -61,7 +61,7 @@ const getContestById = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: contest,
+    message: contest,
   });
 });
 
@@ -97,8 +97,29 @@ const getLeaderboard = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: leaderboard,
+    message: leaderboard,
   });
 })
 
-export { createContest , getAllContests , getContestById , getClock};
+const registerContest = asyncHandler(async (req, res) => {
+  const { contestId } = req.params;
+  const contest = await Contest.findById(contestId);
+
+  if (!contest) {
+    throw new ApiError(404, 'Contest not found');
+  }
+
+  if (contest.participants.some(p => p.user === req.user)) {
+    throw new ApiError(400, 'You are already registered for this contest');
+  }
+
+  contest.participants.push(req.user._id);
+  await contest.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Successfully registered for the contest',
+  });
+});
+
+export { createContest , getAllContests , getContestById , getClock,getLeaderboard,registerContest};

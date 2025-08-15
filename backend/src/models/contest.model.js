@@ -12,7 +12,9 @@ const ContestSchema = new mongoose.Schema({
         index: { type: String, default: "" }
     }],
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    participants: [{ 
+        type: mongoose.Schema.Types.ObjectId, ref: "User" 
+    }],
 }, { timestamps: true });
 
 ContestSchema.virtual("endTime").get(function () {
