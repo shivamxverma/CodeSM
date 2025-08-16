@@ -15,21 +15,23 @@ const createProblem = asyncHandler(async (req, res) => {
         timeLimit,
         inputFormat,
         outputFormat,
-        sampleInput,
-        sampleOutput,
         constraints,
         tags,
         editorial,
         editorialLink,
-        code
+        code,
+        sampleTestcases,
     } = req.body;
+
+    if (!req.user || !req.user._id) {
+        throw new ApiError(403, "Not Authorized");
+    }
 
     const ExistUser = await Author.findById(req.user._id);
 
     if (!ExistUser) {
         throw new ApiError(403, "Not Authorized");
     }
-    console.log(req.body);
 
     let tagsArray;
     if (Array.isArray(tags)) {
@@ -46,7 +48,6 @@ const createProblem = asyncHandler(async (req, res) => {
     } else {
         tagsArray = [];
     }
-    console.log(tagsArray);
 
     const requiredFields = [
         title,
@@ -56,15 +57,12 @@ const createProblem = asyncHandler(async (req, res) => {
         timeLimit,
         inputFormat,
         outputFormat,
-        sampleInput,
-        sampleOutput,
+        sampleTestcases,
         constraints,
         editorial,
         editorialLink,
         code
     ];
-
-
 
     if (requiredFields.some(field => field === undefined || field === null || (typeof field === "string" && !field.trim()))) {
         throw new ApiError(400, "All fields are required");
@@ -75,6 +73,9 @@ const createProblem = asyncHandler(async (req, res) => {
     if (existingProblem) {
         throw new ApiError(400, "Problem with this title already exists");
     }
+    
+    // Parse the sampleTestcases string into a JSON array
+    const parsedSampleTestcases = JSON.parse(sampleTestcases);
 
     const newProblem = await Problem.create({
         title,
@@ -84,14 +85,13 @@ const createProblem = asyncHandler(async (req, res) => {
         timeLimit,
         inputFormat,
         outputFormat,
-        sampleInput,
-        sampleOutput,
+        sampleTestcases: parsedSampleTestcases,
         constraints,
-        editorial : editorial || "",
-        editorialLink : editorialLink || "",
+        editorial: editorial || "",
+        editorialLink: editorialLink || "",
         tags: tagsArray,
         author: ExistUser,
-        solution : code
+        solution: code
     });
 
     if (!newProblem) {
@@ -100,14 +100,12 @@ const createProblem = asyncHandler(async (req, res) => {
 
     const uploadURL = await generateUploadURL(newProblem._id);
 
-    if(!uploadURL){
-        throw new ApiError(500,"Somthing Went Wrong With Upload Url");
+    if (!uploadURL) {
+        throw new ApiError(500, "Somthing Went Wrong With Upload Url");
     }
 
-
-    res.status(201).json(new ApiResponse(201, {newProblem,uploadURL}, "Problem Created Successfully"));
-})
-
+    res.status(201).json(new ApiResponse(201, { newProblem, uploadURL }, "Problem Created Successfully"));
+});
 
 
 const getProblemById = asyncHandler(async (req, res) => {

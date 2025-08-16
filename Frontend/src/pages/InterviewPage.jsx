@@ -86,7 +86,8 @@ const InterviewAssistant = () => {
                     headers: { 'Content-Type': 'application/json' }
                 }
             );
-            const { score, analysis } = response.data;
+            console.log(response.data.data);
+            const { score, analysis } = response.data.data;
             setScore(score);
             setAnalysis(analysis);
             setShowScore(true);
@@ -137,7 +138,20 @@ const InterviewAssistant = () => {
         return (
             <div className="bg-[#1a1b26] min-h-screen text-white p-6 md:p-10 relative">
                 <div className="flex justify-end mb-6">
-                    <button className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-md transition-colors">
+                    <button
+                        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-md transition-colors"
+                        onClick={() => {
+                            setCurrentPage('selection');
+                            setQuestions([]);
+                            setCurrentQuestionIndex(0);
+                            setUserAnswer('');
+                            setShowScore(false);
+                            setScore(null);
+                            setAnalysis('');
+                            setInterviewId(null);
+                            setIsSpeaking(false);
+                        }}
+                    >
                         <span className="mr-2">⏹️</span> End Interview
                     </button>
                 </div>
@@ -209,81 +223,85 @@ const InterviewAssistant = () => {
 
         return (
             <div className="bg-[#1a1b26] min-h-screen text-white p-8 flex flex-col items-center justify-center space-y-10">
-                <div className="text-center space-y-4">
-                    <h2 className="text-3xl font-bold">Ready to Start?</h2>
-                    <p className="text-lg text-gray-400">
-                        Selected: <span className="text-indigo-400 font-semibold">{roleName}</span> |
-                        Experience: <span className="text-indigo-400 font-semibold">{experienceName}</span>
-                    </p>
-                    <button onClick={handleGoBack} className="text-sm text-gray-400 underline hover:text-white transition-colors duration-300">
-                        Change Selection
-                    </button>
-                </div>
-                <div className="flex flex-col lg:flex-row w-full max-w-5xl gap-8">
-                    <div className="w-full lg:w-1/2 p-6 rounded-xl border border-gray-700 bg-gray-800/30">
-                        <h3 className="text-xl font-semibold mb-4 text-indigo-400">Enhanced Features</h3>
-                        <ul className="space-y-4">
-                            <li className="flex items-start gap-3">
-                                <span className="text-green-400 text-xl">✅</span>
-                                <p>AI speaks questions aloud with professional voice</p>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-green-400 text-xl">✅</span>
-                                <p>Continuous speech-to-text with auto-restart</p>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-green-400 text-xl">✅</span>
-                                <p>10 adaptive technical questions</p>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-green-400 text-xl">✅</span>
-                                <p>Real-time AI evaluation and feedback</p>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-green-400 text-xl">✅</span>
-                                <p>Video presence scoring</p>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-green-400 text-xl">✅</span>
-                                <p>Comprehensive final report with recommendations</p>
-                            </li>
-                        </ul>
-                    </div>
-                    <div className="w-full lg:w-1/2 p-6 rounded-xl border border-gray-700 bg-gray-800/30">
-                        <h3 className="text-xl font-semibold mb-4 text-indigo-400">Tips for Success</h3>
-                        <ul className="space-y-4">
-                            <li className="flex items-start gap-3">
-                                <span className="text-yellow-400 text-xl">💡</span>
-                                <p>Enable camera and microphone for better scoring</p>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-yellow-400 text-xl">💡</span>
-                                <p>Listen to AI questions and speak naturally</p>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-yellow-400 text-xl">💡</span>
-                                <p>Speech recognition will auto-restart if it stops</p>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-yellow-400 text-xl">💡</span>
-                                <p>Think out loud to show your problem-solving process</p>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-yellow-400 text-xl">💡</span>
-                                <p>Maintain eye contact with the camera</p>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                <button
-                    onClick={handleGoToInterview}
-                    className={`
-                        w-full max-w-lg py-4 rounded-full font-semibold text-lg transition-transform duration-300
-                        bg-gradient-to-r from-blue-500 to-indigo-600 hover:scale-105 shadow-lg
-                    `}
-                >
-                    Start AI Interview
+            <div className="text-center space-y-4">
+                <h2 className="text-3xl font-bold">Ready to Start?</h2>
+                <p className="text-lg text-gray-400">
+                Selected: <span className="text-indigo-400 font-semibold">{roleName}</span> |
+                Experience: <span className="text-indigo-400 font-semibold">{experienceName}</span>
+                </p>
+                <button onClick={handleGoBack} className="text-sm text-gray-400 underline hover:text-white transition-colors duration-300">
+                Change Selection
                 </button>
+            </div>
+            <div className="flex flex-col lg:flex-row w-full max-w-5xl gap-8">
+                <div className="w-full lg:w-1/2 p-6 rounded-xl border border-gray-700 bg-gray-800/30">
+                <h3 className="text-xl font-semibold mb-4 text-indigo-400">Enhanced Features</h3>
+                <ul className="space-y-4">
+                    <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl">✅</span>
+                    <p>AI speaks questions aloud with professional voice</p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl">✅</span>
+                    <p>Continuous speech-to-text with auto-restart</p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl">✅</span>
+                    <p>10 adaptive technical questions</p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl">✅</span>
+                    <p>Real-time AI evaluation and feedback</p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl">✅</span>
+                    <p>Video presence scoring</p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl">✅</span>
+                    <p>Comprehensive final report with recommendations</p>
+                    </li>
+                </ul>
+                </div>
+                <div className="w-full lg:w-1/2 p-6 rounded-xl border border-gray-700 bg-gray-800/30">
+                <h3 className="text-xl font-semibold mb-4 text-indigo-400">Tips for Success</h3>
+                <ul className="space-y-4">
+                    <li className="flex items-start gap-3">
+                    <span className="text-yellow-400 text-xl">💡</span>
+                    <p>Enable camera and microphone for better scoring</p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                    <span className="text-yellow-400 text-xl">💡</span>
+                    <p>Listen to AI questions and speak naturally</p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                    <span className="text-yellow-400 text-xl">💡</span>
+                    <p>Speech recognition will auto-restart if it stops</p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                    <span className="text-yellow-400 text-xl">💡</span>
+                    <p>Think out loud to show your problem-solving process</p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                    <span className="text-yellow-400 text-xl">💡</span>
+                    <p>Maintain eye contact with the camera</p>
+                    </li>
+                </ul>
+                </div>
+            </div>
+            <button
+                onClick={handleGoToInterview}
+                disabled={isLoading}
+                className={`
+                w-full max-w-lg py-4 rounded-full font-semibold text-lg transition-transform duration-300
+                ${isLoading
+                    ? 'bg-gray-900 text-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:scale-105 shadow-lg'
+                }
+                `}
+            >
+                {isLoading ? 'Loading...' : 'Start AI Interview'}
+            </button>
             </div>
         );
     }
@@ -346,8 +364,24 @@ const InterviewAssistant = () => {
                     }
                 `}
             >
-                Start AI Interview
+                {isLoading ? 'Loading...' : 'Start AI Interview'}
             </button>
+            {showScore && (
+                <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-900 rounded-2xl p-10 w-full max-w-xl text-center border-2 border-green-500 shadow-2xl">
+                        <h2 className="text-3xl font-bold mb-4 text-green-400">Your Answer is Evaluated!</h2>
+                        <p className="text-xl mb-6">Score:</p>
+                        <div className="text-6xl font-extrabold text-green-500 mb-4">{score}/10</div>
+                        <p className="text-base text-gray-300 mb-6">{analysis}</p>
+                        <button
+                            onClick={handleNextQuestion}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-md transition-colors"
+                        >
+                            {currentQuestionIndex + 1 < questions.length ? 'Next Question' : 'Finish Interview'}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

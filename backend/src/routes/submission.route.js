@@ -5,7 +5,13 @@ import {verifyJWT} from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.post('/:problemId',verifyJWT,rateLimitMiddleware, createSubmission);
+router.post('/:problemId', verifyJWT, rateLimitMiddleware, (req, res, next) => {
+    // Check for dryRun query param
+    const isDryRun = req.query.dryRun === 'true';
+    // Attach dryRun info to request for controller
+    req.isDryRun = isDryRun;
+    createSubmission(req, res, next);
+});
 router.get('/problem/:problemId',verifyJWT, rateLimitMiddleware, getSubmissionById);
 
 export default router;

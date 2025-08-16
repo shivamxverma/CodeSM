@@ -301,6 +301,30 @@ int main(){
               <div className="space-y-6">
                 <p className="leading-7 whitespace-pre-line">{problem?.description}</p>
 
+                {/* Sample Input/Output Section using sampleTestcases */}
+                {problem?.sampleTestcases?.length > 0 ? (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-blue-300">Sample Testcases</h3>
+                    {problem.sampleTestcases.map((tc, i) => (
+                      <div key={i} className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm shadow">
+                        <div className="mb-2">
+                          <span className="font-semibold text-blue-200">Input:</span>
+                          <pre className="rounded bg-[#10151c] p-2 mt-1">{tc.input}</pre>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-blue-200">Output:</span>
+                          <pre className="rounded bg-[#10151c] p-2 mt-1">{tc.output}</pre>
+                        </div>
+                        {tc.explanation && (
+                          <div className="mt-2 text-gray-400">
+                            <span className="font-semibold text-blue-200">Explanation:</span> {tc.explanation}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
                 {problem?.examples?.length ? (
                   <div className="space-y-4">
                     <h3 className="font-semibold text-blue-300">Examples</h3>
@@ -427,8 +451,8 @@ int main(){
 
             {activeTab === "Solutions" && (
               <div className="space-y-3">
-                {problem?.solution? (
-                  <>
+                {problem?.solution ? (
+                  <React.Fragment>
                     <div className="flex items-center gap-2">
                       <span className="text-xs px-2 py-1 rounded bg-[#182432] border border-[#233046]">
                         Language: C++
@@ -440,7 +464,7 @@ int main(){
                     <pre className="rounded-lg border border-[#233046] bg-[#0c1219] p-4 text-sm overflow-x-auto">
 {problem.solution}
                     </pre>
-                  </>
+                  </React.Fragment>
                 ) : (
                   <div className="text-sm text-gray-400">No official solution available.</div>
                 )}
@@ -516,6 +540,7 @@ int main(){
           />
         </div>
 
+        {/* Sample Input/Output in Console Section */}
         <div className="bg-[#0f141b] border-t border-[#1b2330]">
           <div className="px-5 py-2 text-xs text-gray-400 flex items-center justify-between">
             <span className="font-medium text-gray-300">Console</span>
@@ -528,6 +553,28 @@ int main(){
               </button>
             </div>
           </div>
+          {problem?.sampleTestcases?.length > 0 ? (
+            <div className="px-5 pb-2">
+              <h4 className="text-xs text-blue-300 font-semibold mb-1">Sample Testcases</h4>
+              <div className="flex gap-4 overflow-x-auto pb-2">
+                {problem.sampleTestcases.map((tc, i) => (
+                  <div key={i} className="min-w-[200px] max-w-[300px] flex-shrink-0">
+                    <div className="rounded border border-[#233046] bg-[#0c1219] p-2 text-xs">
+                      <div className="mb-1">
+                        <span className="text-blue-200 font-semibold">Input:</span>
+                        <pre className="mt-1">{tc.input}</pre>
+                      </div>
+                      <div>
+                        <span className="text-blue-200 font-semibold">Output:</span>
+                        <pre className="mt-1">{tc.output}</pre>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div
             ref={consoleRef}
             className="h-44 overflow-y-auto px-5 pb-4 font-mono text-sm whitespace-pre-wrap bg-[#0c1219]"

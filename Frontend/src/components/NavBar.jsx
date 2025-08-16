@@ -58,7 +58,7 @@ export default function NewNav() {
       ? [{ to: "/newproblem", label: "Create Problem" }]
       : []),
     ...(userRole === "AUTHOR"
-      ? [{ to: "/contests/create", label: "Create Problem" }]
+      ? [{ to: "/contests/create", label: "Create Contest" }]
       : []),
     { to: "/contests", label: "Contests" },
     { to: "/interview", label: "Interview Prep" }

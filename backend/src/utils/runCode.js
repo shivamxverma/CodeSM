@@ -89,7 +89,11 @@ function runBinaryInContainer(input) {
   });
 }
 
-const runCppCodeWithInput = async (cppCode, problemId) => {
+const runCodeWithInput = async (cppCode , problemId,input) => {
+  
+}
+
+const runCodeForSubmission = async (cppCode, problemId) => {
   await fs.mkdir(runnerDir, { recursive: true });
   await fs.writeFile(codePath, cppCode);
 
@@ -127,4 +131,7 @@ const runCppCodeWithInput = async (cppCode, problemId) => {
   return { status: execution.every(r => r.isPassed) ? 'accepted' : 'rejected', execution };
 };
 
-export default runCppCodeWithInput;
+export default {
+  runCodeWithInput,
+  runCodeForSubmission
+}
