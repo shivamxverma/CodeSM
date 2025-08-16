@@ -3,26 +3,74 @@ import Problem from "../models/problem.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { generateUploadURL } from "../../services/aws.service.js";
+import Author from "../models/author.model.js";
+import { generateHintsWithAI } from '../../services/ai.service.js'; 
 
 const createProblem = asyncHandler(async (req, res) => {
-    const {title , difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, constraints, tags} = req.body;
+    const {
+        title,
+        difficulty,
+        description,
+        memoryLimit,
+        timeLimit,
+        inputFormat,
+        outputFormat,
+        sampleInput,
+        sampleOutput,
+        constraints,
+        tags,
+        editorial,
+        editorialLink,
+        code
+    } = req.body;
 
-    // console.log(req.body);
+    const ExistUser = await Author.findById(req.user._id);
 
-    const tagsArray = tags.split(',').map(tag => tag.trim());
-    if(
-        [title, difficulty, description, memoryLimit, timeLimit, inputFormat, outputFormat, sampleInput, sampleOutput, constraints]
-        .some(field => !field.trim())
-    )
-    {
+    if (!ExistUser) {
+        throw new ApiError(403, "Not Authorized");
+    }
+    console.log(req.body);
+
+    let tagsArray;
+    if (Array.isArray(tags)) {
+        tagsArray = tags.map(tag => tag.trim());
+    } else if (typeof tags === "string") {
+        try {
+            tagsArray = JSON.parse(tags);
+            if (!Array.isArray(tagsArray)) {
+                tagsArray = tags.split(',').map(tag => tag.trim());
+            }
+        } catch {
+            tagsArray = tags.split(',').map(tag => tag.trim());
+        }
+    } else {
+        tagsArray = [];
+    }
+    console.log(tagsArray);
+
+    const requiredFields = [
+        title,
+        difficulty,
+        description,
+        memoryLimit,
+        timeLimit,
+        inputFormat,
+        outputFormat,
+        sampleInput,
+        sampleOutput,
+        constraints,
+        editorial,
+        editorialLink,
+        code
+    ];
+
+
+
+    if (requiredFields.some(field => field === undefined || field === null || (typeof field === "string" && !field.trim()))) {
         throw new ApiError(400, "All fields are required");
     }
 
-    // console.log(tagsArray);
-
     const existingProblem = await Problem.findOne({ title });
-
-    // console.log(existingProblem);
 
     if (existingProblem) {
         throw new ApiError(400, "Problem with this title already exists");
@@ -39,7 +87,11 @@ const createProblem = asyncHandler(async (req, res) => {
         sampleInput,
         sampleOutput,
         constraints,
-        tags : tagsArray
+        editorial : editorial || "",
+        editorialLink : editorialLink || "",
+        tags: tagsArray,
+        author: ExistUser,
+        solution : code
     });
 
     if (!newProblem) {
@@ -75,5 +127,25 @@ const getAllProblems = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, problems, "Problems fetched successfully"));
 });
 
+const getUpsolveHints = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const problem = await Problem.findById(id);
+    if (!problem) {
+        throw new ApiError(404, "Problem not found");
+    }
 
-export { createProblem, getProblemById, getAllProblems };
+    if (problem.hints && problem.hints.length > 0) {
+        return res.status(200).json(new ApiResponse(200, { hints: problem.hints }, "Hints fetched successfully"));
+    }
+
+    const hints = await generateHintsWithAI(problem);
+
+    if (!hints || hints.length === 0) {
+        throw new ApiError(500, "Failed to generate hints");
+    }
+
+    res.status(200).json(new ApiResponse(200, { hints }, "Hints generated successfully"));
+})
+
+
+export { createProblem, getProblemById, getAllProblems ,getUpsolveHints };

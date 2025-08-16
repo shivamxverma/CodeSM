@@ -1,54 +1,99 @@
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import LoginCard from "./pages/users/LoginCard";
 import SignUpCard from "./pages/users/SignUpCard";
-import ProblemPage from "./pages/admin/ProblemPage.jsx";
+import ProblemPage from "./pages/admin/ProblemPage";  
 import Dashboard from "./pages/dashboard/DashBoard";
 import Problems from "./pages/users/problem";
-import NavBar from "./component/NavBar";
+import NavBar from "./components/NavBar";
 import NewProblem from "./pages/admin/NewProblem";
 import ProfileCard from "./pages/users/ProfileCard";
+import ContestListPage from "./pages/ContestListPage";
+import ContestCreatePage from "./pages/ContestCreatePage";
+import ContestLobbyAndRun from "./pages/ContestLobbyAndRun";
 
-const ProtectedRoute = ({ element }) => {
-  const token = localStorage.getItem("accessToken"); 
-  return token ? element : <Navigate to="/login" replace />;
-};
+import { AuthProvider } from "./auth/AuthContext";   
+import RequireRole from "./auth/RequireRole";        
 
-function App() {
-  return (
-    <BrowserRouter>
-      <NavBar />
-      <Routes>
-        <Route path="/login" element={<LoginCard />} />
-        <Route path="/signup" element={<SignUpCard />} />
-        {/* <Route path="/profile" element={<ProfileCard />} /> */}
-        <Route
-          path="/:username"
-          element={<ProtectedRoute element={<ProfileCard />} />}
-        />
-
-        <Route
-          path="/problems/:id"
-          element={<ProtectedRoute element={<ProblemPage />} />}
-        />
-        <Route
-          path="/newproblem"
-          element={<ProtectedRoute element={<NewProblem />} />}
-        />
-        <Route
-          path="/"
-          element={<ProtectedRoute element={<Dashboard />} />}
-        />
-        <Route
-          path="/problems"
-          element={<ProtectedRoute element={<Problems />} />}
-        />
-        <Route
-          path="/problems"
-          element={<ProtectedRoute element={<Problems />} />}
-        />
-      </Routes>
-    </BrowserRouter>
-  );
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem("accessToken");
+  return token ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <NavBar />
+
+        <Routes>
+          <Route path="/login" element={<LoginCard />} />
+          <Route path="/signup" element={<SignUpCard />} />
+
+
+          <Route
+            path="/"
+            element={
+                <Dashboard />
+            }
+          />
+          <Route
+            path="/problems"
+            element={
+                <Problems />
+            }
+          />
+          <Route
+            path="/problems/:id"
+            element={
+                <ProblemPage />
+            }
+          />
+          <Route
+            path="/:username"
+            element={
+              <ProtectedRoute>
+                <ProfileCard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/newproblem"
+            element={
+              <RequireRole allowed={["AUTHOR", "ADMIN"]}>
+                <NewProblem />
+              </RequireRole>
+            }
+          />
+
+          <Route
+            path="/contests"
+            element={
+                <ContestListPage />
+            }
+          />
+          <Route
+            path="/contests/create"
+            element={
+              <RequireRole allowed={["AUTHOR", "ADMIN"]}>
+                <ContestCreatePage />
+              </RequireRole>
+            }
+          />
+
+          <Route
+            path="/contest/:id"
+            element={
+                <ContestLobbyAndRun />
+            }
+          />
+          
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
