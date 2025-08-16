@@ -1,7 +1,1 @@
-node_modules
-# Keep environment variables out of version control
-.env
-
-/src/generated/prisma
-
-/src/generated/prisma
+REDIS_URL=redis://localhost:6379
