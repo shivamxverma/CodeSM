@@ -26,10 +26,12 @@ import userRoutes from './routes/user.route.js';
 import problemRoutes from './routes/problem.route.js';
 import submissionRoutes from './routes/submission.route.js';
 import contestRoutes from './routes/contest.route.js';
+import interviewRoutes from './routes/interview.route.js';
 
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/problem", problemRoutes);
 app.use("/api/v1/submission", submissionRoutes);
 app.use("/api/v1/contest", contestRoutes);
+app.use("/api/v1/interview", interviewRoutes);
 
 export default app;

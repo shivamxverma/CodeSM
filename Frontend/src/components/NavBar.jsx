@@ -61,6 +61,7 @@ export default function NewNav() {
       ? [{ to: "/contests/create", label: "Create Problem" }]
       : []),
     { to: "/contests", label: "Contests" },
+    { to: "/interview", label: "Interview Prep" }
   ];
 
   const linkBase =

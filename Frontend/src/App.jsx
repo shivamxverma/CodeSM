@@ -12,6 +12,7 @@ import ProfileCard from "./pages/users/ProfileCard";
 import ContestListPage from "./pages/ContestListPage";
 import ContestCreatePage from "./pages/ContestCreatePage";
 import ContestLobbyAndRun from "./pages/ContestLobbyAndRun";
+import InterviewAssistant from "./pages/InterviewPage"; 
 
 import { AuthProvider } from "./auth/AuthContext";   
 import RequireRole from "./auth/RequireRole";        
@@ -87,6 +88,15 @@ export default function App() {
             path="/contest/:id"
             element={
                 <ContestLobbyAndRun />
+            }
+          />
+
+          <Route
+            path="/interview"
+            element={
+              <ProtectedRoute>
+                <InterviewAssistant />
+              </ProtectedRoute>
             }
           />
           
