@@ -4,6 +4,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { generateUploadURL } from "../../services/aws.service.js";
 import Author from "../models/author.model.js";
+import { generateHintsWithAI } from '../../services/ai.service.js'; 
 
 const createProblem = asyncHandler(async (req, res) => {
     const {
@@ -126,5 +127,25 @@ const getAllProblems = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, problems, "Problems fetched successfully"));
 });
 
+const getUpsolveHints = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const problem = await Problem.findById(id);
+    if (!problem) {
+        throw new ApiError(404, "Problem not found");
+    }
 
-export { createProblem, getProblemById, getAllProblems };
+    if (problem.hints && problem.hints.length > 0) {
+        return res.status(200).json(new ApiResponse(200, { hints: problem.hints }, "Hints fetched successfully"));
+    }
+
+    const hints = await generateHintsWithAI(problem);
+
+    if (!hints || hints.length === 0) {
+        throw new ApiError(500, "Failed to generate hints");
+    }
+
+    res.status(200).json(new ApiResponse(200, { hints }, "Hints generated successfully"));
+})
+
+
+export { createProblem, getProblemById, getAllProblems ,getUpsolveHints };

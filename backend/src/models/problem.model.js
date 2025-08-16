@@ -46,6 +46,21 @@ const problemSchema = new Schema({
         type: String,
         required: true
     }],
+    
+    hints: {
+        type: [{
+            title: {
+                type: String,
+                required: true
+            },
+            content: {
+                type: String,
+                required: true
+            }
+        }],
+        default: [] 
+    },
+
     submission: [{
         type: Schema.Types.ObjectId,
         ref: 'Submission'
@@ -72,4 +87,3 @@ const problemSchema = new Schema({
 const Problem = mongoose.model('Problem', problemSchema);
 
 export default Problem;
-

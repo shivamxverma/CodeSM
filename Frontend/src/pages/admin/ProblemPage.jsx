@@ -6,9 +6,8 @@ import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/auth/AuthContext";
 import { set } from "zod";
 
-const TABS = ["Description", "Editorial", "Submissions", "Solutions"];
+const TABS = ["Description", "Editorial", "Submissions", "Solutions", "Hints"];
 
-// Map rating -> difficulty + color
 function getDifficultyFromRating(rating) {
   if (!rating) return { label: "Unknown", style: "bg-[#1d2736] text-gray-300 border-[#2a3750]" };
   if (rating >= 800 && rating <= 1200)
@@ -18,22 +17,18 @@ function getDifficultyFromRating(rating) {
   return { label: "Hard", style: "bg-[#2a1313] text-red-300 border-[#5d1e1e]" };
 }
 
-// Turn a YouTube URL into an embeddable URL
 function getYouTubeEmbed(url) {
   if (!url) return null;
   try {
     const u = new URL(url);
-    // youtube.com/watch?v=... or youtube.com/shorts/...
     if (u.hostname.includes("youtube.com")) {
       const id = u.searchParams.get("v");
       if (id) return `https://www.youtube.com/embed/${id}`;
-      // shorts
       if (u.pathname.startsWith("/shorts/")) {
         const shortId = u.pathname.split("/shorts/")[1]?.split(/[/?#]/)[0];
         if (shortId) return `https://www.youtube.com/embed/${shortId}`;
       }
     }
-    // youtu.be/...
     if (u.hostname.includes("youtu.be")) {
       const id = u.pathname.replace("/", "");
       if (id) return `https://www.youtube.com/embed/${id}`;
@@ -55,6 +50,11 @@ export default function ProblemPage() {
   const [consoleOutput, setConsoleOutput] = useState("");
   const consoleRef = useRef(null);
 
+  const [hints, setHints] = useState([]);
+  const [hintsLoading, setHintsLoading] = useState(false);
+  const [hintsError, setHintsError] = useState(null);
+  const [revealedHintIndex, setRevealedHintIndex] = useState(0);
+
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
   const { id: problemId } = useParams();
@@ -63,7 +63,6 @@ export default function ProblemPage() {
     async function fetchProblem() {
       try {
         const res = await axios.get(`http://localhost:8000/api/v1/problem/${problemId}`);
-
         console.log("Fetched problem data:", res.data.message);
         setProblem(res.data.message);
       } catch (error) {
@@ -72,6 +71,15 @@ export default function ProblemPage() {
     }
     fetchProblem();
   }, [problemId]);
+
+  useEffect(() => {
+    if (activeTab === "Submissions") {
+        getAllSubmission();
+    }
+    if (activeTab === "Hints") {
+        fetchHints();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     setCode(`#include <bits/stdc++.h>
@@ -155,8 +163,6 @@ int main(){
       );
 
       const payload = data?.message?.output || data?.message || {};
-
-      // console.log(payload);
       const { status, execution = [], errors = [], stderr, stdout } = payload;
 
       if (status === "compile_error") {
@@ -215,7 +221,6 @@ int main(){
       ? "bg-[#2a1313] border-[#5d1e1e] text-red-300"
       : "bg-[#182432] border-[#233046] text-gray-300";
 
-  // Precompute editorial embed
   const embedUrl = getYouTubeEmbed(problem?.editorialLink);
 
   const getAllSubmission = async () => {
@@ -229,14 +234,31 @@ int main(){
       });
       setSubmissions(res.data.message || []);
       console.log("Fetched submissions:", res.data.message);
-    }catch (error) {
+    } catch (error) {
       console.error("Error fetching submissions:", error);
+    }
+  };
+
+  async function fetchHints() {
+    if (hints.length > 0 || hintsLoading) return;
+
+    setHintsLoading(true);
+    setHintsError(null);
+    try {
+      const res = await axios.get(`http://localhost:8000/api/v1/problem/upsolve/${problemId}`);
+      // console.log(res);
+      setHints(res.data.message.hints || []);
+      setRevealedHintIndex(0);
+    } catch (error) {
+      setHintsError("Failed to load hints. Please try again later.");
+      console.error("Error fetching hints:", error);
+    } finally {
+      setHintsLoading(false);
     }
   }
 
   return (
     <div className="flex h-screen w-screen bg-gradient-to-br from-[#0b0f13] via-[#10151c] to-[#1a2230] text-gray-200">
-      {/* LEFT: Problem panel */}
       <div className="hidden xl:flex w-2/5 min-w-[480px] max-w-[720px] flex-col border-r border-[#1b2330] shadow-lg bg-[#10151c]/80">
         <div className="px-5 py-3 bg-[#0f141b] border-b border-[#1b2330] flex items-center gap-3">
           <Link to="/problems" className="text-sm hover:underline transition-colors">Back to Problems</Link>
@@ -424,11 +446,37 @@ int main(){
                 )}
               </div>
             )}
+            
+            {activeTab === "Hints" && (
+                <div className="space-y-4">
+                    {hintsLoading && <div className="text-sm text-gray-400">🧠 Generating hints for you...</div>}
+                    {hintsError && <div className="text-sm text-red-400">{hintsError}</div>}
+                    {!hintsLoading && !hintsError && hints.length === 0 && (
+                        <div className="text-sm text-gray-400">No hints available for this problem.</div>
+                    )}
+
+                    {hints.slice(0, revealedHintIndex + 1).map((hint, index) => (
+                        <div key={index} className="rounded border border-[#233046] bg-[#0c1219] p-4 shadow animate-fade-in">
+                            <h3 className="font-semibold text-blue-300 mb-2">{hint.title}</h3>
+                            <p className="text-gray-300 whitespace-pre-line">{hint.content}</p>
+                        </div>
+                    ))}
+                    
+                    {!hintsLoading && revealedHintIndex < hints.length - 1 && (
+                        <button
+                            onClick={() => setRevealedHintIndex(prev => prev + 1)}
+                            className="w-full px-3 py-2 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750] text-sm font-medium transition-colors"
+                        >
+                            Reveal Next Hint
+                        </button>
+                    )}
+                </div>
+            )}
+
           </div>
         </div>
       </div>
 
-      {/* RIGHT: Editor + header + persistent console */}
       <div className="relative flex-1 flex flex-col">
         <div className="px-5 py-3 bg-[#0f141b] border-b border-[#1b2330] flex items-center gap-3">
           <div className="xl:hidden text-sm truncate">{problem?.title || "Loading..."}</div>
