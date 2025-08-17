@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import z from "zod";
 import { useNavigate } from "react-router-dom";
+import { login } from "../../api/api.js";
 
 const role = "USER"; 
 const emailSchema = z.string().email("Invalid email address");
@@ -50,12 +51,15 @@ function LoginCard() {
 
     try {
       setLoading(true);
-      const response = await axios.post("http://localhost:8000/api/v1/users/login", {
-        role: formData.role,
+
+      const payload = {
+        role : formData.role,
         email: formData.email,
         username: formData.username,
         password: formData.password,
-      },{withCredentials: true});
+      }
+
+      const response = await login(payload);
 
       console.log(response.data);
 

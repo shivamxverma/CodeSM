@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { getAllProblems } from "@/api/api";
 
 export default function ProblemPage() {
   const [problems, setProblems] = useState([]);
@@ -21,11 +22,9 @@ export default function ProblemPage() {
       try {
         setLoading(true);
         setError("");
-        const res = await fetch("http://localhost:8000/api/v1/problem", { signal: controller.signal });
-        if (!res.ok) throw new Error("Network response was not ok");
-        const data = await res.json();
-        console.log(data);
-        setProblems(Array.isArray(data?.message) ? data.message : []);
+        const res = await getAllProblems();
+        const problems = res.data.message;
+        setProblems(Array.isArray(problems) ? problems : []);
       } catch (err) {
         if (err.name !== "AbortError") {
           setError("Could not load problems. Please try again.");

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import z from "zod";
+import { signup } from "@/api/api";
 
 const formSchema = z.object({
   role: z.string(),
@@ -39,11 +40,7 @@ function SignUpCard() {
 
     try {
       setLoading(true);
-      await axios.post(
-        "http://localhost:8000/api/v1/users/register",
-        formData,
-        { headers: { "Content-Type": "application/json" } }
-      );
+      await signup(formData);
 
       setMsg({ type: "success", text: "Signup successful! Redirecting…" });
       setTimeout(() => navigate("/login"), 1500);

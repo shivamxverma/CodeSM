@@ -118,7 +118,7 @@ const getProblemById = asyncHandler(async (req, res) => {
 });
 
 const getAllProblems = asyncHandler(async (req, res) => {
-    const problems = await Problem.find().select("-description -memoryLimit -timeLimit -inputFormat -outputFormat -sampleInput -sampleOutput -constraints").sort({ createdAt: -1 });
+    const problems = await Problem.find().select("-description -memoryLimit -timeLimit -inputFormat -outputFormat -sampleTestcases -constraints -hints -submission -editorial -editorialLink -solution").sort({ createdAt: -1 });
     if (!problems || problems.length === 0) {
         throw new ApiError(404, "No problems found");
     }
@@ -141,6 +141,9 @@ const getUpsolveHints = asyncHandler(async (req, res) => {
     if (!hints || hints.length === 0) {
         throw new ApiError(500, "Failed to generate hints");
     }
+
+    problem.hints = hints;
+    await problem.save();
 
     res.status(200).json(new ApiResponse(200, { hints }, "Hints generated successfully"));
 })

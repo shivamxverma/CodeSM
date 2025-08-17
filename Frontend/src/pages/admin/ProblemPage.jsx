@@ -5,6 +5,7 @@ import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/auth/AuthContext";
 import { set } from "zod";
+import { getProblem , runProblem , getSubmissions , getProblemHints} from "@/api/api";
 
 const TABS = ["Description", "Editorial", "Submissions", "Solutions", "Hints"];
 
@@ -62,7 +63,7 @@ export default function ProblemPage() {
   useEffect(() => {
     async function fetchProblem() {
       try {
-        const res = await axios.get(`http://localhost:8000/api/v1/problem/${problemId}`);
+        const res = await getProblem(problemId);
         console.log("Fetched problem data:", res.data.message);
         setProblem(res.data.message);
       } catch (error) {
@@ -150,17 +151,13 @@ int main(){
     setConsoleOutput((prev) => (prev ? prev + "\n" : "") + (asSubmit ? "▶️ Submitting...\n" : "▶️ Running...\n"));
     clearMarkers();
     try {
-      const { data } = await axios.post(
-        `http://localhost:8000/api/v1/submission/${problemId}${asSubmit ? "" : "?dryRun=true"}`,
-        { code, language, mode: asSubmit ? "submit" : "run" },
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
-      );
+      
+      const input = {
+        code,
+        language,
+        mode : asSubmit ? "submit" : "run",
+      }
+      const { data } = await runProblem(problemId, input, asSubmit);
 
       const payload = data?.message?.output || data?.message || {};
       const { status, execution = [], errors = [], stderr, stdout } = payload;
@@ -230,15 +227,9 @@ int main(){
       if (!problemId || !accessToken) {
         throw new Error("Missing problem ID or access token.");
       }
-      const res = await axios.get(`http://localhost:8000/api/v1/submission/${problemId}`, {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const res = await getSubmissions(problemId);
       setSubmissions(res.data.message || []);
-      console.log("Fetched submissions:", res.data);
+      // console.log("Fetched submissions:", res.data);
     } catch (error) {
       console.error("Error fetching submissions:", error);
     }
@@ -250,7 +241,7 @@ int main(){
     setHintsLoading(true);
     setHintsError(null);
     try {
-      const res = await axios.get(`http://localhost:8000/api/v1/problem/upsolve/${problemId}`);
+      const res = await getProblemHints(problemId);
       // console.log(res);
       setHints(res.data.message.hints || []);
       setRevealedHintIndex(0);

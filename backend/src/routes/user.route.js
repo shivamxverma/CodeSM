@@ -10,7 +10,7 @@ router.post("/login", loginUser);
 
 router.get("/logout", verifyJWT, LogoutUser);
 
-router.post("/refresh-token",refreshAccessToken);
+router.post("/token",refreshAccessToken);
 
 
 export default router;

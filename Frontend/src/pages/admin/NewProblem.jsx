@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { createProblem } from "../../api/api";
 
 export default function CreateProblem() {
   const navigate = useNavigate();
@@ -307,17 +308,7 @@ int main() {
         JSON.stringify({ language: formData.language, code: formData.solution })
       );
 
-      const res = await axios.post(
-        "http://localhost:8000/api/v1/problem/createproblem",
-        data,
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
-      );
+      const res = await createProblem(data);
 
       const url = res?.data?.message?.uploadURL;
       if (url) {

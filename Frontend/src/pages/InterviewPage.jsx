@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { getQuestionsForInterview , getScoreForQuestion } from '../api/api';
 
 const InterviewAssistant = () => {
     const [selectedRole, setSelectedRole] = useState(null);
@@ -48,12 +49,7 @@ const InterviewAssistant = () => {
         try {
             const selectedRoleName = roles.find(r => r.id === selectedRole).name;
             const selectedExperienceName = experienceLevels.find(e => e.id === selectedExperience).name;
-            const response = await axios.post(`http://localhost:8000/api/v1/interview`, {
-                role: selectedRoleName,
-                experience: selectedExperienceName
-            }, {
-                headers: { 'Content-Type': 'application/json' }
-            });
+            const response = await getQuestionsForInterview(selectedRoleName, selectedExperienceName);
 
             const res = response.data.data;
             const { interviewId, questions } = res;
@@ -76,16 +72,7 @@ const InterviewAssistant = () => {
     const submitAnswer = async () => {
         setIsLoading(true);
         try {
-            const response = await axios.post(
-                `http://localhost:8000/api/v1/interview/score`,
-                {
-                    question: questions[currentQuestionIndex].text,
-                    answer: userAnswer
-                },
-                {
-                    headers: { 'Content-Type': 'application/json' }
-                }
-            );
+            const response = await getScoreForQuestion(currentQuestionIndex, questions, userAnswer);
             console.log(response.data.data);
             const { score, analysis } = response.data.data;
             setScore(score);
@@ -137,82 +124,93 @@ const InterviewAssistant = () => {
     if (currentPage === 'interview') {
         return (
             <div className="bg-[#1a1b26] min-h-screen text-white p-6 md:p-10 relative">
-                <div className="flex justify-end mb-6">
+            <div className="flex justify-end mb-6">
+                <button
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-md transition-colors"
+                onClick={() => {
+                    setCurrentPage('selection');
+                    setQuestions([]);
+                    setCurrentQuestionIndex(0);
+                    setUserAnswer('');
+                    setShowScore(false);
+                    setScore(null);
+                    setAnalysis('');
+                    setInterviewId(null);
+                    setIsSpeaking(false);
+                }}
+                >
+                <span className="mr-2">⏹️</span> End Interview
+                </button>
+            </div>
+            <div className="flex flex-col lg:flex-row gap-6">
+                <div className="flex-1 space-y-6">
+                <div className="bg-gray-800 rounded-xl p-4 relative">
+                    <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">{isSpeaking ? 'AI is speaking' : 'AI is listening'}</span>
+                    <div className="bg-black rounded-lg w-full aspect-video flex items-center justify-center">
+                    {isSpeaking ? (
+                        // Replace with your video component or <video> tag
+                        <video
+                        src="/video.mp4"
+                        autoPlay
+                        muted
+                        loop={false}
+                        className="w-full h-full object-cover rounded-lg"
+                        />
+                    ) : (
+                        <span className="text-gray-400">AI Interviewer Video</span>
+                    )}
+                    </div>
+                    <div className="text-center mt-2">
+                    <p className="text-lg">Question {currentQuestionIndex + 1} of {questions.length}</p>
+                    </div>
+                </div>
+                <div className="bg-gray-800 rounded-xl p-4">
+                    <h3 className="text-lg font-semibold mb-2">Current Question:</h3>
+                    <p className="text-gray-300 text-sm">
+                    {questions[currentQuestionIndex]?.text || 'Generating question...'}
+                    </p>
+                </div>
+                </div>
+                <div className="flex-1 space-y-6">
+                <div className="bg-gray-800 rounded-xl p-4">
+                    <h3 className="text-lg font-semibold mb-2">Your Answer</h3>
+                    <textarea
+                    className="w-full h-32 bg-gray-700 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Start speaking or type your answer here..."
+                    value={userAnswer}
+                    onChange={(e) => setUserAnswer(e.target.value)}
+                    ></textarea>
+                    <div className="mt-4 flex justify-center">
                     <button
-                        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-md transition-colors"
-                        onClick={() => {
-                            setCurrentPage('selection');
-                            setQuestions([]);
-                            setCurrentQuestionIndex(0);
-                            setUserAnswer('');
-                            setShowScore(false);
-                            setScore(null);
-                            setAnalysis('');
-                            setInterviewId(null);
-                            setIsSpeaking(false);
-                        }}
+                        onClick={handleSubmitAnswer}
+                        disabled={isLoading || !userAnswer.trim()}
+                        className={`
+                        bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-8 rounded-full transition-colors
+                        ${isLoading || !userAnswer.trim() ? 'opacity-50 cursor-not-allowed' : ''}
+                        `}
                     >
-                        <span className="mr-2">⏹️</span> End Interview
+                        {isLoading ? 'Submitting...' : 'Submit Answer'}
+                    </button>
+                    </div>
+                </div>
+                </div>
+            </div>
+            {showScore && (
+                <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
+                <div className="bg-gray-800 rounded-xl p-8 w-full max-w-lg text-center border-2 border-green-500 shadow-xl">
+                    <h2 className="text-3xl font-bold mb-4 text-green-400">Answer Submitted!</h2>
+                    <p className="text-xl mb-6">Your score is:</p>
+                    <div className="text-6xl font-extrabold text-green-500 mb-4">{score}/10</div>
+                    <p className="text-sm text-gray-400 mb-6">{analysis}</p>
+                    <button
+                    onClick={handleNextQuestion}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-md transition-colors"
+                    >
+                    {currentQuestionIndex + 1 < questions.length ? 'Next Question' : 'Finish Interview'}
                     </button>
                 </div>
-                <div className="flex flex-col lg:flex-row gap-6">
-                    <div className="flex-1 space-y-6">
-                        <div className="bg-gray-800 rounded-xl p-4 relative">
-                            <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">{isSpeaking ? 'AI is speaking' : 'AI is listening'}</span>
-                            <div className="bg-black rounded-lg w-full aspect-video flex items-center justify-center">
-                                <span className="text-gray-400">AI Interviewer Video</span>
-                            </div>
-                            <div className="text-center mt-2">
-                                <p className="text-lg">Question {currentQuestionIndex + 1} of {questions.length}</p>
-                            </div>
-                        </div>
-                        <div className="bg-gray-800 rounded-xl p-4">
-                            <h3 className="text-lg font-semibold mb-2">Current Question:</h3>
-                            <p className="text-gray-300 text-sm">
-                                {questions[currentQuestionIndex]?.text || 'Generating question...'}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex-1 space-y-6">
-                        <div className="bg-gray-800 rounded-xl p-4">
-                            <h3 className="text-lg font-semibold mb-2">Your Answer</h3>
-                            <textarea
-                                className="w-full h-32 bg-gray-700 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                placeholder="Start speaking or type your answer here..."
-                                value={userAnswer}
-                                onChange={(e) => setUserAnswer(e.target.value)}
-                            ></textarea>
-                            <div className="mt-4 flex justify-center">
-                                <button
-                                    onClick={handleSubmitAnswer}
-                                    disabled={isLoading || !userAnswer.trim()}
-                                    className={`
-                                        bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-8 rounded-full transition-colors
-                                        ${isLoading || !userAnswer.trim() ? 'opacity-50 cursor-not-allowed' : ''}
-                                    `}
-                                >
-                                    {isLoading ? 'Submitting...' : 'Submit Answer'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
-                {showScore && (
-                    <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
-                        <div className="bg-gray-800 rounded-xl p-8 w-full max-w-lg text-center border-2 border-green-500 shadow-xl">
-                            <h2 className="text-3xl font-bold mb-4 text-green-400">Answer Submitted!</h2>
-                            <p className="text-xl mb-6">Your score is:</p>
-                            <div className="text-6xl font-extrabold text-green-500 mb-4">{score}/10</div>
-                            <p className="text-sm text-gray-400 mb-6">{analysis}</p>
-                            <button
-                                onClick={handleNextQuestion}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-md transition-colors"
-                            >
-                                {currentQuestionIndex + 1 < questions.length ? 'Next Question' : 'Finish Interview'}
-                            </button>
-                        </div>
-                    </div>
-                )}
+            )}
             </div>
         );
     }

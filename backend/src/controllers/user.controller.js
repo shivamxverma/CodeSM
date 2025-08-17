@@ -58,6 +58,8 @@ const generateAccessTokenAndRefreshToken = async (userId, role) => {
 const registerUser = asyncHandler(async (req, res) => {
     const { role,fullName, email, username, password } = req.body;
 
+    console.log("Registering User", req.body);
+
     if (
         [role,fullName, email, password, username].some((field) => field?.trim() === "")
     ) {
@@ -122,12 +124,14 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
     const {role, username, email, password } = req.body;
 
+
     if (!username && !email) {
         throw new ApiError(400, 'Username or Email is Required');
     }
     if (!role) {
         throw new ApiError(400, 'Role is required');
     }
+
 
     let user;
     if (role.toLowerCase() === "author") {
@@ -142,12 +146,14 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(404, "User doesn't Exist");
     }
 
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
         throw new ApiError(401, 'Invalid password');
     }
 
     const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id, role);
+
 
     if (!accessToken || !refreshToken) {
         throw new ApiError(500, 'Failed to generate tokens');
@@ -156,6 +162,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const loggedInUser = role.toLowerCase() === "author"
         ? await Author.findById(user._id).select('-password -refreshToken')
         : await User.findById(user._id).select('-password -refreshToken');
+
 
     const options = {
         httpOnly: true,
@@ -210,50 +217,38 @@ const LogoutUser = asyncHandler(async (req, res) => {
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+  const incomingRefreshToken = req.cookies?.refreshToken || req.header("Authorization")?.replace("Bearer ", "");
+  if (!incomingRefreshToken) {
+    return res.status(401).json({ message: "Unauthorized request" });
+  }
 
-    if (!incomingRefreshToken) {
-        throw new ApiError(400, "Refresh Token is required");
+  try {
+    const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+    const user = await User.findById(decodedToken?._id);
+    if (!user) {
+      return res.status(401).json({ message: "Invalid refresh token" });
     }
 
-    try {
-        const docodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
-
-        const user = await User.findById(docodedToken?._id);
-
-        if (!user) {
-            throw new ApiError(404, "Invalid Refresh Token");
-        }
-
-        if (user?.refreshToken !== incomingRefreshToken) {
-            throw new ApiError(403, "Invalid Refresh Token");
-        }
-
-        const options = {
-            httpOnly: false,
-            secure: false,
-            maxAge: 24 * 60 * 60 * 1000
-        }
-
-        const { AccesToken, newRefreshToken } = await generateAccessTokenAndRefreshToken(user._id);
-
-
-        return res
-            .status(200)
-            .cookie("AccessToken", AccesToken,options)
-            .cookie("RefreshToken", newRefreshToken,options)
-            .json(
-                new ApiResponse(
-                    200,
-                    { AccesToken, newRefreshToken },
-                    "Access Token is Refreshed Successfully"
-                )
-            )
-    } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid Refresh Token");
+    if (incomingRefreshToken !== user.refreshToken) {
+      return res.status(401).json({ message: "Refresh token expired or used" });
     }
 
+    const accessToken = await generateAccessTokenAndRefreshToken(user._id, user.role);
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    res
+      .status(200)
+      .cookie("accessToken", accessToken, { httpOnly: true, secure: true })
+      .cookie("refreshToken", refreshToken, { httpOnly: true, secure: true })
+      .json({ accessToken, refreshToken });
+  } catch (error) {
+    return res.status(401).json({ message: error.message || "Invalid refresh token" });
+  }
 });
+
 
 export {
     registerUser,
