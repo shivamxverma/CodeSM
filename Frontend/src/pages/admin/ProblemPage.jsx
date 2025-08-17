@@ -225,15 +225,20 @@ int main(){
 
   const getAllSubmission = async () => {
     try {
-      const res = await axios.get(`http://localhost:8000/api/v1/submission/problem/${problemId}`, {
+      console.log("Fetching submissions for problem:", problemId);
+      const accessToken = localStorage.getItem("accessToken");
+      if (!problemId || !accessToken) {
+        throw new Error("Missing problem ID or access token.");
+      }
+      const res = await axios.get(`http://localhost:8000/api/v1/submission/${problemId}`, {
         withCredentials: true,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
       setSubmissions(res.data.message || []);
-      console.log("Fetched submissions:", res.data.message);
+      console.log("Fetched submissions:", res.data);
     } catch (error) {
       console.error("Error fetching submissions:", error);
     }

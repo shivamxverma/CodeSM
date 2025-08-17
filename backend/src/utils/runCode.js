@@ -24,10 +24,10 @@ async function compileInContainer() {
   await fs.rm(binPath, { force: true });
   return new Promise((resolve) => {
     const args = [
-      'run','--rm',
+      'run', '--rm',
       '-v', `${runnerDir}:/host_code:rw`,
       'cpp-runner',
-      'bash','-lc',
+      'bash', '-lc',
       `cd /tmp && cp /host_code/user_code.cpp . && g++ user_code.cpp -O2 -std=c++17 -fdiagnostics-color=never -o user_program 2> /tmp/compile.err && cp /tmp/user_program /host_code/user_program || true; cat /tmp/compile.err`
     ];
     const proc = spawn('docker', args, { cwd: projectRoot });
@@ -67,11 +67,11 @@ function runBinaryInContainer(input) {
     const proc = spawn(
       'docker',
       [
-        'run','--rm','-i',
-        '--memory=256m','--cpus=0.5','--pids-limit=100',
+        'run', '--rm', '-i',
+        '--memory=256m', '--cpus=0.5', '--pids-limit=100',
         '-v', `${runnerDir}:/host_code:ro`,
         'cpp-runner',
-        'bash','-lc',
+        'bash', '-lc',
         `cd /tmp && cp /host_code/user_program . && timeout 2s ./user_program`
       ],
       { cwd: projectRoot }
@@ -89,19 +89,30 @@ function runBinaryInContainer(input) {
   });
 }
 
-const runCodeWithInput = async (cppCode , problemId,input) => {
-  
-}
-
-const runCodeForSubmission = async (cppCode, problemId) => {
+const runCppCodeWithInput = async (cppCode, problem, dryRun) => {
   await fs.mkdir(runnerDir, { recursive: true });
   await fs.writeFile(codePath, cppCode);
 
+  console.log("Running C++ code with input for problem:", problem._id, "Dry run:", dryRun);
+
   let testcases;
-  try {
-    testcases = await fetchTestcasesFromS3(problemId);
-  } catch (err) {
-    return { status: 'testcase_fetch_error', error: err.message };
+  if (dryRun) {
+    if (problem.sampleTestcases && problem.sampleTestcases.length > 0) {
+      testcases = problem.sampleTestcases.map((tc, index) => ({
+        input: tc.input,
+        output: tc.output,
+        testCaseNumber: `${index + 1}`
+      }));
+    } else {
+
+      return { status: 'no_sample_testcases', error: 'No sample testcases provided for dry run.' };
+    }
+  } else {
+    try {
+      testcases = await fetchTestcasesFromS3(problem._id);
+    } catch (err) {
+      return { status: 'testcase_fetch_error', error: err.message };
+    }
   }
 
   try {
@@ -131,7 +142,4 @@ const runCodeForSubmission = async (cppCode, problemId) => {
   return { status: execution.every(r => r.isPassed) ? 'accepted' : 'rejected', execution };
 };
 
-export default {
-  runCodeWithInput,
-  runCodeForSubmission
-}
+export default runCppCodeWithInput;
