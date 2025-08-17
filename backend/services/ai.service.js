@@ -39,7 +39,7 @@ async function generateHintsWithAI(problem) {
 
     **PROBLEM TO ANALYZE:**
     Title: ${problem.title}
-    Difficulty (1-10): ${problem.difficulty}
+    Difficulty (800-3000): ${problem.difficulty}
     Tags: ${problem.tags.join(', ')}
     Description: ${problem.description}
     Input Format: ${problem.inputFormat}

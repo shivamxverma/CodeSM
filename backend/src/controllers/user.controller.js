@@ -58,8 +58,6 @@ const generateAccessTokenAndRefreshToken = async (userId, role) => {
 const registerUser = asyncHandler(async (req, res) => {
     const { role,fullName, email, username, password } = req.body;
 
-    console.log("Registering User", req.body);
-
     if (
         [role,fullName, email, password, username].some((field) => field?.trim() === "")
     ) {

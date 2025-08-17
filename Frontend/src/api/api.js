@@ -15,6 +15,13 @@ export const signup = (payload) => {
   });
 }
 
+export const logout = () => {
+  return axios.post(`${BASE}/users/logout`, {}, {
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+}
+
 export const getAllProblems = () => {
   return axios.get(`${BASE}/problem`, { withCredentials: true });
 }

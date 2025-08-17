@@ -228,8 +228,8 @@ int main(){
         throw new Error("Missing problem ID or access token.");
       }
       const res = await getSubmissions(problemId);
+      console.log("Fetched submissions:", res.data.message);
       setSubmissions(res.data.message || []);
-      // console.log("Fetched submissions:", res.data);
     } catch (error) {
       console.error("Error fetching submissions:", error);
     }

@@ -75,8 +75,6 @@ Return a JSON object with:
         }
     };
 
-    // console.log(payload);
-
     try {
         const result = await model.generateContent(payload);
         const data = JSON.parse(result.response.text());
@@ -88,7 +86,6 @@ Return a JSON object with:
         if (Array.isArray(data.questions)) {
             for (const question of data.questions) {
                 const audioData = await textToAudio(question.text);
-                // console.log("Audio Data:", audioData);
                 question.audioUrl = audioData || null;
             }
         }
@@ -125,7 +122,6 @@ async function AnswerScore(question, answer) {
         const result = await model.generateContent(payload);
         console.log("Result:", result);
 
-        // Safely access the response text
         let responseText;
         if (result && result.response && typeof result.response.text === "function") {
             responseText = result.response.text();

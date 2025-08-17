@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
+import { logout } from "@/api/api"; 
 
 export default function NewNav() {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ export default function NewNav() {
   const dropdownRef = useRef(null);
   const mobileRef = useRef(null);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("accessToken");
     setIsDropdownOpen(false);
     setIsMobileOpen(false);
@@ -67,7 +68,7 @@ export default function NewNav() {
   const linkBase =
     "group relative inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:text-white";
   const linkActive =
-    "text-white after:scale-x-100"; // underline animation controlled via after: below
+    "text-white after:scale-x-100"; 
 
   return (
     <div className="sticky top-0 z-50">
@@ -97,7 +98,6 @@ export default function NewNav() {
                   [
                     linkBase,
                     isActive ? linkActive : "",
-                    // underline shimmer
                     "after:pointer-events-none after:absolute after:inset-x-3 after:-bottom-1 after:h-px after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-indigo-400/0 after:via-indigo-400/80 after:to-indigo-400/0 after:transition-transform"
                   ].join(" ")
                 }

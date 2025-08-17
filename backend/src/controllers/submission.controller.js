@@ -68,8 +68,16 @@ const getAllSubmissionById = asyncHandler(async (req, res) => {
     let submissions;
     if (author) {
         submissions = await Submission.find({ problem: problem._id, author: req.user._id });
+        submissions = submissions.map(sub => ({
+            ...sub.toObject(),
+            username: author.username
+        }));
     } else {
         submissions = await Submission.find({ problem: problem._id, user: req.user._id });
+        submissions = submissions.map(sub => ({
+            ...sub.toObject(),
+            username: req.user.username
+        }));
     }
 
     res.status(200).json(new ApiResponse(200, submissions, "Submission fetched successfully"));

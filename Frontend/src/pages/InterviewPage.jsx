@@ -47,9 +47,9 @@ const InterviewAssistant = () => {
     const fetchQuestions = async () => {
         setIsLoading(true);
         try {
-            const selectedRoleName = roles.find(r => r.id === selectedRole).name;
-            const selectedExperienceName = experienceLevels.find(e => e.id === selectedExperience).name;
-            const response = await getQuestionsForInterview(selectedRoleName, selectedExperienceName);
+            const selectedRoleData = roles.find(r => r.id === selectedRole);
+            const selectedExperienceData = experienceLevels.find(e => e.id === selectedExperience);
+            const response = await getQuestionsForInterview(selectedRoleData, selectedExperienceData);
 
             const res = response.data.data;
             const { interviewId, questions } = res;
@@ -148,12 +148,11 @@ const InterviewAssistant = () => {
                     <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">{isSpeaking ? 'AI is speaking' : 'AI is listening'}</span>
                     <div className="bg-black rounded-lg w-full aspect-video flex items-center justify-center">
                     {isSpeaking ? (
-                        // Replace with your video component or <video> tag
                         <video
                         src="/video.mp4"
                         autoPlay
                         muted
-                        loop={false}
+                        loop={true}
                         className="w-full h-full object-cover rounded-lg"
                         />
                     ) : (

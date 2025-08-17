@@ -3,19 +3,18 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import LoginCard from "./pages/users/LoginCard";
 import SignUpCard from "./pages/users/SignUpCard";
-import ProblemPage from "./pages/admin/ProblemPage";  
+import ProblemPage from "./pages/admin/ProblemPage";
 import Dashboard from "./pages/dashboard/DashBoard";
 import Problems from "./pages/users/problem";
 import NavBar from "./components/NavBar";
 import NewProblem from "./pages/admin/NewProblem";
-import ProfileCard from "./pages/users/ProfileCard";
 import ContestListPage from "./pages/ContestListPage";
 import ContestCreatePage from "./pages/ContestCreatePage";
 import ContestLobbyAndRun from "./pages/ContestLobbyAndRun";
-import InterviewAssistant from "./pages/InterviewPage"; 
+import InterviewAssistant from "./pages/InterviewPage";
 
-import { AuthProvider } from "./auth/AuthContext";   
-import RequireRole from "./auth/RequireRole";        
+import { AuthProvider } from "./auth/AuthContext";
+import RequireRole from "./auth/RequireRole";
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("accessToken");
@@ -36,27 +35,19 @@ export default function App() {
           <Route
             path="/"
             element={
-                <Dashboard />
+              <Dashboard />
             }
           />
           <Route
             path="/problems"
             element={
-                <Problems />
+              <Problems />
             }
           />
           <Route
             path="/problems/:id"
             element={
-                <ProblemPage />
-            }
-          />
-          <Route
-            path="/:username"
-            element={
-              <ProtectedRoute>
-                <ProfileCard />
-              </ProtectedRoute>
+              <ProblemPage />
             }
           />
 
@@ -72,7 +63,7 @@ export default function App() {
           <Route
             path="/contests"
             element={
-                <ContestListPage />
+              <ContestListPage />
             }
           />
           <Route
@@ -87,7 +78,7 @@ export default function App() {
           <Route
             path="/contest/:id"
             element={
-                <ContestLobbyAndRun />
+              <ContestLobbyAndRun />
             }
           />
 
@@ -99,7 +90,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          
+
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
