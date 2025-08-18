@@ -12,6 +12,7 @@ import ContestListPage from "./pages/ContestListPage";
 import ContestCreatePage from "./pages/ContestCreatePage";
 import ContestLobbyAndRun from "./pages/ContestLobbyAndRun";
 import InterviewAssistant from "./pages/InterviewPage";
+import DiscussionPage from './pages/DiscussionPage';
 
 import { AuthProvider } from "./auth/AuthContext";
 import RequireRole from "./auth/RequireRole";
@@ -30,6 +31,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginCard />} />
           <Route path="/signup" element={<SignUpCard />} />
+          <Route path="/discussion" element={<DiscussionPage/>}></Route>
 
 
           <Route

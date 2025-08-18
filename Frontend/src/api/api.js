@@ -66,7 +66,7 @@ export const getSubmissions = (problemId) => {
 }
 
 export const getProblemHints = (problemId) => {
-  return axios.get(`${BASE}/problem/upsolve/${problemId}`,);
+  return axios.get(`${BASE}/problem/upsolve/${problemId}`, { withCredentials: true });
 }
 
 export const listContests = () =>
@@ -94,7 +94,7 @@ export const getLeaderboard = (id) =>
   axios.get(`${BASE}/contest/${id}/leaderboard`, { withCredentials: true });
 
 export const getQuestionsForInterview = (selectedRoleName, selectedExperienceName) => {
-  return axios.post(`http://localhost:8000/api/v1/interview`, {
+  return axios.post(`${BASE}/interview`, {
     role: selectedRoleName,
     experience: selectedExperienceName
   }, {
@@ -102,9 +102,9 @@ export const getQuestionsForInterview = (selectedRoleName, selectedExperienceNam
   });
 }
 
-export const getScoreForQuestion = (currentQuestionIndex,questions,userAnswer) => {
+export const getScoreForQuestion = (currentQuestionIndex, questions, userAnswer) => {
   return axios.post(
-    `http://localhost:8000/api/v1/interview/score`,
+    `${BASE}/interview/score`,
     {
       question: questions[currentQuestionIndex].text,
       answer: userAnswer
@@ -113,4 +113,34 @@ export const getScoreForQuestion = (currentQuestionIndex,questions,userAnswer) =
       headers: { 'Content-Type': 'application/json' }
     }
   );
+}
+
+export const getAllDiscussion = () => {
+  return axios.get(`${BASE}/discussion`, {
+    withCredentials: true
+  });
+}
+
+export const createDiscussion = (payload) => {
+  return axios.post(`${BASE}/discussion`,
+    payload,
+    {
+      withCredentials: true,
+      headers: { Authorization: `Bearer ${accessToken}` }
+    })
+}
+
+export const likeDiscussion = (discussionId) => {
+  return axios.get(`${BASE}/${discussionId}/like`, { withCredentials: true });
+}
+
+export const dislikeDiscussion = (discussionId) => {
+  return axios.get(`${BASE}/${discussionId}/dislike`, { withCredentials: true });
+}
+
+export const createComment = (discussionId, comment) => {
+  return axios.post(`${BASE}/${discussionId}/comment`, comment, {
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${accessToken}` }
+  })
 }
