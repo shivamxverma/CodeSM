@@ -1,9 +1,12 @@
-FROM mcr.microsoft.com/devcontainers/base:debian
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends g++ && \
-    rm -rf /var/lib/apt/lists/*
+FROM node:22
 
 WORKDIR /app
-COPY code/user_code.cpp .
-CMD ["bash","-lc","g++ -std=c++17 user_code.cpp -o user_program && ./user_program < input.txt"]
+
+COPY package*.json ./
+RUN npm install --only=production
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["npm", "start"]
