@@ -28,6 +28,7 @@ import submissionRoutes from './routes/submission.route.js';
 import contestRoutes from './routes/contest.route.js';
 import interviewRoutes from './routes/interview.route.js';
 import discussionRoutes from './routes/discussion.route.js';
+import jobRoutes from './routes/job.route.js';
 
 app.use("/api/v1/discussion", discussionRoutes);
 app.use("/api/v1/users", userRoutes);
@@ -35,5 +36,6 @@ app.use("/api/v1/problem", problemRoutes);
 app.use("/api/v1/submission", submissionRoutes);
 app.use("/api/v1/contest", contestRoutes);
 app.use("/api/v1/interview", interviewRoutes);
+app.use("/api/v1/job", jobRoutes);
 
 export default app;

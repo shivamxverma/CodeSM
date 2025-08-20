@@ -1,5 +1,6 @@
 import axios from "axios";
-const BASE = "https://codesm.onrender.com/api/v1";
+// const BASE = "https://codesm.onrender.com/api/v1";
+const BASE = "http://localhost:8000/api/v1";
 const accessToken = localStorage.getItem("accessToken");
 
 export const login = (payload) => {
@@ -44,8 +45,9 @@ export const createProblem = (payload) => {
   );
 }
 
-export const runProblem = (problemId, payload, asSubmit = false) => {
-  return axios.post(
+export const runProblem = async (problemId, payload, asSubmit = false) => {
+  console.log("Running problem with ID:", problemId);
+  return await axios.post(
     `${BASE}/submission/${problemId}${asSubmit ? "" : "?dryRun=true"}`,
     payload,
     {
@@ -56,6 +58,13 @@ export const runProblem = (problemId, payload, asSubmit = false) => {
       },
     }
   );
+}
+
+export const getJobResponse = (jobId) => {
+  return axios.get(`${BASE}/job/${jobId}`, {
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
 }
 
 export const getSubmissions = (problemId) => {

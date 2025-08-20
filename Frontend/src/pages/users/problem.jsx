@@ -24,6 +24,7 @@ export default function ProblemPage() {
         setError("");
         const res = await getAllProblems();
         const problems = res.data.message;
+        console.log(res);
         setProblems(Array.isArray(problems) ? problems : []);
       } catch (err) {
         if (err.name !== "AbortError") {

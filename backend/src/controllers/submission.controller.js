@@ -2,12 +2,14 @@ import {ApiError} from "../utils/ApiError.js";
 import Submission from "../models/submission.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import runCppCodeWithInput from "../utils/runCode.js";
 import Problem from "../models/problem.model.js";
 import User from "../models/user.model.js";
 import Author from "../models/author.model.js";
+import { myQueue } from "../config/queue.config.js";
 
 const createSubmission = asyncHandler(async (req, res) => {
+
+    console.log("Entering into createSubmission");
     const { code, language } = req.body;
     const { problemId } = req.params;
     const dryRun = req.query.dryRun === "true";
@@ -16,12 +18,10 @@ const createSubmission = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required");
     }
 
-    let role = "AUTHOR";
     const problem = await Problem.findById(problemId);
     let user = await Author.findById(req.user._id).select("-password -refreshToken");
     let isAuthor = !!user;
     if (!isAuthor) {
-        role = "USER";
         user = await User.findById(req.user._id).select("-password -refreshToken");
     }
 
@@ -29,32 +29,15 @@ const createSubmission = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Problem not found");
     }
 
-    let output;
-    try {
-        output = await runCppCodeWithInput(code, problem, dryRun);
-    } catch (err) {
-        console.error("Error running code:", err);
-        throw new ApiError(500, "Failed to run code due to an internal error");
-    }
-
-    if (dryRun) {
-        return res.status(200).json(new ApiResponse(200, output, "Dry run completed successfully"));
-    }
-
-    const newSubmission = await Submission.create({
-        user: role == "AUTHOR" ? null : user,
-        author: role == "AUTHOR" ? user : null,
-        problem: problem._id,
+    const job = await myQueue.add({
         code,
         language,
-        status: output.status
+        problem,
+        isAuthor,
+        dryRun
     });
 
-    if (!newSubmission) {
-        throw new ApiError(500, "Failed to create submission");
-    }
-
-    res.status(201).json(new ApiResponse(201, { output }, "Submission created successfully"));
+    res.status(201).json(new ApiResponse(201, { id: job.id }, "Submission created successfully"));
 });
 
 const getAllSubmissionById = asyncHandler(async (req, res) => {
