@@ -4,7 +4,6 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Problem from "../models/problem.model.js";
 import User from "../models/user.model.js";
-import Author from "../models/author.model.js";
 import { myQueue } from "../config/queue.config.js";
 
 const createSubmission = asyncHandler(async (req, res) => {
@@ -19,11 +18,8 @@ const createSubmission = asyncHandler(async (req, res) => {
     }
 
     const problem = await Problem.findById(problemId);
-    let user = await Author.findById(req.user._id).select("-password -refreshToken");
-    let isAuthor = !!user;
-    if (!isAuthor) {
-        user = await User.findById(req.user._id).select("-password -refreshToken");
-    }
+    const user = await User.findById(req.user._id).select("-password -refreshToken");
+
 
     if (!problem) {
         throw new ApiError(404, "Problem not found");
@@ -33,7 +29,6 @@ const createSubmission = asyncHandler(async (req, res) => {
         code,
         language,
         problem,
-        isAuthor,
         dryRun
     });
 
@@ -47,21 +42,7 @@ const getAllSubmissionById = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Problem not found");
     }
 
-    let author = await Author.findById(req.user._id);
-    let submissions;
-    if (author) {
-        submissions = await Submission.find({ problem: problem._id, author: req.user._id });
-        submissions = submissions.map(sub => ({
-            ...sub.toObject(),
-            username: author.username
-        }));
-    } else {
-        submissions = await Submission.find({ problem: problem._id, user: req.user._id });
-        submissions = submissions.map(sub => ({
-            ...sub.toObject(),
-            username: req.user.username
-        }));
-    }
+    const submissions = await Submission.find({ problem: problem._id, author: req.user }).populate('user','username');
 
     res.status(200).json(new ApiResponse(200, submissions, "Submission fetched successfully"));
 });

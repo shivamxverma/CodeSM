@@ -3,9 +3,9 @@ import Problem from "../models/problem.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { generateUploadURL } from "../../services/aws.service.js";
-import Author from "../models/author.model.js";
 import { generateHintsWithAI } from '../../services/ai.service.js'; 
 import redis from "../config/redis.config.js";
+import User from "../models/user.model.js";
 
 const createProblem = asyncHandler(async (req, res) => {
     const {
@@ -28,7 +28,7 @@ const createProblem = asyncHandler(async (req, res) => {
         throw new ApiError(403, "Not Authorized");
     }
 
-    const ExistUser = await Author.findById(req.user._id);
+    const ExistUser = await User.findById(req.user._id);
 
     if (!ExistUser) {
         throw new ApiError(403, "Not Authorized");
@@ -136,7 +136,7 @@ const getProblemById = asyncHandler(async (req, res) => {
 });
 
 const getAllProblems = asyncHandler(async (req, res) => {
-    console.log("Entering into problems");
+    // console.log("Entering into problems");
     const cachedProblems = await redis.get('allProblems');
     if (
         cachedProblems &&

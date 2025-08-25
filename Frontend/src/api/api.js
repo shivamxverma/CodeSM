@@ -1,6 +1,6 @@
 import axios from "axios";
-const BASE = "https://codesm.onrender.com/api/v1";
-// const BASE = "http://localhost:8000/api/v1";
+// const BASE = "https://codesm.onrender.com/api/v1";
+const BASE = "http://localhost:8000/api/v1";
 const accessToken = localStorage.getItem("accessToken");
 
 export const login = (payload) => {
@@ -151,5 +151,12 @@ export const createComment = (discussionId, comment) => {
   return axios.post(`${BASE}/${discussionId}/comment`, comment, {
     withCredentials: true,
     headers: { Authorization: `Bearer ${accessToken}` }
+  })
+}
+
+export const getAllRequest = () => {
+  return axios.get(`${BASE}/admin`, {
+    withCredentials : true,
+    headers : {Authorization : `Bearer ${accessToken}`}
   })
 }

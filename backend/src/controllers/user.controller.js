@@ -1,6 +1,5 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import User from '../models/user.model.js';
-import Author from '../models/author.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js'
 import jwt from 'jsonwebtoken';
@@ -8,14 +7,8 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 dotenv.config();
 
-const generateAccessTokenAndRefreshToken = async (userId, role) => {
+const generateAccessTokenAndRefreshToken = async (user) => {
     try {
-        let user;
-        if (role && role.toLowerCase() === "author") {
-            user = await Author.findById(userId);
-        } else {
-            user = await User.findById(userId);
-        }
 
         if (!user) {
             throw new ApiError(404, "User not found");
@@ -27,7 +20,7 @@ const generateAccessTokenAndRefreshToken = async (userId, role) => {
                 username: user.username,
                 email: user.email,
                 fullName: user.fullName,
-                role: role || (user.role ? user.role : undefined),
+                role: user.role,
             },
             process.env.ACCESS_TOKEN_SECRET,
             {
@@ -37,7 +30,7 @@ const generateAccessTokenAndRefreshToken = async (userId, role) => {
         const refreshToken = jwt.sign(
             {
                 _id: user._id,
-                role: role || (user.role ? user.role : undefined),
+                role: user.role,
             },
             process.env.REFRESH_TOKEN_SECRET,
             {
@@ -64,21 +57,8 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required");
     }
 
-    let ExistedUser = "";
-
-    if (role.toLowerCase() === "author") {
-        ExistedUser = await Author.findOne(
-            { $or: [{ username }, { email }] }
-        );
-    } else if(role.toLowerCase() === "user") {
-        ExistedUser = await User.findOne({
-        $or: [
-            { username: username },
-            { email: email }
-        ]
-    })
-    } else {
-        throw new ApiError(400, "Invalid role");
+    if(!['user','author','admin'].includes(role.toLowerCase())){
+        throw new ApiError(400,"Role is Invalid");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -87,28 +67,22 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Something Went Wrong While Hashing Password");
     }
 
+    const ExistedUser = await User.findOne({ $or : [{username},{email}]});
+
     if (ExistedUser) {
         throw new ApiError(409, "Username or Email already exists");
     }
 
 
-    const user = role.toLowerCase() === "author"
-        ? await Author.create({
+    const user = await User.create({
             username: username,
             email,
             fullName,
             password: hashedPassword,
-        })
-        : await User.create({
-            username: username,
-            email,
-            fullName,
-            password: hashedPassword,
-        });
+            role : role.toLowerCase()
+    });
 
-    const CreatedUser = role.toLowerCase() === "author"
-        ? await Author.findById(user._id).select("-password -refreshToken")
-        : await User.findById(user._id).select("-password -refreshToken");
+    const CreatedUser = await User.findById(user._id).select("-password -refreshToken");
 
     if (!CreatedUser) {
         throw new ApiError(500, "SomeThing Went Wrong Registering User");
@@ -120,46 +94,31 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-    const {role, username, email, password } = req.body;
+    const {username,email,password } = req.body;
 
-
-    if (!username && !email) {
+    if (!username && !email && !password) {
         throw new ApiError(400, 'Username or Email is Required');
     }
-    if (!role) {
-        throw new ApiError(400, 'Role is required');
-    }
 
-
-    let user;
-    if (role.toLowerCase() === "author") {
-        user = await Author.findOne({ $or: [{ username }, { email }] });
-    } else if (role.toLowerCase() === "user") {
-        user = await User.findOne({ $or: [{ username }, { email }] });
-    } else {
-        throw new ApiError(400, 'Invalid role');
-    }
+    const user = await User.findOne({ $or: [{ username }, { email }] });
 
     if (!user) {
         throw new ApiError(404, "User doesn't Exist");
     }
-
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
         throw new ApiError(401, 'Invalid password');
     }
 
-    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id, role);
+    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user);
 
 
     if (!accessToken || !refreshToken) {
         throw new ApiError(500, 'Failed to generate tokens');
     }
 
-    const loggedInUser = role.toLowerCase() === "author"
-        ? await Author.findById(user._id).select('-password -refreshToken')
-        : await User.findById(user._id).select('-password -refreshToken');
+    const loggedInUser = await User.findById(user._id).select('-password -refreshToken');
 
 
     const options = {
