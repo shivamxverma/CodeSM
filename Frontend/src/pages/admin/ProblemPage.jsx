@@ -103,12 +103,10 @@ export default function ProblemPage() {
         try {
           const res = await getJobResponse(jobId);
           const jobState = res.data.data.state;
-          console.log(jobState);
           setStatus(jobState);
           
           if (jobState === "completed" || jobState === "failed") {
             clearInterval(intervalId);
-            console.log(res.data.data.result);
             setResult(res.data.result);
             
             processExecutionResult(res.data.data.result);
@@ -125,7 +123,7 @@ export default function ProblemPage() {
           setJobId(null);
           setStatusBadge({ type: "error", text: "Execution Failed" });
           setConsoleOutput(
-            (prev) => (prev ? prev + "\n" : "") + "❌ Failed to get job status."
+            (prev) => (prev ? prev + "\n" : "") + "Failed to get job status."
           );
         }
       }, 2000);
@@ -138,7 +136,7 @@ export default function ProblemPage() {
     if (!payload) {
       setStatusBadge({ type: "error", text: "No result received" });
       setConsoleOutput(
-        (prev) => (prev ? prev + "\n" : "") + "❌ No result was returned from the server."
+        (prev) => (prev ? prev + "\n" : "") + "No result was returned from the server."
       );
       return;
     }
@@ -166,7 +164,7 @@ export default function ProblemPage() {
     });
     
     if (!execution.length && !stdout && !stderr) {
-      lines.push("ℹ️ No test results returned.");
+      lines.push("No test results returned.");
     }
     if (stderr) lines.push(`stderr: ${String(stderr).trim()}`);
     
@@ -221,8 +219,8 @@ int main(){
     setStatusBadge({ type: "error", text: "Compilation Error" });
     setConsoleOutput(
       (errors && errors.length
-        ? errors.map((e) => `❌ ${e.message}${e.line ? ` (Line ${e.line})` : ""}`).join("\n")
-        : "❌ Compilation failed") + "\n"
+        ? errors.map((e) => `${e.message}${e.line ? ` (Line ${e.line})` : ""}`).join("\n")
+        : "Compilation failed") + "\n"
     );
   }
 
@@ -263,12 +261,11 @@ int main(){
       const response = await runProblem(problemId, input);
       
       const newJobId = response.data.message.id;
-      console.log(newJobId);
       setJobId(newJobId);
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || "Execution failed";
       setStatusBadge({ type: "error", text: "Error" });
-      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + `❌ ${msg}`);
+      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + `${msg}`);
       setBusy(false);
     }
   };
@@ -279,6 +276,7 @@ int main(){
   const getAllSubmission = async () => {
     try {
       const res = await getSubmissions(problemId);
+      console.log(res.data);
       setSubmissions(res.data.message || []);
     } catch (error) {
       console.error("Error fetching submissions:", error);

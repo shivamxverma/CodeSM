@@ -21,7 +21,7 @@ const generateInterviewQuestions = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Failed to generate interview questions");
   }
 
-  const cacheExpiry = 60 * 60; // Cache for 1 hour
+  const cacheExpiry = 60 * 60; 
   redis.setex(`interviewQuestions:${role}:${experience}`, cacheExpiry, JSON.stringify(questions));
 
   res.status(200).json(new ApiResponse(200, "Interview questions generated successfully", questions));

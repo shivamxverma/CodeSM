@@ -42,7 +42,11 @@ const getAllSubmissionById = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Problem not found");
     }
 
-    const submissions = await Submission.find({ problem: problem._id, author: req.user }).populate('user','username');
+    const submissions = await Submission.find({ problem: problem._id, user: req.user }).populate('user','username');
+
+    if(!submissions){
+        throw new ApiError(404,"Submissions Not Found");
+    }
 
     res.status(200).json(new ApiResponse(200, submissions, "Submission fetched successfully"));
 });

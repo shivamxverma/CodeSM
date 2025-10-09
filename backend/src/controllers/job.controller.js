@@ -1,7 +1,8 @@
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
-import { myQueue } from '../config/queue.config.js'; // Fixed typo in import
+import { myQueue } from '../config/queue.config.js'; 
+import Submission from '../models/submission.model.js';
 
 const getJobResponse = asyncHandler(async (req, res) => {
 
@@ -52,7 +53,12 @@ const getJobResponse = asyncHandler(async (req, res) => {
         throw new ApiError(500, 'Job completed but no result found');
     }
 
-    console.log(jobResult);
+    // if (job.dryRun === false) {
+    //     await Submission.create({
+    //         jobId: job.id,
+    //         result: jobResult.output,
+    //     });
+    // }
 
     return res.status(200).json(
         new ApiResponse(200, 'Job fetched successfully', {
