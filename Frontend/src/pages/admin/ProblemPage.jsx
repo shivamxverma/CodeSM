@@ -51,7 +51,7 @@ function getYouTubeEmbed(url) {
       const id = u.pathname.replace("/", "");
       if (id) return `https://www.youtube.com/embed/${id}`;
     }
-  } catch {}
+  } catch { }
   return null;
 }
 
@@ -77,7 +77,7 @@ export default function ProblemPage() {
   const monacoRef = useRef(null);
   const { id: problemId } = useParams();
   const auth = useAuth();
-  
+
   const handleEditorChange = useCallback((value) => setCode(value || ""), []);
   const onEditorMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
@@ -104,11 +104,11 @@ export default function ProblemPage() {
           const res = await getJobResponse(jobId);
           const jobState = res.data.data.state;
           setStatus(jobState);
-          
+
           if (jobState === "completed" || jobState === "failed") {
             clearInterval(intervalId);
             setResult(res.data.result);
-            
+
             processExecutionResult(res.data.data.result);
             setIsRunning(false);
             setIsSubmitting(false);
@@ -131,7 +131,7 @@ export default function ProblemPage() {
 
     return () => clearInterval(intervalId);
   }, [jobId]);
-  
+
   const processExecutionResult = (payload) => {
     if (!payload) {
       setStatusBadge({ type: "error", text: "No result received" });
@@ -140,14 +140,14 @@ export default function ProblemPage() {
       );
       return;
     }
-    
+
     const { status, execution = [], errors = [], stderr, stdout } = payload;
-    
+
     if (status === "compile_error") {
       showCompileErrors(errors || [{ message: stderr || "Compilation failed" }]);
       return;
     }
-    
+
     const lines = [];
     if (stdout && typeof stdout === "string") lines.push(stdout.trim());
     execution.forEach((tc, i) => {
@@ -162,17 +162,17 @@ export default function ProblemPage() {
         lines.push(`Output: ${String(tc.output).trim()}`);
       }
     });
-    
+
     if (!execution.length && !stdout && !stderr) {
       lines.push("No test results returned.");
     }
     if (stderr) lines.push(`stderr: ${String(stderr).trim()}`);
-    
+
     setConsoleOutput((prev) => (prev ? prev + "\n" : "") + lines.join("\n"));
-    
+
     const allPassed = execution.length > 0 && execution.every((t) => !!t?.isPassed);
     const hasTLE = execution.some((t) => t?.isTLE || /exited/i.test(String(t?.output || "")));
-    
+
     if (hasTLE) setStatusBadge({ type: "warn", text: "Time Limit Exceeded" });
     else if (allPassed) setStatusBadge({ type: "success", text: "Accepted" });
     else setStatusBadge({ type: "error", text: "Wrong Answer" });
@@ -215,7 +215,7 @@ int main(){
       severity: e.severity === "warning" ? monaco.MarkerSeverity.Warning : monaco.MarkerSeverity.Error,
     }));
     if (model) monaco.editor.setModelMarkers(model, "compile", markers);
-    
+
     setStatusBadge({ type: "error", text: "Compilation Error" });
     setConsoleOutput(
       (errors && errors.length
@@ -253,13 +253,13 @@ int main(){
     clearMarkers();
     try {
       const input = {
-      code,
-      language,
-      mode: asSubmit ? "submit" : "run",
-      dryRun: !asSubmit
+        code,
+        language,
+        mode: asSubmit ? "submit" : "run",
+        dryRun: !asSubmit
       };
       const response = await runProblem(problemId, input);
-      
+
       const newJobId = response.data.message.id;
       setJobId(newJobId);
     } catch (err) {
@@ -305,10 +305,10 @@ int main(){
     statusBadge?.type === "success"
       ? "bg-[#0e2a1d] border-[#1e5d3b] text-green-300"
       : statusBadge?.type === "warn"
-      ? "bg-[#3a2a0e] border-[#6a531e] text-yellow-300"
-      : statusBadge?.type === "error"
-      ? "bg-[#2a1313] border-[#5d1e1e] text-red-300"
-      : "bg-[#182432] border-[#233046] text-gray-300";
+        ? "bg-[#3a2a0e] border-[#6a531e] text-yellow-300"
+        : statusBadge?.type === "error"
+          ? "bg-[#2a1313] border-[#5d1e1e] text-red-300"
+          : "bg-[#182432] border-[#233046] text-gray-300";
 
   const embedUrl = getYouTubeEmbed(problem?.editorialLink);
 
@@ -346,11 +346,10 @@ int main(){
               <button
                 key={t}
                 onClick={() => setActiveTab(t)}
-                className={`px-3 py-2 text-sm rounded-t font-medium transition-colors ${
-                  activeTab === t
+                className={`px-3 py-2 text-sm rounded-t font-medium transition-colors ${activeTab === t
                     ? "bg-[#121923] border-x border-t border-[#233046] text-blue-300"
                     : "text-gray-400 hover:text-gray-200"
-                }`}
+                  }`}
               >
                 {t}
               </button>
@@ -680,22 +679,20 @@ int main(){
             <button
               onClick={handleRun}
               disabled={isRunning || isSubmitting}
-              className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${
-                isRunning || isSubmitting
+              className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${isRunning || isSubmitting
                   ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
                   : "bg-[#1e3046] hover:bg-[#264060] border-[#2a4a73]"
-              }`}
+                }`}
             >
               {isRunning ? "Running..." : "Run"}
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || isRunning}
-              className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${
-                isSubmitting || isRunning
+              className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${isSubmitting || isRunning
                   ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
                   : "bg-[#0c5bd5] hover:bg-[#0a4fb9] border-[#0c5bd5]"
-              }`}
+                }`}
             >
               {isSubmitting ? "Submitting..." : "Submit"}
             </button>

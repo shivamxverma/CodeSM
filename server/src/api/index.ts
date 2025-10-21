@@ -5,7 +5,7 @@ interface RouterPath {
     router : any
 }
 
-const routes : RouterPath[] = [];
+const routes : RouterPath[] = [ { path: "/healthcheck", router: Router() } ];
 
 export default (): Router => {
     const app = Router();

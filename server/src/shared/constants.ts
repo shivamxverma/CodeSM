@@ -1,0 +1,5 @@
+
+export const JWT_TOKEN_MAX_AGE = {
+  ACCESS_TOKEN: 2592000000, // 30 days (30 * 24 * 60 * 60 * 1000)
+  REFRESH_TOKEN: 31536000000, // 1 year
+};
