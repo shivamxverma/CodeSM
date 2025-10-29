@@ -136,7 +136,7 @@ const getProblemById = asyncHandler(async (req, res) => {
 });
 
 const getAllProblems = asyncHandler(async (req, res) => {
-    // console.log("Entering into problems");
+    console.log("Entering into problems");
     const cachedProblems = await redis.get('allProblems');
     if (
         cachedProblems &&

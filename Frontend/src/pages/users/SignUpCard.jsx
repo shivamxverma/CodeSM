@@ -3,14 +3,8 @@ import { useNavigate } from "react-router-dom";
 import z from "zod";
 import { signup } from "@/api/api";
 
-const Options = [
-  { id: "email", label: "Email", type: "email", placeholder: "you@example.com" },
-  { id: "username", label: "Username", type: "text", placeholder: "john_doe" },
-  { id: "password", label: "Password Strength", type: "text", placeholder: getLbl(formData.password).t, readOnly: true }
-]
-
 const formSchema = z.object({
-  role: z.string(),
+  role: z.string().min(1, "Please select a role"),
   email: z.string().email("Invalid e-mail address"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string()
@@ -35,16 +29,16 @@ const scorePwd = (s) => {
 
 const getLbl = (s) => {
   const n = scorePwd(s);
-  if (n <= 2) return { t: "weak", v: 33 };
-  if (n <= 4) return { t: "okay", v: 66 };
-  return { t: "strong", v: 100 };
+  if (n <= 2) return { t: "weak", v: 33, c: "bg-red-500" };
+  if (n <= 4) return { t: "okay", v: 66, c: "bg-yellow-500" };
+  return { t: "strong", v: 100, c: "bg-green-500" };
 };
 
 function SignUpCard() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     role: "",
-    fullName: "",
     email: "",
     username: "",
     password: "",
@@ -52,6 +46,14 @@ function SignUpCard() {
 
   const [msg, setMsg] = useState({ type: "", text: "" });
   const [loading, setLoading] = useState(false);
+
+  const Options = [
+    { id: "email", label: "Email", type: "email", placeholder: "you@example.com" },
+    { id: "fullName", label: "fullName", type: "fullName", placeholder: "john doe" },
+    { id: "username", label: "Username", type: "text", placeholder: "john_doe" },
+  ];
+
+  const strength = getLbl(formData.password);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -88,10 +90,11 @@ function SignUpCard() {
 
       {msg.text && (
         <div
-          className={`p-3 mb-4 rounded-lg text-center ${msg.type === "error"
-            ? "bg-red-100 text-red-700"
-            : "bg-green-100 text-green-700"
-            }`}
+          className={`p-3 mb-4 rounded-lg text-center ${
+            msg.type === "error"
+              ? "bg-red-100 text-red-700"
+              : "bg-green-100 text-green-700"
+          }`}
         >
           {msg.text}
         </div>
@@ -99,6 +102,25 @@ function SignUpCard() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         
+        <div>
+          <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+            Role
+          </label>
+          <select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            required
+            className="mt-1 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+          >
+            <option value="" disabled>Select your role</option>
+            <option value="Author">Author</option>
+            <option value="Admin">Admin</option>
+            <option value="User">User</option>
+          </select>
+        </div>
+
         {Options.map(({ id, label, type, placeholder }) => (
           <div key={id}>
             <label htmlFor={id} className="block text-sm font-medium text-gray-700">
@@ -117,11 +139,43 @@ function SignUpCard() {
           </div>
         ))}
 
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="********"
+            required
+            className="mt-1 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          {formData.password.length > 0 && (
+            <div className="mt-2">
+              <div className="h-2 bg-gray-200 rounded-full">
+                <div
+                  className={`h-2 rounded-full ${strength.c} transition-all duration-300`}
+                  style={{ width: `${strength.v}%` }}
+                ></div>
+              </div>
+              <span className="text-xs text-gray-600 capitalize float-right mt-1">
+                {strength.t}
+              </span>
+            </div>
+          )}
+        </div>
+
         <button
           type="submit"
           disabled={loading}
-          className={`w-full py-3 rounded-lg text-white text-lg transition ${loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
-            }`}
+          className={`w-full py-3 rounded-lg text-white text-lg transition ${
+            loading
+              ? "bg-blue-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
           {loading ? "Signing Up…" : "Sign Up"}
         </button>

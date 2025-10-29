@@ -1,6 +1,6 @@
 import axios from "axios";
-const BASE = "http://localhost:8000/api/v1";
-// const BASE = "https://codesm.onrender.com/api/v1";
+// const BASE = "http://localhost:8000/api/v1";
+const BASE = "https://codesm.onrender.com/api/v1";
 const accessToken = localStorage.getItem("accessToken");
 
 export const login = (payload) => {
@@ -10,6 +10,7 @@ export const login = (payload) => {
 }
 
 export const signup = (payload) => {
+  console.log(payload);
   return axios.post(`${BASE}/users/register`, payload, {
     headers: { "Content-Type": "application/json" },
     withCredentials: true,

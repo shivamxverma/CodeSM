@@ -1,7 +1,7 @@
 import {ApiError} from '../utils/ApiError.js';
 import Contest from '../models/contest.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
-import redis from '../config/redis.config.js';
+// import redis from '../config/redis.config.js';
 
 
 const getAllContests = asyncHandler(async (req, res) => {
