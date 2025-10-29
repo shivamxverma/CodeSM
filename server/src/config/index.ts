@@ -13,17 +13,19 @@ const envSchema = yup.object().shape({
     PORT: yup.string().default('3000'),
     JWT_SECRET: yup.string().required(),
     JWT_REFRESH_SECRET: yup.string().required(),
-    INTERNAL_API_KEY: yup.string().required(),
-    ALLOWED_ORIGINS: yup.string(),
     API_VERSION: yup.string().default('v1'),
     LOG_LEVEL : yup
         .string()
         .oneOf(['error','warn','info','http','verbose','debug','silly'])
         .default('info'),
     REDIS_URL: yup.string().required(),
+    ACCESS_TOKEN_SECRET : yup.string().required(),
+    ACCESS_TOKEN_EXPIRY : yup.string().required(),
+    REFRESH_TOKEN_EXPIRY : yup.string().required(),
+    REFRESH_TOKEN_SECRET : yup.string().required(),
     AWS_REGION : yup.string().required(),
-    AWS_ACCESS_KEY_ID : yup.string().required(),
-    AWS_SECRET_ACCESS_KEY : yup.string().required(),
+    AWS_ACCESS_KEY : yup.string().required(),
+    AWS_SECRET_KEY : yup.string().required(),
     AWS_BUCKET_NAME : yup.string().required(),
     CLIENT_URL : yup.string().required(),
     GEMINI_API_KEY : yup.string().required(),

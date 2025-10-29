@@ -8,12 +8,7 @@ import { apiPrefix } from '../utils/constants';
 import env from '../config';
 
 const corsOptions = {
-    origin:
-        env.NODE_ENV === 'production'
-            ? env.ALLOWED_ORIGINS!.split(',')
-            : [
-                'http://localhost:3000',
-            ],
+    origin:['http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-HMAC-Signature'],
@@ -26,11 +21,11 @@ const app = express();
 
 export default ({ app }: { app: express.Application }): void => {
     app.use(cors(corsOptions));
-    app.options('*', cors(corsOptions));
+    // app.options('/*', cors(corsOptions));
     app.use(cookieParser());
     app.get('/', (req, res) => {
         return res.send(
-            "What are you doing here? 🧐 Go to <a href='https://trench.ag/'>Magic Link!!</a>",
+            "What are you doing here? 🧐 Go to <a href='https://shivam.ag/'>Magic Link!!</a>",
         )
     })
 
@@ -41,7 +36,7 @@ export default ({ app }: { app: express.Application }): void => {
             message: 'OK',
             timestamp: new Date(),
             uptime: process.uptime(),
-            application: 'WHALE-TERMINAL',
+            application: 'CODESM',
         };
 
         try {

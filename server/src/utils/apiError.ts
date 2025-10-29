@@ -4,7 +4,7 @@ class ApiError extends Error {
   public data: any;
   public isOperational: boolean;
 
-  constructor(message: string, statusCode: number, data?: any) {
+  constructor(statusCode: number,message: string,data?: any) {
     super(message);
 
     this.statusCode = statusCode;
