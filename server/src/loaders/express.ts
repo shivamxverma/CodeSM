@@ -6,9 +6,6 @@ import cookieParser from 'cookie-parser';
 import routes from '../api';
 import { apiPrefix } from '../utils/constants';
 import env from '../config';
-import { db } from './postgres';
-import { sql } from 'drizzle-orm';
-import { getDrizzleClient } from './postgres';
 
 const corsOptions = {
     origin:['http://localhost:3000'],
@@ -30,13 +27,6 @@ export default ({ app }: { app: express.Application }): void => {
         return res.send(
             "What are you doing here? 🧐 Go to <a href='https://shivam.ag/'>Magic Link!!</a>",
         )
-    })
-
-    app.get('/hello-check',async (req,res) => {
-        const db = await getDrizzleClient();
-        const poolQuery = sql`SELECT 1`;
-        const result = await db.execute(poolQuery);
-        return res.json({message: "Hello Check!", result: result});
     })
 
     app.get('/healthcheck', (req, res) => {
