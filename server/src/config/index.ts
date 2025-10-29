@@ -30,6 +30,9 @@ const envSchema = yup.object().shape({
     CLIENT_URL : yup.string().required(),
     GEMINI_API_KEY : yup.string().required(),
     MURF_API_KEY : yup.string().required(),
+    GOOGLE_CLIENT_ID : yup.string().required(),
+    GOOGLE_CLIENT_SECRET : yup.string().required(),
+    GOOGLE_REDIRECT_URI : yup.string().required()
 })
 
 const parsedEnv = envSchema.validateSync(process.env, {

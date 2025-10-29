@@ -12,3 +12,11 @@ export interface RefreshTokenResponse {
   refreshToken: string;
 }
 
+export interface GoogleAuthResponse {
+  subOrgId: string;
+  isNewUser: boolean;
+  userId: string;
+  accessToken?: string;
+  refreshToken?: string;
+}
+

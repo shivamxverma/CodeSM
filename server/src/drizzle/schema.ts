@@ -26,27 +26,39 @@ export const userType = pgEnum('UserType', [
 export const userStatus = pgEnum('UserStatus', ['ACTIVE', 'INACTIVE']);
 
 export const users = pgTable(
-    'users',
-    {
-        createdAt: timestamp('created_at', { precision: 3, mode: 'string' })
-            .default(sql`(now() AT TIME ZONE 'UTC'::text)`)
-            .notNull(),
-        updatedAt: timestamp('updated_at', { precision: 3, mode: 'string' })
-            .default(sql`(now() AT TIME ZONE 'UTC'::text)`)
-            .notNull(),
-        id: uuid().defaultRandom().primaryKey().notNull(),
-        email: text(),
-        displayName: text('display_name').notNull(),
-        avatarUrl: text('avatar_url'),
-        status: userStatus().default('ACTIVE').notNull(),
-        type: userType().default('USER').notNull(),
-        username: text('username'),
-        Allproblems : uuid('problemId').references((): any => problems.id).notNull()
+  'users',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+
+    supabaseUserId: uuid('supabase_user_id').notNull().unique(),
+    email: text(),
+    displayName: text('display_name').notNull(),
+    username: text('username'),
+    avatarUrl: text('avatar_url'),
+
+    status: userStatus().default('ACTIVE').notNull(),
+    type: userType().default('USER').notNull(),
+    role: text('role').default('user').notNull(),
+
+    emailVerified: boolean('email_verified').default(false).notNull(),
+    isBanned: boolean('is_banned').default(false).notNull(),
+
+    lastLoginAt: timestamp('last_login_at', { precision: 3, mode: 'string' }),
+
+    createdAt: timestamp('created_at', { precision: 3, mode: 'string' })
+      .default(sql`(now() AT TIME ZONE 'UTC'::text)`)
+      .notNull(),
+    updatedAt: timestamp('updated_at', { precision: 3, mode: 'string' })
+      .default(sql`(now() AT TIME ZONE 'UTC'::text)`)
+      .notNull(),
+
+    Allproblems: uuid('problemId').references(() : any => problems.id).notNull(),
   },
-    (table) => [
-        index('user_status_idx').using('btree', table.status.asc().nullsLast())
-    ]
+  (table) => [
+    index('user_status_idx').using('btree', table.status.asc().nullsLast()),
+  ]
 );
+
 
 export const tag = pgTable('tag', {
   id: uuid('id').defaultRandom().primaryKey().notNull(),

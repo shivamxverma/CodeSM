@@ -51,15 +51,15 @@ export const handleValidationError = (
   field: string,
   message: string,
 ): never => {
-  throw new ApiError(`Invalid ${field}: ${message}`, httpStatus.BAD_REQUEST, false);
+  throw new ApiError(httpStatus.BAD_REQUEST,`Invalid ${field}: ${message}`, false);
 };
 
 export const handleUnauthorizedError = (message: string): never => {
-  throw new ApiError(message, httpStatus.UNAUTHORIZED, false);
+  throw new ApiError(httpStatus.UNAUTHORIZED,message,false);
 };
 
 export const handleForbiddenError = (message: string): never => {
-  throw new ApiError(message, httpStatus.FORBIDDEN, false);
+  throw new ApiError(httpStatus.FORBIDDEN,message,false);
 };
 
 export const handleNotFoundError = (
@@ -67,8 +67,8 @@ export const handleNotFoundError = (
   identifier: string,
 ): never => {
   throw new ApiError(
-    `${entity} not found: ${identifier}`,
     httpStatus.NOT_FOUND,
+    `${entity} not found: ${identifier}`,
     false,
   );
 };

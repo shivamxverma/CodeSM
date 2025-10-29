@@ -1,21 +1,24 @@
-import express from 'express';
-import {
-    registerUser,
-    loginUser,
-    LogoutUser,
-    refreshAccessToken,
-} from './auth-controller';
+// import express from 'express';
+// import {
+//     registerUser,
+//     loginUser,
+//     LogoutUser,
+//     refreshAccessToken,
+//     googleOauth
+// } from './auth-controller';
 
-const app = express.Router();
+// const app = express.Router();
 
-app.post('/register',registerUser);
+// app.post('/google-oauth', googleOauth);
 
-app.post('/login',loginUser);
+// app.post('/register',registerUser);
 
-app.post('/logout',LogoutUser);
+// app.post('/login',loginUser);
 
-app.post('/refresh-token',refreshAccessToken);
+// app.post('/logout',LogoutUser);
 
-export default app;
+// app.post('/refresh-token',refreshAccessToken);
+
+// export default app;
 
 

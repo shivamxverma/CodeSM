@@ -3,6 +3,14 @@ const BASE = "http://localhost:8000/api/v1";
 // const BASE = "https://codesm.onrender.com/api/v1";
 const accessToken = localStorage.getItem("accessToken");
 
+export const googleSignIn = (user) => {
+  console.log("Google Sign-In User:", user);
+  return axios.post(`${BASE}/createProfile`, {
+    id: user.id,
+    email: user.email,
+  });
+}
+
 export const login = (payload) => {
   return axios.post(`${BASE}/users/login`, payload, {
     withCredentials: true,
