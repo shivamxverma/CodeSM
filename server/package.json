@@ -1,18 +1,11 @@
 {
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.911.0",
-    "@aws-sdk/s3-request-presigner": "^3.911.0",
-    "@neondatabase/serverless": "^1.0.2",
-    "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "drizzle-orm": "^0.44.6",
     "express": "^5.1.0",
     "http-status": "^2.1.0",
-    "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
-    "pg": "^8.16.3",
     "typescript": "^5.9.3",
     "winston": "^3.18.3",
     "winston-daily-rotate-file": "^5.0.0",
@@ -23,18 +16,14 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/http-status": "^0.2.30",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/morgan": "^1.9.10",
-    "drizzle-kit": "^0.31.5",
-    "tsx": "^4.20.6"
+    "@types/morgan": "^1.9.10"
   },
   "name": "server",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsc -b && node dist/index.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
