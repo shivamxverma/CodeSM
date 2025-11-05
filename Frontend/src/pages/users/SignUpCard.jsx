@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import z from "zod";
 import { signup } from "@/api/api";
+import { supabase } from "@/lib/supabase"; 
+import { FcGoogle } from "react-icons/fc"; 
 
 const formSchema = z.object({
   role: z.string().min(1, "Please select a role"),
@@ -16,6 +18,7 @@ const formSchema = z.object({
     .regex(/[^A-Za-z0-9]/, "need symbol"),
 });
 
+// (scorePwd and getLbl functions remain the same)
 const scorePwd = (s) => {
   let n = 0;
   if (/[a-z]/.test(s)) n++;
@@ -34,6 +37,7 @@ const getLbl = (s) => {
   return { t: "strong", v: 100, c: "bg-green-500" };
 };
 
+
 function SignUpCard() {
   const navigate = useNavigate();
 
@@ -46,10 +50,14 @@ function SignUpCard() {
 
   const [msg, setMsg] = useState({ type: "", text: "" });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false); // NEW: Loading state for Google
 
   const Options = [
     { id: "email", label: "Email", type: "email", placeholder: "you@example.com" },
-    { id: "fullName", label: "fullName", type: "fullName", placeholder: "john doe" },
+    // NOTE: Your original code had 'fullName' here, but your formSchema and state
+    // only have 'username'. I'm following your schema. If you need 'fullName',
+    // you'll need to add it to the schema and state.
+    // { id: "fullName", label: "fullName", type: "fullName", placeholder: "john doe" },
     { id: "username", label: "Username", type: "text", placeholder: "john_doe" },
   ];
 
@@ -70,7 +78,7 @@ function SignUpCard() {
 
     try {
       setLoading(true);
-      await signup(formData);
+      await signup(formData); // This is your custom API call
 
       setMsg({ type: "success", text: "Signup successful! Redirecting…" });
       setTimeout(() => navigate("/login"), 1500);
@@ -83,6 +91,38 @@ function SignUpCard() {
       setLoading(false);
     }
   };
+
+  // NEW: Handler for Google Sign-In
+  const handleGoogleSignUp = async () => {
+    setMsg({ type: "", text: "" });
+    setGoogleLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        // You can add options here, like a redirect URL
+        // options: {
+        //   redirectTo: 'http://localhost:3000/dashboard'
+        // }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      // On success, Supabase will handle the redirect to Google
+      // and then redirect back to your app.
+    } catch (err) {
+      setMsg({
+        type: "error",
+        text: err.message || "Something went wrong with Google Sign-In",
+      });
+    } finally {
+      // We only set loading to false if there's an error,
+      // because a successful call will redirect the user away.
+      setGoogleLoading(false);
+    }
+  };
+
 
   return (
     <div className="max-w-md mx-auto mt-16 p-8 bg-white shadow-xl rounded-2xl">
@@ -170,9 +210,9 @@ function SignUpCard() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || googleLoading} // NEW: Disable if Google auth is loading
           className={`w-full py-3 rounded-lg text-white text-lg transition ${
-            loading
+            (loading || googleLoading)
               ? "bg-blue-400 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-700"
           }`}
@@ -180,6 +220,32 @@ function SignUpCard() {
           {loading ? "Signing Up…" : "Sign Up"}
         </button>
       </form>
+
+      {/* --- NEW: "OR" DIVIDER AND GOOGLE BUTTON --- */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-gray-300"></span>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-white px-2 text-gray-500">
+            Or continue with
+          </span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleGoogleSignUp}
+        disabled={googleLoading || loading}
+        className={`w-full py-3 flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition ${
+          (googleLoading || loading) && "opacity-50 cursor-not-allowed"
+        }`}
+      >
+        <FcGoogle size={24} />
+        {googleLoading ? "Redirecting..." : "Sign Up with Google"}
+      </button>
+      {/* --- END OF NEW UI --- */}
+
 
       <p className="text-sm text-center text-gray-600 mt-4">
         Already have an account?{" "}

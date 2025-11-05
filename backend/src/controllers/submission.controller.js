@@ -12,7 +12,7 @@ const createSubmission = asyncHandler(async (req, res) => {
     const { code, language } = req.body;
     const { problemId } = req.params;
     const dryRun = req.query.dryRun === "true";
-    console.log("Entering into createSubmission");
+    
     if ([problemId, code, language].some(field => typeof field !== "string" || !field.trim())) {
         throw new ApiError(400, "All fields are required");
     }
@@ -43,6 +43,8 @@ const getAllSubmissionById = asyncHandler(async (req, res) => {
     }
 
     const submissions = await Submission.find({ problem: problem._id, user: req.user }).populate('user','username');
+
+    console.log("Submissions fetched:", submissions);
 
     if(!submissions){
         throw new ApiError(404,"Submissions Not Found");

@@ -101,7 +101,7 @@ export default function ProblemPage() {
     if (jobId) {
       intervalId = setInterval(async () => {
         try {
-          const res = await getJobResponse(jobId);
+          const res = await getJobResponse(jobId,problemId);
           const jobState = res.data.data.state;
           setStatus(jobState);
 
@@ -258,6 +258,7 @@ int main(){
         mode: asSubmit ? "submit" : "run",
         dryRun: !asSubmit
       };
+
       const response = await runProblem(problemId, input);
 
       const newJobId = response.data.message.id;
@@ -507,7 +508,7 @@ int main(){
                         <tr key={sub._id || idx} className="bg-[#0c1219]">
                           <td className="border border-[#233046] px-2 py-1">{idx + 1}</td>
                           <td className="border border-[#233046] px-2 py-1">
-                            {sub.username || "N/A"}
+                            {sub.user.username || "N/A"}
                           </td>
                           <td className="border border-[#233046] px-2 py-1">
                             {sub.status || "N/A"}

@@ -1,6 +1,6 @@
 import axios from "axios";
-// const BASE = "http://localhost:8000/api/v1";
-const BASE = "https://codesm.onrender.com/api/v1";
+const BASE = "http://localhost:8000/api/v1";
+// const BASE = "https://codesm.onrender.com/api/v1";
 const accessToken = localStorage.getItem("accessToken");
 
 export const login = (payload) => {
@@ -61,8 +61,8 @@ export const runProblem = async (problemId, payload, asSubmit = false) => {
   );
 }
 
-export const getJobResponse = (jobId) => {
-  return axios.get(`${BASE}/job/${jobId}`, {
+export const getJobResponse = (jobId,problemId) => {
+  return axios.get(`${BASE}/job/${jobId}/problems/${problemId}`, {
     withCredentials: true,
     headers: { Authorization: `Bearer ${accessToken}` }
   });

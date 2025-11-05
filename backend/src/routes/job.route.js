@@ -4,6 +4,6 @@ import { verifyJWT } from '../middlewares/auth.middleware.js'
 
 const router = Router();
 
-router.get('/:jobId', verifyJWT, getJobResponse);
+router.get('/:jobId/problems/:problemId', verifyJWT, getJobResponse);
 
 export default router;
