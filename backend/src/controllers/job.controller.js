@@ -60,12 +60,14 @@ const getJobResponse = asyncHandler(async (req, res) => {
         throw new ApiError(404, 'Problem not found for submission');
     }
 
+    // console.log(jobResult);
+
     const Submitted = await Submission.create({
         user: req.user,
         problem,
         code: jobData.code,
         language: jobData.language,
-        status: jobResult.status ? 'accepted' : 'rejected',
+        status: jobResult.output.status,
     });
 
     // console.log("Submission recorded:", Submitted);

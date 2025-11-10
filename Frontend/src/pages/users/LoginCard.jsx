@@ -191,7 +191,7 @@ function LoginCard() {
       </form>
 
       {/* --- NEW: "OR" DIVIDER AND GOOGLE BUTTON --- */}
-      <div className="relative my-6">
+      {/* <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-gray-300"></span>
         </div>
@@ -200,9 +200,9 @@ function LoginCard() {
             Or continue with
           </span>
         </div>
-      </div>
+      </div> */}
 
-      <button
+      {/* <button
         type="button"
         onClick={handleGoogleLogin}
         disabled={loading || googleLoading}
@@ -212,7 +212,7 @@ function LoginCard() {
       >
         <FcGoogle size={24} />
         {googleLoading ? "Redirecting..." : "Log In with Google"}
-      </button>
+      </button> */}
       {/* --- END OF NEW UI --- */}
 
       {/* Signup Link */}

@@ -7,6 +7,7 @@ import { FcGoogle } from "react-icons/fc";
 
 const formSchema = z.object({
   role: z.string().min(1, "Please select a role"),
+  fullName: z.string().min(3, "Full name must be at least 3 characters"),
   email: z.string().email("Invalid e-mail address"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string()
@@ -43,6 +44,7 @@ function SignUpCard() {
 
   const [formData, setFormData] = useState({
     role: "",
+    fullName: "",
     email: "",
     username: "",
     password: "",
@@ -57,7 +59,7 @@ function SignUpCard() {
     // NOTE: Your original code had 'fullName' here, but your formSchema and state
     // only have 'username'. I'm following your schema. If you need 'fullName',
     // you'll need to add it to the schema and state.
-    // { id: "fullName", label: "fullName", type: "fullName", placeholder: "john doe" },
+    { id: "fullName", label: "fullName", type: "fullName", placeholder: "john doe" },
     { id: "username", label: "Username", type: "text", placeholder: "john_doe" },
   ];
 
@@ -222,7 +224,7 @@ function SignUpCard() {
       </form>
 
       {/* --- NEW: "OR" DIVIDER AND GOOGLE BUTTON --- */}
-      <div className="relative my-6">
+      {/* <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-gray-300"></span>
         </div>
@@ -231,9 +233,9 @@ function SignUpCard() {
             Or continue with
           </span>
         </div>
-      </div>
+      </div> */}
 
-      <button
+      {/* <button
         type="button"
         onClick={handleGoogleSignUp}
         disabled={googleLoading || loading}
@@ -243,7 +245,7 @@ function SignUpCard() {
       >
         <FcGoogle size={24} />
         {googleLoading ? "Redirecting..." : "Sign Up with Google"}
-      </button>
+      </button> */}
       {/* --- END OF NEW UI --- */}
 
 

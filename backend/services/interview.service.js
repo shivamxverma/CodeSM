@@ -120,7 +120,7 @@ async function AnswerScore(question, answer) {
         };
 
         const result = await model.generateContent(payload);
-        console.log("Result:", result);
+        // console.log("Result:", result);
 
         let responseText;
         if (result && result.response && typeof result.response.text === "function") {
