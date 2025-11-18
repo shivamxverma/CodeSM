@@ -5,7 +5,7 @@ if (!process.env.GEMINI_API_KEY) {
 }
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 async function generateHintsWithAI(problem) {
 
@@ -39,7 +39,7 @@ async function generateHintsWithAI(problem) {
 
     **PROBLEM TO ANALYZE:**
     Title: ${problem.title}
-    Difficulty (1-10): ${problem.difficulty}
+    Difficulty (800-3000): ${problem.difficulty}
     Tags: ${problem.tags.join(', ')}
     Description: ${problem.description}
     Input Format: ${problem.inputFormat}

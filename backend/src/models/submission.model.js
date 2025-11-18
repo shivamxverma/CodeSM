@@ -5,10 +5,6 @@ const submissionSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'User'
     },
-    author: {
-        type: Schema.Types.ObjectId,
-        ref: 'Author'
-    },
     problem: {
         type: Schema.Types.ObjectId,
         ref: 'Problem',

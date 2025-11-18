@@ -17,15 +17,12 @@ const s3Client = new S3Client({
 });
 
 async function generateUploadURL(problemId) {
-  // console.log("Generating upload URL for problem:", problemId);
   const params = new PutObjectCommand({
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: `/problems/${problemId}/testcases.json`,
     ContentType: "application/json",
   });
-  // console.log("S3 Params:", params);
   const url = await getSignedUrl(s3Client, params,{ expiresIn: 3600 });
-  // console.log("Generated URL:", url);
   return url;
 }
 

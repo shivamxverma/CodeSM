@@ -3,8 +3,9 @@ import Problem from "../models/problem.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { generateUploadURL } from "../../services/aws.service.js";
-import Author from "../models/author.model.js";
 import { generateHintsWithAI } from '../../services/ai.service.js'; 
+import redis from "../config/redis.config.js";
+import User from "../models/user.model.js";
 
 const createProblem = asyncHandler(async (req, res) => {
     const {
@@ -15,21 +16,23 @@ const createProblem = asyncHandler(async (req, res) => {
         timeLimit,
         inputFormat,
         outputFormat,
-        sampleInput,
-        sampleOutput,
         constraints,
         tags,
         editorial,
         editorialLink,
-        code
+        code,
+        sampleTestcases,
     } = req.body;
 
-    const ExistUser = await Author.findById(req.user._id);
+    if (!req.user || !req.user._id) {
+        throw new ApiError(403, "Not Authorized");
+    }
+
+    const ExistUser = await User.findById(req.user._id);
 
     if (!ExistUser) {
         throw new ApiError(403, "Not Authorized");
     }
-    console.log(req.body);
 
     let tagsArray;
     if (Array.isArray(tags)) {
@@ -46,7 +49,6 @@ const createProblem = asyncHandler(async (req, res) => {
     } else {
         tagsArray = [];
     }
-    console.log(tagsArray);
 
     const requiredFields = [
         title,
@@ -56,15 +58,12 @@ const createProblem = asyncHandler(async (req, res) => {
         timeLimit,
         inputFormat,
         outputFormat,
-        sampleInput,
-        sampleOutput,
+        sampleTestcases,
         constraints,
         editorial,
         editorialLink,
         code
     ];
-
-
 
     if (requiredFields.some(field => field === undefined || field === null || (typeof field === "string" && !field.trim()))) {
         throw new ApiError(400, "All fields are required");
@@ -75,6 +74,9 @@ const createProblem = asyncHandler(async (req, res) => {
     if (existingProblem) {
         throw new ApiError(400, "Problem with this title already exists");
     }
+    
+    
+    const parsedSampleTestcases = JSON.parse(sampleTestcases);
 
     const newProblem = await Problem.create({
         title,
@@ -84,14 +86,13 @@ const createProblem = asyncHandler(async (req, res) => {
         timeLimit,
         inputFormat,
         outputFormat,
-        sampleInput,
-        sampleOutput,
+        sampleTestcases: parsedSampleTestcases,
         constraints,
-        editorial : editorial || "",
-        editorialLink : editorialLink || "",
+        editorial: editorial || "",
+        editorialLink: editorialLink || "",
         tags: tagsArray,
         author: ExistUser,
-        solution : code
+        solution: code
     });
 
     if (!newProblem) {
@@ -100,34 +101,72 @@ const createProblem = asyncHandler(async (req, res) => {
 
     const uploadURL = await generateUploadURL(newProblem._id);
 
-    if(!uploadURL){
-        throw new ApiError(500,"Somthing Went Wrong With Upload Url");
+    if (!uploadURL) {
+        throw new ApiError(500, "Somthing Went Wrong With Upload Url");
     }
 
+    const cacheExpiry = 60 * 60;
+    redis.setex(`problem:${newProblem._id}`, cacheExpiry, JSON.stringify(newProblem));
 
-    res.status(201).json(new ApiResponse(201, {newProblem,uploadURL}, "Problem Created Successfully"));
-})
+    const allProblems = await Problem.find().select("-description -memoryLimit -timeLimit -inputFormat -outputFormat -sampleTestcases -constraints -hints -submission -editorial -editorialLink -solution").sort({ createdAt: -1 });
+    redis.setex('allProblems', cacheExpiry, JSON.stringify(allProblems));
 
+
+    res.status(201).json(new ApiResponse(201, { newProblem, uploadURL }, "Problem Created Successfully"));
+});
 
 
 const getProblemById = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const cachedProblem = await redis.get(`problem:${id}`);
+
+    if (cachedProblem) {
+        return res.status(200).json(new ApiResponse(200, JSON.parse(cachedProblem), "Problem fetched successfully from cache"));
+    }
+
     const problem = await Problem.findById(id);
     if (!problem) {
         throw new ApiError(404, "Problem not found");
     }       
+
+    const cacheExpiry = 60 * 60;
+    redis.setex(`problem:${id}`, cacheExpiry, JSON.stringify(problem));
+
     res.status(200).json(new ApiResponse(200, problem, "Problem fetched successfully"));    
 });
 
 const getAllProblems = asyncHandler(async (req, res) => {
-    const problems = await Problem.find().select("-description -memoryLimit -timeLimit -inputFormat -outputFormat -sampleInput -sampleOutput -constraints").sort({ createdAt: -1 });
+    console.log("Entering into problems");
+    const cachedProblems = await redis.get('allProblems');
+    if (
+        cachedProblems &&
+        typeof cachedProblems === "string" &&
+        cachedProblems.trim().length !== 0 &&
+        cachedProblems.trim() !== "[]"
+    ) {
+        return res.status(200).json(new ApiResponse(200, JSON.parse(cachedProblems), "Problems fetched successfully from cache"));
+    }
+
+    
+    const problems = await Problem.find().select("-description -memoryLimit -timeLimit -inputFormat -outputFormat -sampleTestcases -constraints -hints -submission -editorial -editorialLink -solution").sort({ createdAt: -1 });
+
     if (!problems || problems.length === 0) {
         throw new ApiError(404, "No problems found");
     }
+
+    const cacheExpiry = 60 * 60;
+    redis.setex('allProblems', cacheExpiry, JSON.stringify(problems));
+
     res.status(200).json(new ApiResponse(200, problems, "Problems fetched successfully"));
 });
 
 const getUpsolveHints = asyncHandler(async (req, res) => {
+    const cachedHints = await redis.get(`hints:${req.params.id}`);
+    if (cachedHints) {
+        return res.status(200).json(new ApiResponse(200, JSON.parse(cachedHints), "Hints fetched successfully from cache"));
+    }
+
+    
     const { id } = req.params;
     const problem = await Problem.findById(id);
     if (!problem) {
@@ -143,6 +182,12 @@ const getUpsolveHints = asyncHandler(async (req, res) => {
     if (!hints || hints.length === 0) {
         throw new ApiError(500, "Failed to generate hints");
     }
+
+    const cacheExpiry = 60 * 60;
+    redis.setex(`hints:${req.params.id}`, cacheExpiry, JSON.stringify(hints));
+
+    problem.hints = hints;
+    await problem.save();
 
     res.status(200).json(new ApiResponse(200, { hints }, "Hints generated successfully"));
 })

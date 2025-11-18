@@ -30,14 +30,16 @@ const problemSchema = new Schema({
         type: String,
         required: true
     },
-    sampleInput: {
-        type: String,
-        required: true
-    },
-    sampleOutput: {
-        type: String,
-        required: true
-    },
+    sampleTestcases : [{
+        input: {
+            type: String,
+            required: true
+        },
+        output: {
+            type: String,
+            required: true
+        }
+    }],
     constraints: {
         type: String,
         required: true
@@ -67,7 +69,7 @@ const problemSchema = new Schema({
     }],
     author: {
         type: Schema.Types.ObjectId,
-        ref: 'Author',
+        ref: 'User',
         required: true
     },
     editorial: {
