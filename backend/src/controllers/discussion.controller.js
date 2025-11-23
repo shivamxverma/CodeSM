@@ -38,7 +38,7 @@ export const createDiscussion = asyncHandler (async (req,res)=>{
 export const getDiscussions = asyncHandler(async (req,res)=> {
     const cachedDiscussions = await redis.get('allDiscussions');
     if (cachedDiscussions) {
-        return res.status(200).json(new ApiResponse(200, JSON.parse(cachedDiscussions), "Discussions fetched successfully from cache"));
+        return res.status(200).json(new ApiResponse(200, "Discussions fetched successfully from cache", JSON.parse(cachedDiscussions)));
     }
 
     const discussions = await Discussion.find()
@@ -53,8 +53,8 @@ export const getDiscussions = asyncHandler(async (req,res)=> {
 
 export const createComment = asyncHandler(async (req,res)=> {
 
-    const content = req.body;
-    const discussionId = req.params;
+    const { content } = req.body;
+    const { discussionId } = req.params;
 
     if (!discussionId || !content) {
         throw new ApiError(400, "Discussion ID and content are required");

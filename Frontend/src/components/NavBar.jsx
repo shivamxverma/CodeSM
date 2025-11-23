@@ -54,6 +54,7 @@ export default function NewNav() {
   const navItems = [
     { to: "/", label: "Home" },
     { to: "/problems", label: "Problems" },
+    { to: "/discussion", label: "Discussions" },
     ...(userRole === "author" || userRole === "admin"
       ? [{ to: "/newproblem", label: "Create Problem" }]
       : []),

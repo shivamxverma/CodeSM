@@ -141,15 +141,21 @@ export const createDiscussion = (payload) => {
 }
 
 export const likeDiscussion = (discussionId) => {
-  return axios.get(`${BASE}/${discussionId}/like`, { withCredentials: true });
+  return axios.post(`${BASE}/discussion/${discussionId}/like`, {}, {
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
 }
 
 export const dislikeDiscussion = (discussionId) => {
-  return axios.get(`${BASE}/${discussionId}/dislike`, { withCredentials: true });
+  return axios.post(`${BASE}/discussion/${discussionId}/dislike`, {}, {
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
 }
 
 export const createComment = (discussionId, comment) => {
-  return axios.post(`${BASE}/${discussionId}/comment`, comment, {
+  return axios.post(`${BASE}/discussion/${discussionId}/comment`, comment, {
     withCredentials: true,
     headers: { Authorization: `Bearer ${accessToken}` }
   })

@@ -5,10 +5,10 @@ const router = Router();
 
 router.get('/',getDiscussions);
 router.post('/',verifyJWT,createDiscussion);
-router.delete('/',verifyJWT,deleteDiscussion);
+router.delete('/:discussionId',verifyJWT,deleteDiscussion);
 router.post('/:discussionId/comment',verifyJWT,createComment);
-router.get('/:disscussionId/like',verifyJWT,likeDiscussion);
-router.get('/:discussionId/dislike',verifyJWT,dislikeDiscussion);
+router.post('/:discussionId/like',verifyJWT,likeDiscussion);
+router.post('/:discussionId/dislike',verifyJWT,dislikeDiscussion);
 
 
 export default router;
