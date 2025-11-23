@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "@/auth/AuthContext"; 
+import { useAuth } from "@/auth/AuthContext";
 
 export default function NewNav() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { user, logout } = useAuth(); // ✅ take once here
+  const { user, logout } = useAuth();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -16,7 +16,7 @@ export default function NewNav() {
 
   const handleLogout = async () => {
     localStorage.removeItem("accessToken");
-    logout(); // ✅ also update context state
+    logout();
     setIsDropdownOpen(false);
     setIsMobileOpen(false);
     navigate("/login");
@@ -50,7 +50,7 @@ export default function NewNav() {
     setIsMobileOpen(false);
   }, [location.pathname]);
 
-  const userRole = user?.role; // ✅ cleaner
+  const userRole = user?.role;
   const navItems = [
     { to: "/", label: "Home" },
     { to: "/problems", label: "Problems" },
@@ -71,7 +71,6 @@ export default function NewNav() {
       <nav className="supports-[backdrop-filter]:bg-slate-900/60 bg-slate-900/90 backdrop-blur border-b border-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           
-          {/* Brand */}
           <div className="flex items-center gap-3">
             <Link to="/" className="relative block">
               <span className="absolute -inset-1 -z-10 rounded-lg bg-gradient-to-r from-indigo-500/30 via-sky-500/30 to-emerald-500/30 blur-md" />
@@ -82,7 +81,6 @@ export default function NewNav() {
             <span className="hidden text-xs text-slate-400 md:inline-flex">Practice • Compete • Grow</span>
           </div>
 
-          {/* Desktop Nav */}
           <div className="hidden items-center gap-2 md:flex">
             {navItems.map((item) => (
               <NavLink
@@ -97,7 +95,6 @@ export default function NewNav() {
             ))}
           </div>
 
-          {/* User or Login/Signup */}
           <div className="flex items-center gap-3">
             {user ? (
               <div className="relative" ref={dropdownRef}>
