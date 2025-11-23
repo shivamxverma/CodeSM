@@ -11,6 +11,7 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem("accessToken");
     if (!token) {
       setUser(null);
+      setLoading(false);
       return;
     }
     try {
@@ -18,6 +19,8 @@ export function AuthProvider({ children }) {
       setUser({ id: payload._id, role: payload.role });
     } catch {
       setUser(null);
+    } finally {
+      setLoading(false);
     }
   }, []);
 

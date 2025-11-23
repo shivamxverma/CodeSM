@@ -69,7 +69,7 @@ function LoginCard() {
       setSuccess("Login successful! Redirecting to dashboard...");
       setTimeout(() => {
         navigate("/");
-      }, 1500);
+      }, 1000);
     } catch (err) {
       setError(err.response?.data?.message || "Invalid credentials");
     } finally {
