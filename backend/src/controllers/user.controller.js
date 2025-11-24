@@ -191,8 +191,12 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       return res.status(401).json({ message: "Refresh token expired or used" });
     }
 
-    const accessToken = await generateAccessTokenAndRefreshToken(user._id, user.role);
+    // const accessToken = await generateAccessTokenAndRefreshToken(user._id, user.role);
 
+    // user.refreshToken = refreshToken;
+    // await user.save({ validateBeforeSave: false });
+
+    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user);
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
 

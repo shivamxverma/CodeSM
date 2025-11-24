@@ -1,12 +1,10 @@
 import React, { useState } from "react";
-// axios is not used in this file if login() handles it, but z, useNavigate are
 import z from "zod";
 import { useNavigate } from "react-router-dom";
-import { login } from "../../api/api.js";
-import { supabase } from "../../lib/supabase"; // NEW: Import Supabase client
-import { FcGoogle } from "react-icons/fc"; // NEW: Import Google icon
+import { login as apiLogin } from "../../api/api.js"; 
+import { supabase } from "../../lib/supabase"; 
+import { useAuth } from "../../auth/AuthContext"; // ✅ Import useAuth
 
-// Your existing schema logic
 const emailSchema = z.string().email("Invalid email address");
 const usernameSchema = z.string().min(3, "Username must be at least 3 characters long");
 const passwordSchema = z.string().min(8, "Password must be at least 8 characters long");
@@ -24,6 +22,8 @@ const validateForm = ({ email, username, password }) => {
 
 function LoginCard() {
   const navigate = useNavigate();
+  const { login } = useAuth(); // ✅ Get context login function
+
   const [formData, setFormData] = useState({
     email: "",
     username: "",
@@ -32,14 +32,13 @@ function LoginCard() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false); // NEW: Loading state for Google
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  // Your existing email/pass/username submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -60,57 +59,51 @@ function LoginCard() {
         password: formData.password,
       };
 
-      const response = await login(payload);
+      // 1. Call Backend
+      const response = await apiLogin(payload);
+      
+      // 2. Extract Token
+      const token = response.data.message.accessToken || response.data.accessToken;
 
-      const token = response.data.message.accessToken;
+      if (!token) throw new Error("No access token received");
 
-      localStorage.setItem("accessToken", token);
+      // 3. ✅ Update Context (State + LocalStorage)
+      login(token);
 
-      setSuccess("Login successful! Redirecting to dashboard...");
+      setSuccess("Login successful! Redirecting...");
+      
       setTimeout(() => {
         navigate("/");
-      }, 1000);
+      }, 500);
+
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid credentials");
+      console.error(err);
+      setError(err.response?.data?.message || err.message || "Invalid credentials");
     } finally {
       setLoading(false);
     }
   };
 
-  // NEW: Handler for Google Log-In
   const handleGoogleLogin = async () => {
-    setError(""); // Clear previous errors
+    setError("");
     setGoogleLoading(true);
-
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        // You can add redirect options here if needed
-        // options: {
-        //   redirectTo: 'http://localhost:3000/dashboard'
-        // }
       });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-      // On success, Supabase handles the redirect away from your app
-      // and back. You don't need to navigate() here.
+      if (error) throw new Error(error.message);
     } catch (err) {
       setError(err.message || "Something went wrong with Google Log-In");
-      // Only set loading to false on error, as success redirects
       setGoogleLoading(false);
     }
   };
 
   return (
     <div className="max-w-lg mx-auto p-8 bg-white shadow-2xl rounded-2xl mt-12">
-      {/* Header */}
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
         Log In to Your Account
       </h2>
 
-      {/* Error/Success Messages */}
       {error && (
         <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-center">
           {error}
@@ -122,13 +115,9 @@ function LoginCard() {
         </div>
       )}
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Email */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email
-          </label>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
           <input
             id="email"
             type="email"
@@ -141,11 +130,8 @@ function LoginCard() {
           />
         </div>
 
-        {/* Username */}
         <div>
-          <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-            Username
-          </label>
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
           <input
             id="username"
             type="text"
@@ -158,11 +144,8 @@ function LoginCard() {
           />
         </div>
 
-        {/* Password */}
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-            Password
-          </label>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
           <input
             id="password"
             type="password"
@@ -175,13 +158,11 @@ function LoginCard() {
           />
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading || googleLoading} // UPDATED
+          disabled={loading || googleLoading}
           className={`w-full py-3 px-6 text-white text-lg rounded-lg transition
-            ${
-              loading || googleLoading
+            ${loading || googleLoading
                 ? "bg-blue-400 cursor-not-allowed"
                 : "bg-blue-600 hover:bg-blue-700"
             }`}
@@ -190,32 +171,6 @@ function LoginCard() {
         </button>
       </form>
 
-      {/* --- NEW: "OR" DIVIDER AND GOOGLE BUTTON --- */}
-      {/* <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-gray-300"></span>
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-2 text-gray-500">
-            Or continue with
-          </span>
-        </div>
-      </div> */}
-
-      {/* <button
-        type="button"
-        onClick={handleGoogleLogin}
-        disabled={loading || googleLoading}
-        className={`w-full py-3 flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition ${
-          (googleLoading || loading) && "opacity-50 cursor-not-allowed"
-        }`}
-      >
-        <FcGoogle size={24} />
-        {googleLoading ? "Redirecting..." : "Log In with Google"}
-      </button> */}
-      {/* --- END OF NEW UI --- */}
-
-      {/* Signup Link */}
       <p className="mt-4 text-center text-sm text-gray-600">
         Don't have an account?{" "}
         <a href="/signup" className="text-blue-600 hover:underline">
