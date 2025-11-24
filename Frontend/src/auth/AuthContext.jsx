@@ -18,23 +18,23 @@ export function AuthProvider({ children }) {
 
     try {
       const payload = jwtDecode(token);
-      // Optional: Check expiration
+      // Check if token is expired
       const currentTime = Date.now() / 1000;
       if (payload.exp && payload.exp < currentTime) {
         throw new Error("Token expired");
       }
       
-      setUser({ id: payload._id || payload.id, role: payload.role });
+      setUser({ id: payload._id || payload.id, role: payload.role, email: payload.email });
     } catch (error) {
-      console.warn("Invalid token:", error);
-      localStorage.removeItem("accessToken");
+      console.warn("Invalid or expired token:", error);
+      localStorage.removeItem("accessToken"); // Clean up bad token
       setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ CRITICAL: Check for token on mount (refresh)
+  // Run once on mount
   useEffect(() => {
     loadUserFromToken();
   }, []);
@@ -55,7 +55,12 @@ export function AuthProvider({ children }) {
     [user, loading]
   );
 
-  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
+  return (
+    <AuthCtx.Provider value={value}>
+      {/* Only render the app after the token check is complete */}
+      {!loading && children}
+    </AuthCtx.Provider>
+  );
 }
 
 export const useAuth = () => useContext(AuthCtx);
