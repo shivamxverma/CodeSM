@@ -33,14 +33,25 @@ const discussionSchema = new Schema({
             trim : true
         }
     }],
-    like : {
-        type : Number,
-        default : 0
-    },
-    dislike : {
-        type : Number,
-        default : 0
+    reactions: [{
+        user: { type: Schema.Types.ObjectId, ref: 'User' },
+        type: { type: String, enum: ['like', 'dislike'] }
+    }],
+    status: {
+        type: String,
+        enum: ['active', 'flagged', 'deleted'],
+        default: 'active'
     }
+
+
+    // like : {
+    //     type : Number,
+    //     default : 0
+    // },
+    // dislike : {
+    //     type : Number,
+    //     default : 0
+    // }
 
 },{timestamps: true});
 
