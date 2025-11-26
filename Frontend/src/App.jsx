@@ -60,7 +60,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/discussion" element={<DiscussionPage />} />
+            <Route path="/discuss" element={<DiscussionPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />
