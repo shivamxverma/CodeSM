@@ -10,6 +10,8 @@ export default function NewNav() {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
 
   const dropdownRef = useRef(null);
   const mobileRef = useRef(null);
@@ -50,6 +52,15 @@ export default function NewNav() {
     setIsMobileOpen(false);
   }, [location.pathname]);
 
+  // Load saved theme
+  useEffect(() => {
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "dark") {
+    document.documentElement.classList.add("dark");
+    setIsDark(true);
+  }
+  }, []);
+
   const userRole = user?.role;
   const navItems = [
     { to: "/", label: "Home" },
@@ -64,7 +75,16 @@ export default function NewNav() {
     { to: "/discuss", label: "Discuss" },
     { to: "/interview", label: "Interview Prep" }
   ];
+    const toggleTheme = () => {
+    const html = document.documentElement;
+    const nextDark = !html.classList.contains("dark");
 
+    html.classList.toggle("dark");
+    localStorage.setItem("theme", nextDark ? "dark" : "light");
+    setIsDark(nextDark);
+    };
+
+  
   return (
     <div className="sticky top-0 z-50">
       <div className="h-px w-full bg-gradient-to-r from-indigo-500/0 via-indigo-500/60 to-emerald-400/0" />
@@ -95,8 +115,37 @@ export default function NewNav() {
               </NavLink>
             ))}
           </div>
+          
 
           <div className="flex items-center gap-3">
+            {/* 🌞 / 🌙 THEME TOGGLE */}
+          <button
+            onClick={toggleTheme}
+            className="relative flex h-10 w-10 items-center justify-center
+                      rounded-full border border-white/10
+                      bg-white/5 text-slate-200
+                      transition hover:bg-white/10"
+            aria-label="Toggle theme"
+          >
+            {/* Sun */}
+            <span
+              className={`absolute transition-all duration-300
+                ${isDark ? "scale-0 rotate-90 opacity-0" : "scale-100 rotate-0 opacity-100"}
+              `}
+            >
+              ☀️
+            </span>
+
+            {/* Moon */}
+            <span
+              className={`absolute transition-all duration-300
+                ${isDark ? "scale-100 rotate-0 opacity-100" : "scale-0 -rotate-90 opacity-0"}
+              `}
+            >
+              🌙
+            </span>
+          </button>
+
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
