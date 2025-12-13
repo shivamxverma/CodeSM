@@ -8,7 +8,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 const corsOptions = {
-  origin: process.env.CLIENT || 'http://localhost:5173', 
+  origin: process.env.CLIENT_URL || 'http://localhost:5173', 
   credentials: true, 
   allowedHeaders: ['Content-Type', 'Authorization'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
