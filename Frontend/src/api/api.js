@@ -1,6 +1,5 @@
 import axios from "axios";
-const BASE = "http://localhost:8000/api/v1";
-// const BASE = "https://codesm.onrender.com/api/v1";
+const BASE = import.meta.env.VITE_API_URL;
 const accessToken = localStorage.getItem("accessToken");
 
 export const login = (payload) => {
