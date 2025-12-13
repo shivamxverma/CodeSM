@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import z from "zod";
 import { signup } from "@/api/api";
-import { supabase } from "@/lib/supabase"; 
+// import { supabase } from "@/lib/supabase"; 
 import { FcGoogle } from "react-icons/fc"; 
 
 const formSchema = z.object({
@@ -95,35 +95,35 @@ function SignUpCard() {
   };
 
   // NEW: Handler for Google Sign-In
-  const handleGoogleSignUp = async () => {
-    setMsg({ type: "", text: "" });
-    setGoogleLoading(true);
+  // const handleGoogleSignUp = async () => {
+  //   setMsg({ type: "", text: "" });
+  //   setGoogleLoading(true);
     
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        // You can add options here, like a redirect URL
-        // options: {
-        //   redirectTo: 'http://localhost:3000/dashboard'
-        // }
-      });
+  //   try {
+  //     const { error } = await supabase.auth.signInWithOAuth({
+  //       provider: 'google',
+  //       // You can add options here, like a redirect URL
+  //       // options: {
+  //       //   redirectTo: 'http://localhost:3000/dashboard'
+  //       // }
+  //     });
 
-      if (error) {
-        throw new Error(error.message);
-      }
-      // On success, Supabase will handle the redirect to Google
-      // and then redirect back to your app.
-    } catch (err) {
-      setMsg({
-        type: "error",
-        text: err.message || "Something went wrong with Google Sign-In",
-      });
-    } finally {
-      // We only set loading to false if there's an error,
-      // because a successful call will redirect the user away.
-      setGoogleLoading(false);
-    }
-  };
+  //     if (error) {
+  //       throw new Error(error.message);
+  //     }
+  //     // On success, Supabase will handle the redirect to Google
+  //     // and then redirect back to your app.
+  //   } catch (err) {
+  //     setMsg({
+  //       type: "error",
+  //       text: err.message || "Something went wrong with Google Sign-In",
+  //     });
+  //   } finally {
+  //     // We only set loading to false if there's an error,
+  //     // because a successful call will redirect the user away.
+  //     setGoogleLoading(false);
+  //   }
+  // };
 
 
   return (

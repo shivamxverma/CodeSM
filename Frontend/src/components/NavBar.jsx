@@ -72,7 +72,7 @@ export default function NewNav() {
       ? [{ to: "/contests/create", label: "Create Contest" }]
       : []),
     { to: "/contests", label: "Contests" },
-    { to: "/discuss", label: "Discuss" },
+    // { to: "/discuss", label: "Discuss" },
     { to: "/interview", label: "Interview Prep" }
   ];
     const toggleTheme = () => {

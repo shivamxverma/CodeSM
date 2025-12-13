@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import z from "zod";
 import { useNavigate } from "react-router-dom";
 import { login as apiLogin } from "../../api/api.js"; 
-import { supabase } from "../../lib/supabase"; 
+// import { supabase } from "../../lib/supabase"; 
 import { useAuth } from "../../auth/AuthContext"; // ✅ Import useAuth
 
 const emailSchema = z.string().email("Invalid email address");
@@ -84,19 +84,19 @@ function LoginCard() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setError("");
-    setGoogleLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-      });
-      if (error) throw new Error(error.message);
-    } catch (err) {
-      setError(err.message || "Something went wrong with Google Log-In");
-      setGoogleLoading(false);
-    }
-  };
+  // const handleGoogleLogin = async () => {
+  //   setError("");
+  //   setGoogleLoading(true);
+  //   try {
+  //     const { error } = await supabase.auth.signInWithOAuth({
+  //       provider: "google",
+  //     });
+  //     if (error) throw new Error(error.message);
+  //   } catch (err) {
+  //     setError(err.message || "Something went wrong with Google Log-In");
+  //     setGoogleLoading(false);
+  //   }
+  // };
 
   return (
     <div className="max-w-lg mx-auto p-8 bg-white shadow-2xl rounded-2xl mt-12">

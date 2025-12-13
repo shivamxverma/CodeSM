@@ -114,7 +114,7 @@ int main() {
         Array.isArray(obj.sampleTestcases) && obj.sampleTestcases.length
           ? { sampleTestcases: obj.sampleTestcases }
           : Array.isArray(obj.examples) && obj.examples.length
-          ? {
+            ? {
               sampleTestcases: [
                 {
                   input: obj.examples[0].input || "",
@@ -122,20 +122,20 @@ int main() {
                 },
               ],
             }
-          : { sampleTestcases: [{ input: "", output: "" }] };
+            : { sampleTestcases: [{ input: "", output: "" }] };
       const tc = Array.isArray(obj.testcases)
         ? obj.testcases
         : Array.isArray(obj.tests)
-        ? obj.tests
-        : samples.sampleInput || samples.sampleOutput
-        ? [{ input: samples.sampleInput, output: samples.sampleOutput }]
-        : [{ input: "", output: "" }];
+          ? obj.tests
+          : samples.sampleInput || samples.sampleOutput
+            ? [{ input: samples.sampleInput, output: samples.sampleOutput }]
+            : [{ input: "", output: "" }];
       const sol =
         obj.solutions && (obj.solutions.code || obj.solutions.language)
           ? {
-              language: obj.solutions.language || "cpp",
-              solution: obj.solutions.code || "",
-            }
+            language: obj.solutions.language || "cpp",
+            solution: obj.solutions.code || "",
+          }
           : { language: obj.language || "cpp", solution: obj.solution || "" };
       const tagsVal = Array.isArray(obj.tags)
         ? obj.tags.join(", ")
@@ -164,9 +164,9 @@ int main() {
           }))
           .length
           ? (tc || []).map((x) => ({
-              input: String(x.input ?? ""),
-              output: String(x.output ?? ""),
-            }))
+            input: String(x.input ?? ""),
+            output: String(x.output ?? ""),
+          }))
           : [{ input: "", output: "" }],
         language: sol.language,
         solution: sol.solution,
@@ -237,9 +237,8 @@ int main() {
 
   const CharCount = ({ value, max = 5000 }) => (
     <span
-      className={`text-xs ${
-        value.length > max ? "text-rose-300" : "text-slate-400"
-      }`}
+      className={`text-xs ${value.length > max ? "text-rose-300" : "text-slate-400"
+        }`}
     >
       {value.length}/{max}
     </span>
@@ -566,9 +565,8 @@ int main() {
 
                 <Field
                   label="Tags (comma separated)"
-                  hint={`${tagsArray.length} tag${
-                    tagsArray.length !== 1 ? "s" : ""
-                  }`}
+                  hint={`${tagsArray.length} tag${tagsArray.length !== 1 ? "s" : ""
+                    }`}
                 >
                   <input
                     type="text"
@@ -761,11 +759,10 @@ int main() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`w-full rounded-xl px-5 py-2 text-sm font-semibold text-white sm:w-auto ${
-                    isSubmitting
+                  className={`w-full rounded-xl px-5 py-2 text-sm font-semibold text-white sm:w-auto ${isSubmitting
                       ? "cursor-not-allowed bg-indigo-400"
                       : "bg-indigo-600 hover:bg-indigo-500"
-                  }`}
+                    }`}
                 >
                   {isSubmitting ? "Submitting…" : "Submit Problem"}
                 </button>
