@@ -31,10 +31,6 @@ const userSchema = new Schema(
       enum : ['user','author','admin'],
       default : 'user'
     },
-    problemSolved: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Problem",
-    },
     refreshToken: {
       type: String,
       default: null,
