@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { listContests } from "../api/api.js";
+import { listContests } from "../../api/api.js";
 import { Link } from "react-router-dom";
 
 export default function ContestListPage() {

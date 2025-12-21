@@ -3,7 +3,7 @@ import z from "zod";
 import { useNavigate } from "react-router-dom";
 import { login as apiLogin } from "../../api/api.js"; 
 // import { supabase } from "../../lib/supabase"; 
-import { useAuth } from "../../auth/AuthContext"; // ✅ Import useAuth
+import { useAuth } from "../../auth/AuthContext.jsx"; 
 
 const emailSchema = z.string().email("Invalid email address");
 const usernameSchema = z.string().min(3, "Username must be at least 3 characters long");

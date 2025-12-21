@@ -1,18 +1,18 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import LoginCard from "./pages/users/LoginCard";
-import SignUpCard from "./pages/users/SignUpCard";
-import ProblemPage from "./pages/admin/ProblemPage";
-import Dashboard from "./pages/dashboard/DashBoard";
-import Problems from "./pages/users/problem";
-import NewProblem from "./pages/admin/NewProblem";
-import ContestListPage from "./pages/ContestListPage";
-import ContestCreatePage from "./pages/ContestCreatePage";
-import ContestLobbyAndRun from "./pages/ContestLobbyAndRun";
-import InterviewAssistant from "./pages/InterviewPage";
-import DiscussionPage from "./pages/DiscussionPage";
-import AdminDashboard from "./pages/admin/AdminDashboard";
+import LoginCard from "./views/users/LoginCard";
+import SignUpCard from "./views/users/SignUpCard";
+import ProblemPage from "./views/problem/ProblemPage";
+import Dashboard from "./views/dashboard/DashBoard";
+import Problems from "./views/problem/problem";
+import NewProblem from "./views/problem/NewProblem";
+import ContestListPage from "./views/contest/ContestListPage";
+import ContestCreatePage from "./views/contest/ContestCreatePage";
+import ContestLobbyAndRun from "./views/contest/ContestLobbyAndRun";
+import InterviewAssistant from "./views/interview/InterviewPage";
+import DiscussionPage from "./views/discussion/DiscussionPage";
+import AdminDashboard from "./views/admin/AdminDashboard";
 
 import { AuthProvider } from "./auth/AuthContext";
 import RequireRole from "./auth/RequireRole";
