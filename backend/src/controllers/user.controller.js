@@ -49,17 +49,17 @@ const generateAccessTokenAndRefreshToken = async (user) => {
 }
 
 const registerUser = asyncHandler(async (req, res) => {
-    const { role,fullName, email, username, password } = req.body;
+    const { fullName, email, username, password } = req.body;
 
     if (
-        [role,fullName, email, password, username].some((field) => field?.trim() === "")
+        [fullName, email, password, username].some((field) => field?.trim() === "")
     ) {
         throw new ApiError(400, "All fields are required");
     }
 
-    if(!['user','author','admin'].includes(role.toLowerCase())){
-        throw new ApiError(400,"Role is Invalid");
-    }
+    // if(!['user','author','admin'].includes(role.toLowerCase())){
+    //     throw new ApiError(400,"Role is Invalid");
+    // }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -79,7 +79,6 @@ const registerUser = asyncHandler(async (req, res) => {
             email,
             fullName,
             password: hashedPassword,
-            role : role.toLowerCase()
     });
 
     const CreatedUser = await User.findById(user._id).select("-password -refreshToken");

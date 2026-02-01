@@ -62,13 +62,13 @@ const getJobResponse = asyncHandler(async (req, res) => {
 
     // console.log(jobResult);
 
-    const Submitted = await Submission.create({
-        user: req.user,
-        problem,
-        code: jobData.code,
-        language: jobData.language,
-        status: jobResult.output.status,
-    });
+    // const Submitted = await Submission.create({
+    //     user: req.user,
+    //     problem,
+    //     code: jobData.code,
+    //     language: jobData.language,
+    //     status: jobResult.output.status,
+    // });
 
     // console.log("Submission recorded:", Submitted);
 

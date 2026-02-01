@@ -6,7 +6,6 @@ import { signup } from "@/api/api";
 import { FcGoogle } from "react-icons/fc"; 
 
 const formSchema = z.object({
-  role: z.string().min(1, "Please select a role"),
   fullName: z.string().min(3, "Full name must be at least 3 characters"),
   email: z.string().email("Invalid e-mail address"),
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -43,7 +42,6 @@ function SignUpCard() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    role: "",
     fullName: "",
     email: "",
     username: "",
@@ -143,26 +141,6 @@ function SignUpCard() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        
-        <div>
-          <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-            Role
-          </label>
-          <select
-            id="role"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            required
-            className="mt-1 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-          >
-            <option value="" disabled>Select your role</option>
-            <option value="Author">Author</option>
-            <option value="Admin">Admin</option>
-            <option value="User">User</option>
-          </select>
-        </div>
-
         {Options.map(({ id, label, type, placeholder }) => (
           <div key={id}>
             <label htmlFor={id} className="block text-sm font-medium text-gray-700">

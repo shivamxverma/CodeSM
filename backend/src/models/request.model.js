@@ -1,27 +1,25 @@
-import mongoose,{Schema} from 'mongoose';
+// import mongoose,{Schema} from 'mongoose';
 
-const requestSchema = Schema({
-    problem : {
+// const requestSchema = Schema({
+//     problem : {
 
-    },
-    status : {
-        type : String,
-        enum : ['Pending','Approved','Rejected'],
-        default : 'Approved'
-    }
-})
+//     },
+//     status : {
+//         type : String,
+//         enum : ['Pending','Approved','Rejected'],
+//         default : 'Approved'
+//     }
+// })
 
-const Request = new mongoose.model('Request',requestSchema);
+// const Request = new mongoose.model('Request',requestSchema);
 
-export default Request;
+// export default Request;
 
-/*
+// /*
 
-Author Create a problem 
+// Author Create a problem 
 
-save the request in request schema 
-
-
+// save the request in request schema 
 
 
 
@@ -29,4 +27,6 @@ save the request in request schema
 
 
 
-*/
+
+
+// */
