@@ -3,9 +3,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ===================== */
-/* THEME TOKENS (KEEP)   */
-/* ===================== */
+/* ====================================================== */
+/* THEME TOKENS                                           */
+/* ====================================================== */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -21,69 +21,132 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-surface: var(--surface);
 }
 
-/* ===================== */
-/* ROOT THEME            */
-/* ===================== */
+/* ====================================================== */
+/* LIGHT THEME (default)                                  */
+/* ====================================================== */
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.13 0.028 261.692);
+
+  /* Page background: clean off-white */
+  --background: oklch(0.97 0.003 240);
+  /* Body text: dark slate */
+  --foreground: oklch(0.16 0.022 260);
+
+  /* Card / panel surface */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.13 0.028 261.692);
-  --primary: oklch(0.21 0.034 264.665);
-  --primary-foreground: oklch(0.985 0.002 247.839);
-  --secondary: oklch(0.967 0.003 264.542);
-  --muted: oklch(0.967 0.003 264.542);
-  --accent: oklch(0.967 0.003 264.542);
-  --border: oklch(0.928 0.006 264.531);
-  --input: oklch(0.928 0.006 264.531);
-  --ring: oklch(0.707 0.022 261.325);
+  --card-foreground: oklch(0.16 0.022 260);
+
+  /* Elevated surface (sidebars, code boxes, alt rows) */
+  --surface: oklch(0.93 0.005 240);
+
+  /* Primary action: indigo */
+  --primary: oklch(0.50 0.18 264);
+  --primary-foreground: oklch(0.97 0.003 240);
+
+  /* Secondary / chips */
+  --secondary: oklch(0.91 0.008 240);
+  --muted: oklch(0.92 0.006 240);
+  --muted-foreground: oklch(0.50 0.016 250);
+  --accent: oklch(0.91 0.010 260);
+
+  /* Borders & inputs */
+  --border: oklch(0.86 0.008 240);
+  --input: oklch(0.86 0.008 240);
+  --ring: oklch(0.58 0.12 264);
 }
+
+/* ====================================================== */
+/* DARK THEME — Soft & warm, comfortable for night use   */
+/* ====================================================== */
 
 .dark {
-  --background: oklch(0.13 0.028 261.692);
-  --foreground: oklch(0.985 0.002 247.839);
-  --card: oklch(0.21 0.034 264.665);
-  --card-foreground: oklch(0.985 0.002 247.839);
-  --primary: oklch(0.928 0.006 264.531);
-  --primary-foreground: oklch(0.21 0.034 264.665);
-  --secondary: oklch(0.278 0.033 256.848);
-  --muted: oklch(0.278 0.033 256.848);
-  --accent: oklch(0.278 0.033 256.848);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  /* Warm dark background — slate with warmth, not cold blue-black */
+  --background: oklch(0.16 0.012 258);
+  /* Warm off-white text — reduces glare vs pure white */
+  --foreground: oklch(0.90 0.008 248);
+
+  /* Card: slightly lighter than bg */
+  --card: oklch(0.20 0.014 260);
+  --card-foreground: oklch(0.90 0.008 248);
+
+  /* Elevated panels */
+  --surface: oklch(0.23 0.014 258);
+
+  /* Primary: softer indigo, readable but not harsh */
+  --primary: oklch(0.70 0.14 264);
+  --primary-foreground: oklch(0.16 0.012 258);
+
+  /* Muted surfaces */
+  --secondary: oklch(0.26 0.018 258);
+  --muted: oklch(0.26 0.018 258);
+  --muted-foreground: oklch(0.62 0.014 248);
+  --accent: oklch(0.30 0.022 260);
+
+  /* Soft borders — visible but not harsh */
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: oklch(0.60 0.08 264);
 }
 
-/* ===================== */
-/* BASE STYLES           */
-/* ===================== */
+/* ====================================================== */
+/* GLOBAL SMOOTH THEME TRANSITION                         */
+/* ====================================================== */
+
+*,
+*::before,
+*::after {
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.15s ease,
+    box-shadow 0.25s ease;
+}
+
+/* Don't animate transforms/opacity (breaks other animations) */
+[class*="animate-"],
+[class*="transition-"],
+[style*="transform"],
+.sparkle-canvas {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.15s ease !important;
+}
+
+/* ====================================================== */
+/* BASE STYLES                                            */
+/* ====================================================== */
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
-/* ===================== */
-/* COMPONENTS (NEW)      */
-/* ===================== */
+/* ====================================================== */
+/* COMPONENT CLASSES (shared across pages)               */
+/* ====================================================== */
 
 @layer components {
-  /* Auth / Forms */
+
+  /* Page roots that need to respond to theme */
+  .page-root {
+    @apply min-h-screen bg-background text-foreground;
+  }
+
+  /* ── Auth / Forms ─────────────────────────────────── */
   .auth-container {
-    @apply w-full max-w-md mx-auto bg-card text-card-foreground
-           p-6 rounded-xl shadow-md text-center;
+    @apply w-full max-w-md mx-auto bg-card text-card-foreground p-6 rounded-xl shadow-md text-center;
   }
 
   .auth-title {
@@ -91,22 +154,14 @@
   }
 
   .auth-input {
-    @apply w-full p-3 my-3 border border-input rounded-md
-           bg-background text-foreground
-           focus:outline-none focus:ring-2 focus:ring-ring;
+    @apply w-full p-3 my-3 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring;
   }
 
   .submit-button {
-    @apply w-full mt-4 p-3 rounded-lg
-           bg-primary text-primary-foreground
-           font-medium transition cursor-pointer;
+    @apply w-full mt-4 p-3 rounded-lg bg-primary text-primary-foreground font-medium transition cursor-pointer hover:opacity-90;
   }
 
-  .submit-button:hover {
-    @apply bg-accent;
-  }
-
-  /* Alerts */
+  /* ── Alerts ───────────────────────────────────────── */
   .success-popup {
     @apply bg-green-500 text-white p-3 rounded-md mb-3;
   }
@@ -115,7 +170,7 @@
     @apply bg-red-500 text-white p-3 rounded-md mb-3;
   }
 
-  /* Problem page */
+  /* ── Problem page ─────────────────────────────────── */
   .problem-container {
     @apply w-full max-w-3xl mx-auto bg-card p-6 rounded-xl shadow;
   }

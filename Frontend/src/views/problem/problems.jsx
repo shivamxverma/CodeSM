@@ -113,7 +113,7 @@ export default function ProblemPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 py-10 text-slate-100">
+    <div className="min-h-screen bg-background py-10 text-foreground">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
@@ -138,17 +138,16 @@ export default function ProblemPage() {
               <button
                 key={d}
                 onClick={() => setDifficulty(d)}
-                className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm transition ${
-                  difficulty === d ? "bg-white/10 text-white ring-1 ring-white/10" : "text-slate-300 hover:bg-white/5"
-                }`}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm transition ${difficulty === d ? "bg-white/10 text-white ring-1 ring-white/10" : "text-slate-300 hover:bg-white/5"
+                  }`}
                 title={
                   d === "Easy"
                     ? "800–1200"
                     : d === "Medium"
-                    ? "1300–1700"
-                    : d === "Hard"
-                    ? "1800–3000"
-                    : "No rating filter"
+                      ? "1300–1700"
+                      : d === "Hard"
+                        ? "1800–3000"
+                        : "No rating filter"
                 }
               >
                 {d}
