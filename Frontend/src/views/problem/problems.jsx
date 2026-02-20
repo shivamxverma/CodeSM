@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAllProblems } from "@/api/api";
+import { usePostHog } from "@posthog/react";
 
 export default function ProblemPage() {
+  const posthog = usePostHog();
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -20,6 +22,7 @@ export default function ProblemPage() {
     const controller = new AbortController();
     async function fetchProblems() {
       try {
+        posthog.capture("problem_page_load");
         setLoading(true);
         setError("");
         const res = await getAllProblems();

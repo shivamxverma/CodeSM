@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
+    "@posthog/react": "^1.8.0",
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/supabase-js": "^2.78.0",
     "@tailwindcss/vite": "^4.1.8",
@@ -26,6 +27,7 @@
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.515.0",
     "motion": "^12.18.1",
+    "posthog-js": "^1.352.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",

@@ -1,9 +1,9 @@
-import  {ApiError}  from "../utils/ApiError.js";
+import { ApiError } from "../utils/ApiError.js";
 import Problem from "../models/problem.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { generateUploadURL } from "../../services/aws.service.js";
-import { generateHintsWithAI } from '../../services/ai.service.js'; 
+import { generateHintsWithAI } from '../../services/ai.service.js';
 import redis from "../config/redis.config.js";
 import User from "../models/user.model.js";
 
@@ -74,8 +74,8 @@ const createProblem = asyncHandler(async (req, res) => {
     if (existingProblem) {
         throw new ApiError(400, "Problem with this title already exists");
     }
-    
-    
+
+
     const parsedSampleTestcases = JSON.parse(sampleTestcases);
 
     const newProblem = await Problem.create({
@@ -127,16 +127,15 @@ const getProblemById = asyncHandler(async (req, res) => {
     const problem = await Problem.findById(id);
     if (!problem) {
         throw new ApiError(404, "Problem not found");
-    }       
+    }
 
     const cacheExpiry = 60 * 60;
     redis.setex(`problem:${id}`, cacheExpiry, JSON.stringify(problem));
 
-    res.status(200).json(new ApiResponse(200, problem, "Problem fetched successfully"));    
+    res.status(200).json(new ApiResponse(200, problem, "Problem fetched successfully"));
 });
 
 const getAllProblems = asyncHandler(async (req, res) => {
-    console.log("Entering into problems");
     const cachedProblems = await redis.get('allProblems');
     if (
         cachedProblems &&
@@ -147,8 +146,8 @@ const getAllProblems = asyncHandler(async (req, res) => {
         return res.status(200).json(new ApiResponse(200, JSON.parse(cachedProblems), "Problems fetched successfully from cache"));
     }
 
-    
     const problems = await Problem.find().select("-description -memoryLimit -timeLimit -inputFormat -outputFormat -sampleTestcases -constraints -hints -submission -editorial -editorialLink -solution").sort({ createdAt: -1 });
+
 
     if (!problems || problems.length === 0) {
         throw new ApiError(404, "No problems found");
@@ -166,7 +165,7 @@ const getUpsolveHints = asyncHandler(async (req, res) => {
         return res.status(200).json(new ApiResponse(200, JSON.parse(cachedHints), "Hints fetched successfully from cache"));
     }
 
-    
+
     const { id } = req.params;
     const problem = await Problem.findById(id);
     if (!problem) {
@@ -193,4 +192,4 @@ const getUpsolveHints = asyncHandler(async (req, res) => {
 })
 
 
-export { createProblem, getProblemById, getAllProblems ,getUpsolveHints };
+export { createProblem, getProblemById, getAllProblems, getUpsolveHints };
