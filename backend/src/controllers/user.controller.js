@@ -8,8 +8,6 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
 const generateAccessTokenAndRefreshToken = async (user) => {
-    console.log(process.env.ACCESS_TOKEN_SECRET);
-
     try {
 
         if (!user) {
