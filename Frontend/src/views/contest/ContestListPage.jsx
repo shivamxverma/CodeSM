@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { listContests } from "../../api/api.js";
 import { Link } from "react-router-dom";
+import { usePostHog } from "@posthog/react";
 
 export default function ContestListPage() {
   const [contests, setContests] = useState([]);
+  const posthog = usePostHog();
 
   useEffect(() => {
     (async () => {
       const { data } = await listContests();
-      console.log("Contests data:", data.data);
       setContests(data.data || []);
+      posthog.capture("contest_list_viewed", { count: data.data?.length });
     })();
-  }, []);
+  }, [posthog]);
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">

@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createContest } from "../../api/api.js";
 import { useNavigate } from "react-router-dom";
+import { usePostHog } from "@posthog/react";
 
 export default function ContestCreatePage() {
   const nav = useNavigate();
+  const posthog = usePostHog();
   const [f, setF] = useState({
     title: "",
     description: "",
@@ -13,6 +15,10 @@ export default function ContestCreatePage() {
     problems: [{ problemId: "", index: "A", points: 100 }],
   });
   const [err, setErr] = useState("");
+
+  useEffect(() => {
+    posthog.capture("contest_creation_started");
+  }, [posthog]);
 
   const addProblem = () => setF((s) => ({ ...s, problems: [...s.problems, { problemId: "", index: "", points: 100 }] }));
   const rmProblem = (i) => setF((s) => ({ ...s, problems: s.problems.filter((_, j) => j !== i) }));
@@ -25,9 +31,12 @@ export default function ContestCreatePage() {
         problems: f.problems.map(p => ({ problem: p.problemId, index: p.index || "", points: Number(p.points || 0) }))
       };
       await createContest(payload);
+      posthog.capture("contest_created_success", { title: f.title, problem_count: f.problems.length });
       nav("/contests");
     } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to create contest");
+      const errorMsg = e?.response?.data?.message || "Failed to create contest";
+      posthog.capture("contest_created_failure", { title: f.title, error: errorMsg });
+      setErr(errorMsg);
     }
   };
 
