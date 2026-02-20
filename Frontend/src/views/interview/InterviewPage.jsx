@@ -225,7 +225,7 @@ const InterviewAssistant = () => {
 
     if (currentPage === 'interview') {
         return (
-            <div className="bg-[#1a1b26] min-h-screen text-white p-6 md:p-10 relative">
+            <div className="bg-background text-foreground min-h-screen p-6 md:p-10 relative">
                 <div className="flex justify-end mb-6">
                     <button
                         className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-md transition-colors"
@@ -246,7 +246,7 @@ const InterviewAssistant = () => {
                 </div>
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1 space-y-6">
-                        <div className="bg-gray-800 rounded-xl p-4 relative">
+                        <div className="bg-card border border-border rounded-xl p-4 relative">
                             <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">{isSpeaking ? 'AI is speaking' : 'AI is listening'}</span>
                             <div className="bg-black rounded-lg w-full aspect-video flex items-center justify-center">
                                 {isSpeaking ? (
@@ -265,7 +265,7 @@ const InterviewAssistant = () => {
                                 <p className="text-lg">Question {currentQuestionIndex + 1} of {questions.length}</p>
                             </div>
                         </div>
-                        <div className="bg-gray-800 rounded-xl p-4">
+                        <div className="bg-card border border-border rounded-xl p-4">
                             <h3 className="text-lg font-semibold mb-2">Current Question:</h3>
                             <p className="text-gray-300 text-sm">
                                 {questions[currentQuestionIndex]?.text || 'Generating question...'}
@@ -273,7 +273,7 @@ const InterviewAssistant = () => {
                         </div>
                     </div>
                     <div className="flex-1 space-y-6">
-                        <div className="bg-gray-800 rounded-xl p-4">
+                        <div className="bg-card border border-border rounded-xl p-4">
                             <h3 className="text-lg font-semibold mb-2">Your Answer</h3>
                             <textarea
                                 className="w-full h-32 bg-gray-700 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -352,7 +352,7 @@ const InterviewAssistant = () => {
         const experienceName = experienceLevels.find(e => e.id === selectedExperience)?.name || 'Not Selected';
 
         return (
-            <div className="bg-[#1a1b26] min-h-screen text-white p-8 flex flex-col items-center justify-center space-y-10">
+            <div className="bg-background text-foreground min-h-screen p-8 flex flex-col items-center justify-center space-y-10">
                 <div className="text-center space-y-4">
                     <h2 className="text-3xl font-bold">Ready to Start?</h2>
                     <p className="text-lg text-gray-400">
@@ -364,7 +364,7 @@ const InterviewAssistant = () => {
                     </button>
                 </div>
                 <div className="flex flex-col lg:flex-row w-full max-w-5xl gap-8">
-                    <div className="w-full lg:w-1/2 p-6 rounded-xl border border-gray-700 bg-gray-800/30">
+                    <div className="w-full lg:w-1/2 p-6 rounded-xl border border-border bg-card/60">
                         <h3 className="text-xl font-semibold mb-4 text-indigo-400">Enhanced Features</h3>
                         <ul className="space-y-4">
                             <li className="flex items-start gap-3">
@@ -393,7 +393,7 @@ const InterviewAssistant = () => {
                             </li>
                         </ul>
                     </div>
-                    <div className="w-full lg:w-1/2 p-6 rounded-xl border border-gray-700 bg-gray-800/30">
+                    <div className="w-full lg:w-1/2 p-6 rounded-xl border border-border bg-card/60">
                         <h3 className="text-xl font-semibold mb-4 text-indigo-400">Tips for Success</h3>
                         <ul className="space-y-4">
                             <li className="flex items-start gap-3">
@@ -437,7 +437,7 @@ const InterviewAssistant = () => {
     }
 
     return (
-        <div className="bg-[#1a1b26] min-h-screen text-white p-8 flex flex-col items-center space-y-12">
+        <div className="bg-background text-foreground min-h-screen p-8 flex flex-col items-center space-y-12">
             <div className="text-center">
                 <h1 className="text-4xl font-bold mb-2">AI Interview Assistant</h1>
                 <p className="text-xl text-gray-400">
@@ -453,8 +453,8 @@ const InterviewAssistant = () => {
                             onClick={() => setSelectedRole(role.id)}
                             className={`
                                 p-6 rounded-xl border-2 cursor-pointer transition-all duration-300
-                                bg-gray-800 flex flex-col items-center text-center space-y-2
-                                ${selectedRole === role.id ? 'border-indigo-500 bg-indigo-900/50 scale-105 shadow-2xl' : 'border-gray-700 hover:border-indigo-500 hover:scale-[1.02]'}
+                                bg-card flex flex-col items-center text-center space-y-2
+                                ${selectedRole === role.id ? 'border-indigo-500 bg-indigo-500/10 scale-105 shadow-2xl' : 'border-border hover:border-indigo-500 hover:scale-[1.02]'}
                             `}
                         >
                             <span className="text-4xl">{role.icon}</span>
@@ -473,8 +473,8 @@ const InterviewAssistant = () => {
                             onClick={() => setSelectedExperience(level.id)}
                             className={`
                                 p-6 rounded-xl border-2 cursor-pointer transition-all duration-300
-                                bg-gray-800 flex flex-col items-center text-center space-y-2
-                                ${selectedExperience === level.id ? 'border-indigo-500 bg-indigo-900/50 scale-105 shadow-2xl' : 'border-gray-700 hover:border-indigo-500 hover:scale-[1.02]'}
+                                bg-card flex flex-col items-center text-center space-y-2
+                                ${selectedExperience === level.id ? 'border-indigo-500 bg-indigo-500/10 scale-105 shadow-2xl' : 'border-border hover:border-indigo-500 hover:scale-[1.02]'}
                             `}
                         >
                             <h3 className="text-lg font-medium">{level.name}</h3>

@@ -14,7 +14,7 @@ export default function ContestListPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
+    <div className="min-h-screen bg-background text-foreground p-6">
       <div className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Contests</h1>
@@ -27,9 +27,8 @@ export default function ContestListPage() {
                   <div className="text-lg font-semibold">{c.title}</div>
                   <div className="text-xs text-slate-400 mt-1">{new Date(c.startTime).toLocaleString()} · {c.durationMinutes} min</div>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded border ${
-                  c.visibility === "public" ? "bg-emerald-900/30 border-emerald-800 text-emerald-300" : "bg-amber-900/30 border-amber-800 text-amber-300"
-                }`}>{c.visibility}</span>
+                <span className={`text-xs px-2 py-1 rounded border ${c.visibility === "public" ? "bg-emerald-900/30 border-emerald-800 text-emerald-300" : "bg-amber-900/30 border-amber-800 text-amber-300"
+                  }`}>{c.visibility}</span>
               </div>
               {c.description && <p className="mt-2 text-sm text-slate-300 line-clamp-2">{c.description}</p>}
             </Link>

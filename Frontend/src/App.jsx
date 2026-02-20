@@ -5,7 +5,7 @@ import LoginCard from "./views/users/LoginCard";
 import SignUpCard from "./views/users/SignUpCard";
 import ProblemPage from "./views/problem/ProblemPage";
 import Dashboard from "./views/dashboard/DashBoard";
-import Problems from "./views/problem/problem";
+import Problems from "./views/problem/problems";
 import NewProblem from "./views/problem/NewProblem";
 import ContestListPage from "./views/contest/ContestListPage";
 import ContestCreatePage from "./views/contest/ContestCreatePage";

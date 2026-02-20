@@ -1,5 +1,5 @@
 import axios from "axios";
-const BASE = "https://codesm.onrender.com/api/v1";
+const BASE = "http://localhost:8000/api/v1";
 const accessToken = localStorage.getItem("accessToken");
 
 export const login = (payload) => {

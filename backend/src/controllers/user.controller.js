@@ -1,13 +1,15 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import asyncHandler from '../utils/asyncHandler.js';
 import User from '../models/user.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js'
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
-dotenv.config();
 
 const generateAccessTokenAndRefreshToken = async (user) => {
+    console.log(process.env.ACCESS_TOKEN_SECRET);
+
     try {
 
         if (!user) {
@@ -44,6 +46,7 @@ const generateAccessTokenAndRefreshToken = async (user) => {
         return { accessToken, refreshToken };
 
     } catch (error) {
+        console.log(error);
         throw new ApiError(500, "Something Went Wrong While generating refresh and access token");
     }
 }

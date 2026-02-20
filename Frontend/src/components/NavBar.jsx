@@ -54,11 +54,11 @@ export default function NewNav() {
 
   // Load saved theme
   useEffect(() => {
-  const savedTheme = localStorage.getItem("theme");
-  if (savedTheme === "dark") {
-    document.documentElement.classList.add("dark");
-    setIsDark(true);
-  }
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+      setIsDark(true);
+    }
   }, []);
 
   const userRole = user?.role;
@@ -75,23 +75,23 @@ export default function NewNav() {
     // { to: "/discuss", label: "Discuss" },
     { to: "/interview", label: "Interview Prep" }
   ];
-    const toggleTheme = () => {
+  const toggleTheme = () => {
     const html = document.documentElement;
     const nextDark = !html.classList.contains("dark");
 
     html.classList.toggle("dark");
     localStorage.setItem("theme", nextDark ? "dark" : "light");
     setIsDark(nextDark);
-    };
+  };
 
-  
+
   return (
     <div className="sticky top-0 z-50">
       <div className="h-px w-full bg-gradient-to-r from-indigo-500/0 via-indigo-500/60 to-emerald-400/0" />
 
       <nav className="supports-[backdrop-filter]:bg-slate-900/60 bg-slate-900/90 backdrop-blur border-b border-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          
+
           <div className="flex items-center gap-3">
             <Link to="/" className="relative block">
               <span className="absolute -inset-1 -z-10 rounded-lg bg-gradient-to-r from-indigo-500/30 via-sky-500/30 to-emerald-500/30 blur-md" />
@@ -115,36 +115,36 @@ export default function NewNav() {
               </NavLink>
             ))}
           </div>
-          
+
 
           <div className="flex items-center gap-3">
             {/* 🌞 / 🌙 THEME TOGGLE */}
-          <button
-            onClick={toggleTheme}
-            className="relative flex h-10 w-10 items-center justify-center
+            <button
+              onClick={toggleTheme}
+              className="relative flex h-10 w-10 items-center justify-center
                       rounded-full border border-white/10
                       bg-white/5 text-slate-200
                       transition hover:bg-white/10"
-            aria-label="Toggle theme"
-          >
-            {/* Sun */}
-            <span
-              className={`absolute transition-all duration-300
+              aria-label="Toggle theme"
+            >
+              {/* Sun */}
+              <span
+                className={`absolute transition-all duration-300
                 ${isDark ? "scale-0 rotate-90 opacity-0" : "scale-100 rotate-0 opacity-100"}
               `}
-            >
-              ☀️
-            </span>
+              >
+                ☀️
+              </span>
 
-            {/* Moon */}
-            <span
-              className={`absolute transition-all duration-300
+              {/* Moon */}
+              <span
+                className={`absolute transition-all duration-300
                 ${isDark ? "scale-100 rotate-0 opacity-100" : "scale-0 -rotate-90 opacity-0"}
               `}
-            >
-              🌙
-            </span>
-          </button>
+              >
+                🌙
+              </span>
+            </button>
 
             {user ? (
               <div className="relative" ref={dropdownRef}>
