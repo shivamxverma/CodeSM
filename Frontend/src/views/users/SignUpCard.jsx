@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import z from "zod";
 import { signup } from "@/api/api";
 // import { supabase } from "@/lib/supabase"; 
-import { FcGoogle } from "react-icons/fc"; 
+import { FcGoogle } from "react-icons/fc";
 
 const formSchema = z.object({
   fullName: z.string().min(3, "Full name must be at least 3 characters"),
@@ -92,36 +92,11 @@ function SignUpCard() {
     }
   };
 
-  // NEW: Handler for Google Sign-In
-  // const handleGoogleSignUp = async () => {
-  //   setMsg({ type: "", text: "" });
-  //   setGoogleLoading(true);
-    
-  //   try {
-  //     const { error } = await supabase.auth.signInWithOAuth({
-  //       provider: 'google',
-  //       // You can add options here, like a redirect URL
-  //       // options: {
-  //       //   redirectTo: 'http://localhost:3000/dashboard'
-  //       // }
-  //     });
-
-  //     if (error) {
-  //       throw new Error(error.message);
-  //     }
-  //     // On success, Supabase will handle the redirect to Google
-  //     // and then redirect back to your app.
-  //   } catch (err) {
-  //     setMsg({
-  //       type: "error",
-  //       text: err.message || "Something went wrong with Google Sign-In",
-  //     });
-  //   } finally {
-  //     // We only set loading to false if there's an error,
-  //     // because a successful call will redirect the user away.
-  //     setGoogleLoading(false);
-  //   }
-  // };
+  // Sign-up with Google — same OAuth flow as login
+  // passport.config.js will create a new user if they don't exist
+  const handleGoogleSignUp = () => {
+    window.location.href = 'http://localhost:8000/api/v1/users/auth/google';
+  };
 
 
   return (
@@ -130,11 +105,10 @@ function SignUpCard() {
 
       {msg.text && (
         <div
-          className={`p-3 mb-4 rounded-lg text-center ${
-            msg.type === "error"
+          className={`p-3 mb-4 rounded-lg text-center ${msg.type === "error"
               ? "bg-red-100 text-red-700"
               : "bg-green-100 text-green-700"
-          }`}
+            }`}
         >
           {msg.text}
         </div>
@@ -191,40 +165,35 @@ function SignUpCard() {
         <button
           type="submit"
           disabled={loading || googleLoading} // NEW: Disable if Google auth is loading
-          className={`w-full py-3 rounded-lg text-white text-lg transition ${
-            (loading || googleLoading)
+          className={`w-full py-3 rounded-lg text-white text-lg transition ${(loading || googleLoading)
               ? "bg-blue-400 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-700"
-          }`}
+            }`}
         >
           {loading ? "Signing Up…" : "Sign Up"}
         </button>
       </form>
 
-      {/* --- NEW: "OR" DIVIDER AND GOOGLE BUTTON --- */}
-      {/* <div className="relative my-6">
+      {/* OR divider */}
+      <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-gray-300"></span>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-2 text-gray-500">
-            Or continue with
-          </span>
+          <span className="bg-white px-2 text-gray-500">Or continue with</span>
         </div>
-      </div> */}
+      </div>
 
-      {/* <button
+      <button
         type="button"
         onClick={handleGoogleSignUp}
         disabled={googleLoading || loading}
-        className={`w-full py-3 flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition ${
-          (googleLoading || loading) && "opacity-50 cursor-not-allowed"
-        }`}
+        className={`w-full py-3 flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition ${(googleLoading || loading) ? "opacity-50 cursor-not-allowed" : ""
+          }`}
       >
         <FcGoogle size={24} />
         {googleLoading ? "Redirecting..." : "Sign Up with Google"}
-      </button> */}
-      {/* --- END OF NEW UI --- */}
+      </button>
 
 
       <p className="text-sm text-center text-gray-600 mt-4">
