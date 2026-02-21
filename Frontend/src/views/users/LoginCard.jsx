@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import z from "zod";
 import { useNavigate } from "react-router-dom";
-import { login as apiLogin } from "../../api/api.js"; 
+import { login as apiLogin } from "../../api/api.js";
 // import { supabase } from "../../lib/supabase"; 
-import { useAuth } from "../../auth/AuthContext.jsx"; 
+import { useAuth } from "../../auth/AuthContext.jsx";
 
 const emailSchema = z.string().email("Invalid email address");
 const usernameSchema = z.string().min(3, "Username must be at least 3 characters long");
@@ -61,7 +61,7 @@ function LoginCard() {
 
       // 1. Call Backend
       const response = await apiLogin(payload);
-      
+
       // 2. Extract Token
       const token = response.data.message.accessToken || response.data.accessToken;
 
@@ -71,7 +71,7 @@ function LoginCard() {
       login(token);
 
       setSuccess("Login successful! Redirecting...");
-      
+
       setTimeout(() => {
         navigate("/");
       }, 500);
@@ -163,20 +163,27 @@ function LoginCard() {
           disabled={loading || googleLoading}
           className={`w-full py-3 px-6 text-white text-lg rounded-lg transition
             ${loading || googleLoading
-                ? "bg-blue-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
+              ? "bg-blue-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
             }`}
         >
           {loading ? "Logging In..." : "Log In"}
         </button>
-      </form>
 
-      <p className="mt-4 text-center text-sm text-gray-600">
-        Don't have an account?{" "}
-        <a href="/signup" className="text-blue-600 hover:underline">
-          Sign up
-        </a>
-      </p>
+        {/* Google Login Button */}
+        <button
+          type="button"
+          disabled={googleLoading}
+          onClick={() => {
+            // Redirect to backend Google OAuth entry point
+            const base = 'http://localhost:8000/api/v1/users';
+            window.location.href = `${base}/auth/google`;
+          }}
+          className={`w-full py-3 px-6 mt-4 text-white text-lg rounded-lg transition ${googleLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
+        >
+          {googleLoading ? 'Redirecting...' : 'Continue with Google'}
+        </button>
+      </form>
     </div>
   );
 }

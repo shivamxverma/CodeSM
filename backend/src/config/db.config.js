@@ -7,7 +7,6 @@ dotenv.config();
 const connectDB = async () => {
     try {
         console.log("Connecting to MongoDB...");
-        console.log(`MongoDB URI: ${process.env.MONGO_URI}${DATABASE_NAME}`);
         const connectionInstance = await mongoose.connect(`${process.env.MONGO_URI}${DATABASE_NAME}`);
 
         // seedAdmin()
@@ -22,7 +21,7 @@ const connectDB = async () => {
 
         console.log("Connection successful!");
 
-    } catch(err){
+    } catch (err) {
         console.error("Error connecting to MongoDB:", err);
         process.exit(1);
     }

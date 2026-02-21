@@ -23,18 +23,23 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
       minlength: [8, "Password must be at least 8 characters long"],
     },
-    role :{
-      type : String,
-      enum : ['user','author','admin'],
-      default : 'user'
+    googleId: {
+      type: String,
+      required: false,
+      unique: true,
+    },
+    role: {
+      type: String,
+      enum: ['user', 'author', 'admin'],
+      default: 'user',
     },
     refreshToken: {
       type: String,
       default: null,
-    }
+    },
   },
   { timestamps: true }
 );
