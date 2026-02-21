@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { getQuestionsForInterview, getScoreForQuestion } from '../../api/api.js';
+import { usePostHog } from '@posthog/react';
 
 const InterviewAssistant = () => {
     const [selectedRole, setSelectedRole] = useState(null);
     const [selectedExperience, setSelectedExperience] = useState(null);
+    const posthog = usePostHog();
     const [currentPage, setCurrentPage] = useState('selection');
     const [showScore, setShowScore] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -67,6 +69,13 @@ const InterviewAssistant = () => {
             setCurrentPage('interview');
             setIsLoading(false);
 
+            posthog.capture("interview_started", {
+                role: selectedRoleData?.name,
+                experience: selectedExperienceData?.name,
+                interview_id: interviewId,
+                question_count: questions.length,
+            });
+
             if (questions.length > 0 && questions[0].audioUrl) {
                 playAudio(questions[0].audioUrl);
             }
@@ -85,6 +94,12 @@ const InterviewAssistant = () => {
             setAnalysis(analysis);
             setShowScore(true);
             setIsLoading(false);
+
+            posthog.capture("interview_question_answered", {
+                question_index: currentQuestionIndex,
+                score: score,
+                interview_id: interviewId,
+            });
         } catch (error) {
             console.error("Error submitting answer:", error);
             setIsLoading(false);
@@ -121,6 +136,10 @@ const InterviewAssistant = () => {
                 playAudio(questions[nextIndex].audioUrl);
             }
         } else {
+            posthog.capture("interview_finished", {
+                interview_id: interviewId,
+                total_questions: questions.length,
+            });
             setCurrentPage('selection');
             setQuestions([]);
             setCurrentQuestionIndex(0);

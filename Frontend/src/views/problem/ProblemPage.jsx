@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Editor from "@monaco-editor/react";
+import { usePostHog } from "@posthog/react";
 import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/auth/AuthContext";
@@ -77,6 +78,7 @@ export default function ProblemPage() {
   const monacoRef = useRef(null);
   const { id: problemId } = useParams();
   const auth = useAuth();
+  const posthog = usePostHog();
 
   const handleEditorChange = useCallback((value) => setCode(value || ""), []);
   const onEditorMount = useCallback((editor, monaco) => {
@@ -88,13 +90,19 @@ export default function ProblemPage() {
     async function fetchProblem() {
       try {
         const res = await getProblem(problemId);
-        setProblem(res.data.message);
+        const p = res.data.message;
+        setProblem(p);
+        posthog.capture("problem_viewed", {
+          problem_id: problemId,
+          problem_title: p?.title,
+          difficulty: p?.difficulty,
+        });
       } catch (error) {
         setProblem(null);
       }
     }
     fetchProblem();
-  }, [problemId]);
+  }, [problemId, posthog]);
 
   useEffect(() => {
     let intervalId;
@@ -109,7 +117,15 @@ export default function ProblemPage() {
             clearInterval(intervalId);
             setResult(res.data.result);
 
-            processExecutionResult(res.data.data.result);
+            const resultPayload = res.data.data.result;
+            processExecutionResult(resultPayload);
+
+            posthog.capture(isSubmitting ? "submission_result" : "run_result", {
+              problem_id: problemId,
+              status: resultPayload?.status,
+              job_state: jobState,
+            });
+
             setIsRunning(false);
             setIsSubmitting(false);
             setJobId(null);
@@ -118,6 +134,10 @@ export default function ProblemPage() {
           console.error("Error fetching job response:", err);
           clearInterval(intervalId);
           setStatus("failed");
+          posthog.capture(isSubmitting ? "submission_failed" : "run_failed", {
+            problem_id: problemId,
+            error: "Failed to get job status",
+          });
           setIsRunning(false);
           setIsSubmitting(false);
           setJobId(null);
@@ -263,10 +283,18 @@ int main(){
 
       const newJobId = response.data.message.id;
       setJobId(newJobId);
+      posthog.capture(asSubmit ? "submission_attempt" : "run_attempt", {
+        problem_id: problemId,
+        language,
+      });
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || "Execution failed";
       setStatusBadge({ type: "error", text: "Error" });
       setConsoleOutput((prev) => (prev ? prev + "\n" : "") + `${msg}`);
+      posthog.capture(asSubmit ? "submission_error" : "run_error", {
+        problem_id: problemId,
+        error: msg,
+      });
       setBusy(false);
     }
   };
@@ -289,8 +317,10 @@ int main(){
     setHintsError(null);
     try {
       const res = await getProblemHints(problemId);
-      setHints(res.data.message.hints || []);
+      const fetchedHints = res.data.message.hints || [];
+      setHints(fetchedHints);
       setRevealedHintIndex(0);
+      posthog.capture("hints_generated", { problem_id: problemId, count: fetchedHints.length });
     } catch (error) {
       setHintsError("Failed to load hints. Please try again later.");
       console.error("Error fetching hints:", error);
@@ -574,7 +604,10 @@ int main(){
 
                 {!hintsLoading && revealedHintIndex < hints.length - 1 && (
                   <button
-                    onClick={() => setRevealedHintIndex((prev) => prev + 1)}
+                    onClick={() => {
+                      setRevealedHintIndex((prev) => prev + 1);
+                      posthog.capture("hint_revealed", { problem_id: problemId, hint_index: revealedHintIndex + 1 });
+                    }}
                     className="w-full px-3 py-2 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750] text-sm font-medium transition-colors"
                   >
                     Reveal Next Hint

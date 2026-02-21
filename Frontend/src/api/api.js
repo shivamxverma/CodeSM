@@ -1,5 +1,5 @@
 import axios from "axios";
-const BASE = "http://localhost:8000/api/v1";
+const BASE = import.meta.env.VITE_API_URL;
 const accessToken = localStorage.getItem("accessToken");
 
 export const login = (payload) => {
@@ -32,7 +32,7 @@ export const getProblem = (id) => {
 
 export const createProblem = (payload) => {
   return axios.post(
-    "http://localhost:8000/api/v1/problem/createproblem",
+    `${BASE}/problem/createproblem`,
     payload,
     {
       withCredentials: true,

@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { createProblem } from "../../api/api";
+import { usePostHog } from "@posthog/react";
 
 export default function CreateProblem() {
   const navigate = useNavigate();
+  const posthog = usePostHog();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -29,6 +31,10 @@ int main() {
     editorial: "",
     editorialLink: "",
   });
+
+  useEffect(() => {
+    posthog.capture("problem_creation_started");
+  }, [posthog]);
 
   const tagsArray = useMemo(
     () =>
@@ -308,6 +314,10 @@ int main() {
       );
 
       const res = await createProblem(data);
+      posthog.capture("problem_created_success", {
+        title: formData.title,
+        difficulty: formData.difficulty,
+      });
 
       const url = res?.data?.message?.uploadURL;
       if (url) {
@@ -322,7 +332,12 @@ int main() {
       navigate("/problems");
     } catch (err) {
       console.error(err);
-      setError("Failed to create problem. Please try again.");
+      const errorMsg = "Failed to create problem. Please try again.";
+      posthog.capture("problem_created_failure", {
+        title: formData.title,
+        error: err.message,
+      });
+      setError(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -760,8 +775,8 @@ int main() {
                   type="submit"
                   disabled={isSubmitting}
                   className={`w-full rounded-xl px-5 py-2 text-sm font-semibold text-white sm:w-auto ${isSubmitting
-                      ? "cursor-not-allowed bg-indigo-400"
-                      : "bg-indigo-600 hover:bg-indigo-500"
+                    ? "cursor-not-allowed bg-indigo-400"
+                    : "bg-indigo-600 hover:bg-indigo-500"
                     }`}
                 >
                   {isSubmitting ? "Submitting…" : "Submit Problem"}

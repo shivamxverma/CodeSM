@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { getAllProblems } from "@/api/api";
+import { usePostHog } from "@posthog/react";
 
 // ─── Animated counter hook ────────────────────────────────────────────────────
 function useCountUp(target, duration = 1200) {
@@ -89,10 +90,12 @@ function DiffBadge({ label, count, dotColor }) {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function DashBoard() {
     const { user } = useAuth();
+    const posthog = usePostHog();
     const [problems, setProblems] = useState([]);
     const [loadingProblems, setLoadingProblems] = useState(true);
 
     useEffect(() => {
+        posthog.capture("dashboard_viewed");
         getAllProblems()
             .then((res) => {
                 const data = res?.data?.message;

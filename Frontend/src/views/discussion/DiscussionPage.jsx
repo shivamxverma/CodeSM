@@ -1,15 +1,21 @@
-import React, { useEffect , useState } from 'react';
-import {getAllDiscussion} from '@/api/api';
+import React, { useEffect, useState } from 'react';
+import { usePostHog } from '@posthog/react';
+import { getAllDiscussion } from '@/api/api';
 
 const DiscussionPage = () => {
-  const [discussion,setDiscussion] = useState([{
-    _id : 1,content : "your name is shivam",like : 1,dislike : 3
+  const posthog = usePostHog();
+  const [discussion, setDiscussion] = useState([{
+    _id: 1, content: "your name is shivam", like: 1, dislike: 3
   }]);
-  const [formData,setFormData] = useState({
-    title : "",
-    description : "",
-    tags : ""
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    tags: ""
   })
+
+  useEffect(() => {
+    posthog.capture("discussion_page_viewed");
+  }, [posthog]);
 
   const Field = ({ label, hint, children }) => (
     <div>
@@ -34,40 +40,40 @@ const DiscussionPage = () => {
   // },[])
 
   const handleDiscussionCreation = () => {
-
-  }
+    posthog.capture("discussion_creation_attempt", { title: formData.title });
+  };
 
   return (
     <>
 
       <form onSubmit={handleDiscussionCreation}>
         <Field label="Title">
-          <input 
-           type="text"
-           value={formData.title}
-           onChange={(e)=>updateField("title",e.target.value)}
-           placeholder='Enter Title For Discussion'
-           required
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) => updateField("title", e.target.value)}
+            placeholder='Enter Title For Discussion'
+            required
           />
         </Field>
 
         <Field
-         label="description"
+          label="description"
         >
-          <textarea 
-           value={formData.description}
-           onChange={(e)=>updateField("description",e.target.value)}
-           placeholder='Give the Description'
-           required
+          <textarea
+            value={formData.description}
+            onChange={(e) => updateField("description", e.target.value)}
+            placeholder='Give the Description'
+            required
           />
         </Field>
       </form>
-        
-      <button 
+
+      <button
         onClick={handleDiscussionCreation}
-        className='border-black-400 text-purple-600 hover:border-transparent hover:bg-purple-600 hover:text-white active:bg-purple-700'>+Create Discussion</button> 
+        className='border-black-400 text-purple-600 hover:border-transparent hover:bg-purple-600 hover:text-white active:bg-purple-700'>+Create Discussion</button>
       <div>
-        {discussion.map(dis=>(
+        {discussion.map(dis => (
           <div key={dis._id}>
             <h1>{dis.content}</h1>
             <p>{dis.like}</p>
