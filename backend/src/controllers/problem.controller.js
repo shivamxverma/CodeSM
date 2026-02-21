@@ -149,6 +149,7 @@ const getAllProblems = asyncHandler(async (req, res) => {
 
     const problems = await Problem.find().select("-description -memoryLimit -timeLimit -inputFormat -outputFormat -sampleTestcases -constraints -hints -submission -editorial -editorialLink -solution").sort({ createdAt: -1 });
 
+
     if (!problems || problems.length === 0) {
         return res.status(200).json(new ApiResponse(200, [], "No problems found"));
     }

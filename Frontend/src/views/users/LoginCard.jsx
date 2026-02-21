@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { login as apiLogin } from "../../api/api.js";
 // import { supabase } from "../../lib/supabase"; 
 import { useAuth } from "../../auth/AuthContext.jsx";
+import { usePostHog } from '@posthog/react'
 
 const emailSchema = z.string().email("Invalid email address");
 const usernameSchema = z.string().min(3, "Username must be at least 3 characters long");
@@ -23,6 +24,7 @@ const validateForm = ({ email, username, password }) => {
 function LoginCard() {
   const navigate = useNavigate();
   const { login } = useAuth(); // ✅ Get context login function
+  const posthog = usePostHog();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -40,6 +42,10 @@ function LoginCard() {
   };
 
   const handleSubmit = async (e) => {
+    posthog.capture("login_attempt", {
+      email: formData.email,
+      username: formData.username,
+    });
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -70,6 +76,11 @@ function LoginCard() {
       // 3. ✅ Update Context (State + LocalStorage)
       login(token);
 
+      posthog.capture("login_success", {
+        email: formData.email,
+        username: formData.username,
+      });
+
       setSuccess("Login successful! Redirecting...");
 
       setTimeout(() => {
@@ -78,7 +89,13 @@ function LoginCard() {
 
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || err.message || "Invalid credentials");
+      const errorMsg = err.response?.data?.message || err.message || "Invalid credentials";
+      posthog.capture("login_failure", {
+        email: formData.email,
+        username: formData.username,
+        error: errorMsg,
+      });
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

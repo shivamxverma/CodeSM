@@ -4,6 +4,7 @@ import z from "zod";
 import { signup } from "@/api/api";
 // import { supabase } from "@/lib/supabase"; 
 import { FcGoogle } from "react-icons/fc";
+import { usePostHog } from "@posthog/react";
 
 const formSchema = z.object({
   fullName: z.string().min(3, "Full name must be at least 3 characters"),
@@ -40,6 +41,7 @@ const getLbl = (s) => {
 
 function SignUpCard() {
   const navigate = useNavigate();
+  const posthog = usePostHog();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -72,20 +74,37 @@ function SignUpCard() {
 
     const parse = formSchema.safeParse(formData);
     if (!parse.success) {
-      setMsg({ type: "error", text: parse.error.errors[0].message });
+      const errorMsg = parse.error.errors[0].message;
+      posthog.capture("signup_validation_error", { error: errorMsg });
+      setMsg({ type: "error", text: errorMsg });
       return;
     }
 
     try {
+      posthog.capture("signup_attempt", {
+        email: formData.email,
+        username: formData.username,
+        fullName: formData.fullName,
+      });
       setLoading(true);
       await signup(formData); // This is your custom API call
 
       setMsg({ type: "success", text: "Signup successful! Redirecting…" });
+      posthog.capture("signup_success", {
+        email: formData.email,
+        username: formData.username,
+      });
       setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
+      const errorMsg = err.response?.data?.message || "Something went wrong";
+      posthog.capture("signup_failure", {
+        email: formData.email,
+        username: formData.username,
+        error: errorMsg,
+      });
       setMsg({
         type: "error",
-        text: err.response?.data?.message || "Something went wrong",
+        text: errorMsg,
       });
     } finally {
       setLoading(false);
