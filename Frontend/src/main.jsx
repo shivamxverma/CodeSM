@@ -10,15 +10,16 @@ import { PostHogProvider } from '@posthog/react';
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={clientId}>
-    <PostHogProvider
-      apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY}
-      options={{
-        host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
-      }}
-    >
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </PostHogProvider>
+      <PostHogProvider
+        apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY}
+        options={{
+          host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
+        }}
+      >
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </PostHogProvider>
+    </GoogleOAuthProvider>
   </StrictMode>,
 )
