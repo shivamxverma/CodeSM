@@ -101,20 +101,6 @@ function LoginCard() {
     }
   };
 
-  // const handleGoogleLogin = async () => {
-  //   setError("");
-  //   setGoogleLoading(true);
-  //   try {
-  //     const { error } = await supabase.auth.signInWithOAuth({
-  //       provider: "google",
-  //     });
-  //     if (error) throw new Error(error.message);
-  //   } catch (err) {
-  //     setError(err.message || "Something went wrong with Google Log-In");
-  //     setGoogleLoading(false);
-  //   }
-  // };
-
   return (
     <div className="max-w-lg mx-auto p-8 bg-white shadow-2xl rounded-2xl mt-12">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
