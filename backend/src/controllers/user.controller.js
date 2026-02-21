@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
 const generateAccessTokenAndRefreshToken = async (user) => {
+
     try {
 
         if (!user) {
@@ -68,7 +69,7 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Something Went Wrong While Hashing Password");
     }
 
-    const ExistedUser = await User.findOne({ $or : [{username},{email}]});
+    const ExistedUser = await User.findOne({ $or: [{ username }, { email }] });
 
     if (ExistedUser) {
         throw new ApiError(409, "Username or Email already exists");
@@ -76,10 +77,10 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
     const user = await User.create({
-            username: username,
-            email,
-            fullName,
-            password: hashedPassword,
+        username: username,
+        email,
+        fullName,
+        password: hashedPassword,
     });
 
     const CreatedUser = await User.findById(user._id).select("-password -refreshToken");
@@ -94,7 +95,7 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-    const {username,email,password } = req.body;
+    const { username, email, password } = req.body;
 
     if (!username && !email && !password) {
         throw new ApiError(400, 'Username or Email is Required');
@@ -168,46 +169,46 @@ const LogoutUser = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .clearCookie("accessToken",options)
-        .clearCookie("refreshToken",options)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
         .json(new ApiResponse(200, {}, "User logged out"));
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken = req.cookies?.refreshToken || req.header("Authorization")?.replace("Bearer ", "");
-  if (!incomingRefreshToken) {
-    return res.status(401).json({ message: "Unauthorized request" });
-  }
-
-  try {
-    const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
-
-    const user = await User.findById(decodedToken?._id);
-    if (!user) {
-      return res.status(401).json({ message: "Invalid refresh token" });
+    const incomingRefreshToken = req.cookies?.refreshToken || req.header("Authorization")?.replace("Bearer ", "");
+    if (!incomingRefreshToken) {
+        return res.status(401).json({ message: "Unauthorized request" });
     }
 
-    if (incomingRefreshToken !== user.refreshToken) {
-      return res.status(401).json({ message: "Refresh token expired or used" });
+    try {
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+        const user = await User.findById(decodedToken?._id);
+        if (!user) {
+            return res.status(401).json({ message: "Invalid refresh token" });
+        }
+
+        if (incomingRefreshToken !== user.refreshToken) {
+            return res.status(401).json({ message: "Refresh token expired or used" });
+        }
+
+        // const accessToken = await generateAccessTokenAndRefreshToken(user._id, user.role);
+
+        // user.refreshToken = refreshToken;
+        // await user.save({ validateBeforeSave: false });
+
+        const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user);
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
+
+        res
+            .status(200)
+            .cookie("accessToken", accessToken, { httpOnly: true, secure: true })
+            .cookie("refreshToken", refreshToken, { httpOnly: true, secure: true })
+            .json({ accessToken, refreshToken });
+    } catch (error) {
+        return res.status(401).json({ message: error.message || "Invalid refresh token" });
     }
-
-    // const accessToken = await generateAccessTokenAndRefreshToken(user._id, user.role);
-
-    // user.refreshToken = refreshToken;
-    // await user.save({ validateBeforeSave: false });
-
-    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user);
-    user.refreshToken = refreshToken;
-    await user.save({ validateBeforeSave: false });
-
-    res
-      .status(200)
-      .cookie("accessToken", accessToken, { httpOnly: true, secure: true })
-      .cookie("refreshToken", refreshToken, { httpOnly: true, secure: true })
-      .json({ accessToken, refreshToken });
-  } catch (error) {
-    return res.status(401).json({ message: error.message || "Invalid refresh token" });
-  }
 });
 
 

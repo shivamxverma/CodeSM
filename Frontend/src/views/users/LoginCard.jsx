@@ -186,14 +186,21 @@ function LoginCard() {
         >
           {loading ? "Logging In..." : "Log In"}
         </button>
-      </form>
 
-      <p className="mt-4 text-center text-sm text-gray-600">
-        Don't have an account?{" "}
-        <a href="/signup" className="text-blue-600 hover:underline">
-          Sign up
-        </a>
-      </p>
+        {/* Google Login Button */}
+        <button
+          type="button"
+          disabled={googleLoading}
+          onClick={() => {
+            // Redirect to backend Google OAuth entry point
+            const base = 'http://localhost:8000/api/v1/users';
+            window.location.href = `${base}/auth/google`;
+          }}
+          className={`w-full py-3 px-6 mt-4 text-white text-lg rounded-lg transition ${googleLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
+        >
+          {googleLoading ? 'Redirecting...' : 'Continue with Google'}
+        </button>
+      </form>
     </div>
   );
 }

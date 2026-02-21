@@ -146,11 +146,12 @@ const getAllProblems = asyncHandler(async (req, res) => {
         return res.status(200).json(new ApiResponse(200, JSON.parse(cachedProblems), "Problems fetched successfully from cache"));
     }
 
+
     const problems = await Problem.find().select("-description -memoryLimit -timeLimit -inputFormat -outputFormat -sampleTestcases -constraints -hints -submission -editorial -editorialLink -solution").sort({ createdAt: -1 });
 
 
     if (!problems || problems.length === 0) {
-        throw new ApiError(404, "No problems found");
+        return res.status(200).json(new ApiResponse(200, [], "No problems found"));
     }
 
     const cacheExpiry = 60 * 60;
