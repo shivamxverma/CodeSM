@@ -22,7 +22,7 @@ async function generateUploadURL(problemId) {
     Key: `/problems/${problemId}/testcases.json`,
     ContentType: "application/json",
   });
-  const url = await getSignedUrl(s3Client, params,{ expiresIn: 3600 });
+  const url = await getSignedUrl(s3Client, params, { expiresIn: 3600 });
   return url;
 }
 
@@ -44,7 +44,6 @@ async function fetchTestcasesFromS3(problemId) {
     const response = await s3Client.send(command);
     const jsonString = await streamToString(response.Body);
     const data = JSON.parse(jsonString);
-    console.log("Testcases fetched from S3:", data);
     return data;
   } catch (err) {
     console.error("Error fetching testcases:", err);
@@ -52,4 +51,4 @@ async function fetchTestcasesFromS3(problemId) {
   }
 }
 
-export { generateUploadURL , fetchTestcasesFromS3};
+export { generateUploadURL, fetchTestcasesFromS3 };

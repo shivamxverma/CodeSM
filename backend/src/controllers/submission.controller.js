@@ -1,4 +1,4 @@
-import {ApiError} from "../utils/ApiError.js";
+import { ApiError } from "../utils/ApiError.js";
 import Submission from "../models/submission.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -8,11 +8,10 @@ import { myQueue } from "../config/queue.config.js";
 
 const createSubmission = asyncHandler(async (req, res) => {
 
-    console.log("Entering into createSubmission");
     const { code, language } = req.body;
     const { problemId } = req.params;
     const dryRun = req.query.dryRun === "true";
-    
+
     if ([problemId, code, language].some(field => typeof field !== "string" || !field.trim())) {
         throw new ApiError(400, "All fields are required");
     }
@@ -42,12 +41,11 @@ const getAllSubmissionById = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Problem not found");
     }
 
-    const submissions = await Submission.find({ problem: problem._id, user: req.user }).populate('user','username');
+    const submissions = await Submission.find({ problem: problem._id, user: req.user }).populate('user', 'username');
 
-    console.log("Submissions fetched:", submissions);
 
-    if(!submissions){
-        throw new ApiError(404,"Submissions Not Found");
+    if (!submissions) {
+        throw new ApiError(404, "Submissions Not Found");
     }
 
     res.status(200).json(new ApiResponse(200, submissions, "Submission fetched successfully"));

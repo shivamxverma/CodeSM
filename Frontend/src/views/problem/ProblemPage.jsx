@@ -101,7 +101,7 @@ export default function ProblemPage() {
     if (jobId) {
       intervalId = setInterval(async () => {
         try {
-          const res = await getJobResponse(jobId,problemId);
+          const res = await getJobResponse(jobId, problemId);
           const jobState = res.data.data.state;
           setStatus(jobState);
 
@@ -277,7 +277,6 @@ int main(){
   const getAllSubmission = async () => {
     try {
       const res = await getSubmissions(problemId);
-      console.log(res.data);
       setSubmissions(res.data.message || []);
     } catch (error) {
       console.error("Error fetching submissions:", error);
@@ -348,8 +347,8 @@ int main(){
                 key={t}
                 onClick={() => setActiveTab(t)}
                 className={`px-3 py-2 text-sm rounded-t font-medium transition-colors ${activeTab === t
-                    ? "bg-[#121923] border-x border-t border-[#233046] text-blue-300"
-                    : "text-gray-400 hover:text-gray-200"
+                  ? "bg-[#121923] border-x border-t border-[#233046] text-blue-300"
+                  : "text-gray-400 hover:text-gray-200"
                   }`}
               >
                 {t}
@@ -681,8 +680,8 @@ int main(){
               onClick={handleRun}
               disabled={isRunning || isSubmitting}
               className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${isRunning || isSubmitting
-                  ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
-                  : "bg-[#1e3046] hover:bg-[#264060] border-[#2a4a73]"
+                ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
+                : "bg-[#1e3046] hover:bg-[#264060] border-[#2a4a73]"
                 }`}
             >
               {isRunning ? "Running..." : "Run"}
@@ -691,8 +690,8 @@ int main(){
               onClick={handleSubmit}
               disabled={isSubmitting || isRunning}
               className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${isSubmitting || isRunning
-                  ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
-                  : "bg-[#0c5bd5] hover:bg-[#0a4fb9] border-[#0c5bd5]"
+                ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
+                : "bg-[#0c5bd5] hover:bg-[#0a4fb9] border-[#0c5bd5]"
                 }`}
             >
               {isSubmitting ? "Submitting..." : "Submit"}

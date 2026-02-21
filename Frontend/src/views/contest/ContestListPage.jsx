@@ -8,7 +8,6 @@ export default function ContestListPage() {
   useEffect(() => {
     (async () => {
       const { data } = await listContests();
-      console.log("Contests data:", data.data);
       setContests(data.data || []);
     })();
   }, []);

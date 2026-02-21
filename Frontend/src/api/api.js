@@ -9,7 +9,6 @@ export const login = (payload) => {
 }
 
 export const signup = (payload) => {
-  console.log(payload);
   return axios.post(`${BASE}/users/register`, payload, {
     headers: { "Content-Type": "application/json" },
     withCredentials: true,
@@ -46,7 +45,6 @@ export const createProblem = (payload) => {
 }
 
 export const runProblem = async (problemId, payload, asSubmit = false) => {
-  console.log("Running problem with ID:", problemId);
   return await axios.post(
     `${BASE}/submission/${problemId}${asSubmit ? "" : "?dryRun=true"}`,
     payload,
@@ -60,7 +58,7 @@ export const runProblem = async (problemId, payload, asSubmit = false) => {
   );
 }
 
-export const getJobResponse = (jobId,problemId) => {
+export const getJobResponse = (jobId, problemId) => {
   return axios.get(`${BASE}/job/${jobId}/problems/${problemId}`, {
     withCredentials: true,
     headers: { Authorization: `Bearer ${accessToken}` }
@@ -156,7 +154,7 @@ export const createComment = (discussionId, comment) => {
 
 export const getAllRequest = () => {
   return axios.get(`${BASE}/admin`, {
-    withCredentials : true,
-    headers : {Authorization : `Bearer ${accessToken}`}
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${accessToken}` }
   })
 }

@@ -45,7 +45,7 @@ const generateAccessTokenAndRefreshToken = async (user) => {
         return { accessToken, refreshToken };
 
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw new ApiError(500, "Something Went Wrong While generating refresh and access token");
     }
 }
