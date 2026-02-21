@@ -114,7 +114,7 @@ function SignUpCard() {
   // Sign-up with Google — same OAuth flow as login
   // passport.config.js will create a new user if they don't exist
   const handleGoogleSignUp = () => {
-    window.location.href = 'http://localhost:8000/api/v1/users/auth/google';
+    window.location.href = `${import.meta.env.VITE_API_URL}/users/auth/google`;
   };
 
 
@@ -125,8 +125,8 @@ function SignUpCard() {
       {msg.text && (
         <div
           className={`p-3 mb-4 rounded-lg text-center ${msg.type === "error"
-              ? "bg-red-100 text-red-700"
-              : "bg-green-100 text-green-700"
+            ? "bg-red-100 text-red-700"
+            : "bg-green-100 text-green-700"
             }`}
         >
           {msg.text}
@@ -185,8 +185,8 @@ function SignUpCard() {
           type="submit"
           disabled={loading || googleLoading} // NEW: Disable if Google auth is loading
           className={`w-full py-3 rounded-lg text-white text-lg transition ${(loading || googleLoading)
-              ? "bg-blue-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
+            ? "bg-blue-400 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700"
             }`}
         >
           {loading ? "Signing Up…" : "Sign Up"}
