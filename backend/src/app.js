@@ -15,8 +15,8 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 };
 
+app.use(cors(corsOptions));
 app.use(passport.initialize());
-// app.options('*', cors(corsOptions));
 
 
 app.use(express.json({ limit: '50mb' }));
