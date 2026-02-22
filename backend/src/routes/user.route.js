@@ -10,11 +10,11 @@ router.get("/auth/google", passport.authenticate('google', { scope: ['profile', 
 
 // Google OAuth callback
 router.get("/auth/google/callback",
-    passport.authenticate('google', { session: false, failureRedirect: 'http://localhost:5173/login' }),
+    passport.authenticate('google', { session: false, failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:5173'}/login` }),
     (req, res) => {
         const { accessToken } = req.user;
         // Pass token via URL so the frontend can store it in localStorage
-        res.redirect(`http://localhost:5173/oauth-success?token=${accessToken}`);
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/oauth-success?token=${accessToken}`);
     }
 );
 

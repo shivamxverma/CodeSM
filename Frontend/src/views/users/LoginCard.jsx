@@ -179,8 +179,8 @@ function LoginCard() {
           disabled={googleLoading}
           onClick={() => {
             // Redirect to backend Google OAuth entry point
-            const base = 'http://localhost:8000/api/v1/users';
-            window.location.href = `${base}/auth/google`;
+            const base = import.meta.env.VITE_API_URL;
+            window.location.href = `${base}/users/auth/google`;
           }}
           className={`w-full py-3 px-6 mt-4 text-white text-lg rounded-lg transition ${googleLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
         >
