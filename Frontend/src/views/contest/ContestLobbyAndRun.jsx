@@ -5,16 +5,16 @@ import { Link, useParams } from "react-router-dom";
 import { set } from "zod";
 import { useAuth } from "../../auth/AuthContext.jsx";
 
-function msFmt(ms){
-  if(ms == null) return "--:--:--";
-  const s = Math.floor(ms/1000);
-  const h = Math.floor(s/3600).toString().padStart(2,"0");
-  const m = Math.floor((s%3600)/60).toString().padStart(2,"0");
-  const ss = (s%60).toString().padStart(2,"0");
+function msFmt(ms) {
+  if (ms == null) return "--:--:--";
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600).toString().padStart(2, "0");
+  const m = Math.floor((s % 3600) / 60).toString().padStart(2, "0");
+  const ss = (s % 60).toString().padStart(2, "0");
   return `${h}:${m}:${ss}`;
 }
 
-export default function ContestLobbyAndRun(){
+export default function ContestLobbyAndRun() {
   const { user } = useAuth();
   const { id } = useParams();
   const [contest, setContest] = useState(null);
@@ -29,20 +29,19 @@ export default function ContestLobbyAndRun(){
       try {
         const { data } = await getContest(id);
         setContest(data.message);
-      } catch(e) { setErr("Failed to load contest"); }
+      } catch (e) { setErr("Failed to load contest"); }
     })();
   }, [id]);
 
   useEffect(() => {
     let t;
-    async function pull(){
-      try{
+    async function pull() {
+      try {
         const { data } = await getLeaderboard(id);
-        console.log(data.message);
         setBoard(data.message || []);
-      }catch{}
+      } catch { }
     }
-    if (phase === "running" || phase === "ended"){
+    if (phase === "running" || phase === "ended") {
       pull();
       t = setInterval(pull, 5000);
     }
@@ -55,7 +54,7 @@ export default function ContestLobbyAndRun(){
       await registerContest(id);
       const { data } = await getContest(id);
       setContest(data.message);
-    } catch(e) {
+    } catch (e) {
       setErr(e?.response?.data?.message || "Failed to register");
     } finally {
       setJoining(false);
@@ -65,15 +64,15 @@ export default function ContestLobbyAndRun(){
   const currentUserId = user?.id || "";
 
   const isRegistered = useMemo(() => {
-    
+
     if (!contest || !contest.participants || !currentUserId) return false;
     return contest.participants.includes(currentUserId);
   }, [contest, currentUserId]);
 
   const headerBadge =
     phase === "before" ? "bg-amber-900/40 border-amber-800 text-amber-200" :
-    phase === "running" ? "bg-emerald-900/40 border-emerald-800 text-emerald-200" :
-    phase === "ended" ? "bg-slate-800 border-slate-600 text-slate-200" : "bg-slate-800/60 border-slate-700";
+      phase === "running" ? "bg-emerald-900/40 border-emerald-800 text-emerald-200" :
+        phase === "ended" ? "bg-slate-800 border-slate-600 text-slate-200" : "bg-slate-800/60 border-slate-700";
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
@@ -126,7 +125,7 @@ export default function ContestLobbyAndRun(){
                 {(contest?.problems || []).map((p, i) => (
                   <div key={i} className="rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="rounded bg-white/10 px-2 py-1 text-xs">{p.index || String.fromCharCode(65+i)}</span>
+                      <span className="rounded bg-white/10 px-2 py-1 text-xs">{p.index || String.fromCharCode(65 + i)}</span>
                       <div className="text-sm">{p.problem?.title || "Problem"}</div>
                     </div>
                     {phase === "running" ? (
@@ -152,9 +151,9 @@ export default function ContestLobbyAndRun(){
                 <div>#</div><div className="col-span-2">User</div><div className="text-right">Score</div>
               </div>
               <div className="mt-1 divide-y divide-white/10">
-                {board.map((row, i)=>(
+                {board.map((row, i) => (
                   <div key={row.user._id || i} className="grid grid-cols-4 px-2 py-2 text-sm">
-                    <div>{i+1}</div>
+                    <div>{i + 1}</div>
                     <div className="col-span-2 truncate">{row.user.username || row.user.email}</div>
                     <div className="text-right">{row.score}</div>
                   </div>

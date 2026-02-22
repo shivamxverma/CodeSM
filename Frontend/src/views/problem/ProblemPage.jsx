@@ -305,7 +305,6 @@ int main(){
   const getAllSubmission = async () => {
     try {
       const res = await getSubmissions(problemId);
-      console.log(res.data);
       setSubmissions(res.data.message || []);
     } catch (error) {
       console.error("Error fetching submissions:", error);

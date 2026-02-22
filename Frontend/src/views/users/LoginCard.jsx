@@ -101,20 +101,6 @@ function LoginCard() {
     }
   };
 
-  // const handleGoogleLogin = async () => {
-  //   setError("");
-  //   setGoogleLoading(true);
-  //   try {
-  //     const { error } = await supabase.auth.signInWithOAuth({
-  //       provider: "google",
-  //     });
-  //     if (error) throw new Error(error.message);
-  //   } catch (err) {
-  //     setError(err.message || "Something went wrong with Google Log-In");
-  //     setGoogleLoading(false);
-  //   }
-  // };
-
   return (
     <div className="max-w-lg mx-auto p-8 bg-white shadow-2xl rounded-2xl mt-12">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
@@ -193,8 +179,8 @@ function LoginCard() {
           disabled={googleLoading}
           onClick={() => {
             // Redirect to backend Google OAuth entry point
-            const base = 'http://localhost:8000/api/v1/users';
-            window.location.href = `${base}/auth/google`;
+            const base = import.meta.env.VITE_API_URL;
+            window.location.href = `${base}/users/auth/google`;
           }}
           className={`w-full py-3 px-6 mt-4 text-white text-lg rounded-lg transition ${googleLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
         >

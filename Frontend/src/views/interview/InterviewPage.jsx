@@ -89,7 +89,6 @@ const InterviewAssistant = () => {
         setIsLoading(true);
         try {
             const response = await getScoreForQuestion(currentQuestionIndex, questions, userAnswer);
-            console.log(response.data.data);
             const { score, analysis } = response.data.data;
             setScore(score);
             setAnalysis(analysis);

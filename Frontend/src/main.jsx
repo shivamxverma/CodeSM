@@ -4,9 +4,10 @@ import './index.css';
 import App from './App.jsx';
 import { AuthProvider } from '@/auth/AuthContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { PostHogProvider } from '@posthog/react';
+
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-import { PostHogProvider } from '@posthog/react';
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={clientId}>
