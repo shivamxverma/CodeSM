@@ -1,7 +1,7 @@
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
-import { myQueue } from '../config/queue.config.js'; 
+import { myQueue } from '../config/queue.config.js';
 import Submission from '../models/submission.model.js';
 import Problem from '../models/problem.model.js';
 
@@ -29,8 +29,8 @@ const getJobResponse = asyncHandler(async (req, res) => {
         throw new ApiError(500, `Failed to fetch job state: ${error.message}`);
     }
 
-    const jobData = job.data || null; 
-    const jobResult = job.returnvalue || null; 
+    const jobData = job.data || null;
+    const jobResult = job.returnvalue || null;
 
     if (state !== 'completed') {
         let message = 'Job still processing';
@@ -56,23 +56,23 @@ const getJobResponse = asyncHandler(async (req, res) => {
 
     const problem = await Problem.findById(problemId);
 
-    if(!problem) {
+    if (!problem) {
         throw new ApiError(404, 'Problem not found for submission');
     }
 
-    // console.log(jobResult);
+    console.log(jobResult);
 
-    // const Submitted = await Submission.create({
-    //     user: req.user,
-    //     problem,
-    //     code: jobData.code,
-    //     language: jobData.language,
-    //     status: jobResult.output.status,
-    // });
+    const Submitted = await Submission.create({
+        user: req.user,
+        problem,
+        code: jobData.code,
+        language: jobData.language,
+        status: jobResult.output.status,
+    });
 
-    // console.log("Submission recorded:", Submitted);
+    console.log("Submission recorded:", Submitted);
 
-    if(!Submitted) {
+    if (!Submitted) {
         throw new ApiError(500, 'Failed to record submission');
     }
 
