@@ -109,8 +109,22 @@ export default function ProblemPage() {
     return list;
   }, [problems, search, difficulty, sortBy]);
 
-  const diffPill = () => {
-    return "inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-muted text-muted-foreground ring-1 ring-border";
+  const formatTag = (t) => {
+    if (typeof t !== "string") return t;
+    return t.replace(/['"]+/g, "").trim();
+  };
+
+  const diffPill = (difficulty) => {
+    const d = String(difficulty || "").toLowerCase();
+    let colors = "bg-muted text-muted-foreground ring-border";
+    if (d.includes("easy") || d.includes("800") || d.includes("1200")) {
+      colors = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-emerald-500/20";
+    } else if (d.includes("medium") || d.includes("1300") || d.includes("1700")) {
+      colors = "bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-amber-500/20";
+    } else if (d.includes("hard") || d.includes("1800")) {
+      colors = "bg-rose-500/10 text-rose-600 dark:text-rose-400 ring-rose-500/20";
+    }
+    return `inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${colors}`;
   };
 
   return (
@@ -140,8 +154,8 @@ export default function ProblemPage() {
                 key={d}
                 onClick={() => setDifficulty(d)}
                 className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm transition ${difficulty === d
-                    ? "bg-primary text-primary-foreground ring-1 ring-primary/30"
-                    : "text-muted-foreground hover:bg-muted"
+                  ? "bg-primary text-primary-foreground ring-1 ring-primary/30"
+                  : "text-muted-foreground hover:bg-muted"
                   }`}
                 title={
                   d === "Easy"
@@ -235,18 +249,24 @@ export default function ProblemPage() {
                       </svg>
                     </Link>
                     {Array.isArray(item?.tags) && item.tags.length > 0 ? (
-                      <div className="hidden gap-1 sm:flex">
-                        {item.tags.slice(0, 2).map((t) => (
-                          <span
-                            key={t}
-                            className="rounded-lg bg-muted px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground ring-1 ring-border"
-                          >
-                            {t}
-                          </span>
-                        ))}
+                      <div className="hidden flex-wrap gap-1.5 sm:flex">
+                        {item.tags.filter(Boolean).slice(0, 3).map((t) => {
+                          const cleaned = formatTag(t);
+                          return (
+                            <span
+                              key={t}
+                              className="rounded-lg bg-secondary/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-secondary-foreground ring-1 ring-border/50"
+                            >
+                              {cleaned}
+                            </span>
+                          );
+                        })}
+                        {item.tags.length > 3 && (
+                          <span className="text-[10px] font-medium text-muted-foreground">+{item.tags.length - 3}</span>
+                        )}
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground"> </span>
+                      <span className="text-xs text-muted-foreground" />
                     )}
                   </div>
                 </div>
