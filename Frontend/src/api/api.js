@@ -158,3 +158,9 @@ export const getAllRequest = () => {
     headers: { Authorization: `Bearer ${accessToken}` }
   })
 }
+
+export const forgotPassword = (email) =>
+  axios.post(`${BASE}/users/forgot-password`, { email });
+
+export const resetPassword = (token, password, confirmPassword) =>
+  axios.post(`${BASE}/users/reset-password/${token}`, { password, confirmPassword });

@@ -32,7 +32,7 @@ async function fetchTestcasesFromS3(problemId) {
     const response = await s3Client.send(command);
     const jsonString = await streamToString(response.Body);
     const data = JSON.parse(jsonString);
-    console.log("Testcases fetched from S3:", data);
+    // console.log("Testcases fetched from S3:", data);
     return data;
   } catch (err) {
     console.error("Error fetching testcases:", err);
@@ -40,4 +40,4 @@ async function fetchTestcasesFromS3(problemId) {
   }
 }
 
-export {fetchTestcasesFromS3};
+export { fetchTestcasesFromS3 };

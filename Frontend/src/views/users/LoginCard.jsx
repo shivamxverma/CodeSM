@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import z from "zod";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { login as apiLogin } from "../../api/api.js";
 // import { supabase } from "../../lib/supabase"; 
 import { useAuth } from "../../auth/AuthContext.jsx";
@@ -186,6 +186,12 @@ function LoginCard() {
         >
           {googleLoading ? 'Redirecting...' : 'Continue with Google'}
         </button>
+
+        <div className="text-center mt-4">
+          <Link to="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+            Forgot Password?
+          </Link>
+        </div>
       </form>
     </div>
   );
