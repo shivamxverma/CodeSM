@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerUser, loginUser, LogoutUser, refreshAccessToken } from "../controllers/user.controller.js";
+import { registerUser, loginUser, LogoutUser, refreshAccessToken, forgotPassword, resetPassword } from "../controllers/user.controller.js";
 import passport from "../config/passport.config.js";
 // import {upload} from '../middlewares/multer.middleware.js';
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -25,5 +25,9 @@ router.post("/login", loginUser);
 router.get("/logout", verifyJWT, LogoutUser);
 
 router.post("/token", refreshAccessToken);
+
+// ── Password Reset ──────────────────────────────────────────
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
 
 export default router;

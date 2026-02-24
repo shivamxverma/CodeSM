@@ -14,6 +14,8 @@ import InterviewAssistant from "./views/interview/InterviewPage";
 import DiscussionPage from "./views/discussion/DiscussionPage";
 import AdminDashboard from "./views/admin/AdminDashboard";
 import OAuthSuccess from "./views/users/OAuthSuccess";
+import ForgotPassword from "./views/users/ForgotPassword";
+import ResetPassword from "./views/users/ResetPassword";
 
 import { AuthProvider } from "./auth/AuthContext";
 import RequireRole from "./auth/RequireRole";
@@ -27,6 +29,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginCard />} />
           <Route path="/signup" element={<SignUpCard />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/oauth-success" element={<OAuthSuccess />} />
           <Route path="/admin" element={<AdminDashboard />} />
 

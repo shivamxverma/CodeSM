@@ -1,11 +1,13 @@
 import dotenv from 'dotenv';
 dotenv.config();
+import crypto from 'crypto';
 import asyncHandler from '../utils/asyncHandler.js';
 import User from '../models/user.model.js';
 import { ApiError } from '../utils/ApiError.js';
-import { ApiResponse } from '../utils/ApiResponse.js'
+import { ApiResponse } from '../utils/ApiResponse.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { sendPasswordResetEmail } from '../utils/email.js';
 
 const generateAccessTokenAndRefreshToken = async (user) => {
 
@@ -212,9 +214,111 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 
+/**
+ * POST /api/v1/users/forgot-password
+ * Body: { email }
+ * Generates a secure reset token, stores its hash in DB, and emails the user a link.
+ */
+const forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        throw new ApiError(400, 'Email is required');
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+
+    // Always respond OK to prevent email enumeration attacks
+    if (!user) {
+        return res.status(200).json(
+            new ApiResponse(200, {}, 'If an account with that email exists, a reset link has been sent.')
+        );
+    }
+
+    // Generate a random 32-byte token
+    const rawToken = crypto.randomBytes(32).toString('hex');
+
+    // Hash before storing — never store the raw token in DB
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    user.passwordResetToken = hashedToken;
+    user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await user.save({ validateBeforeSave: false });
+
+    // Build the frontend reset URL with the RAW token (not hashed)
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetUrl = `${clientUrl}/reset-password/${rawToken}`;
+
+    try {
+        await sendPasswordResetEmail(user.email, resetUrl);
+    } catch (err) {
+        console.error("Nodemailer Error:", err);
+        // If email fails, clear the token so user can try again
+        user.passwordResetToken = null;
+        user.passwordResetExpires = null;
+        await user.save({ validateBeforeSave: false });
+        throw new ApiError(500, 'Failed to send reset email. Please try again later.');
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, 'If an account with that email exists, a reset link has been sent.')
+    );
+});
+
+/**
+ * POST /api/v1/users/reset-password/:token
+ * Body: { password, confirmPassword }
+ * Verifies the token, checks expiry, updates the password.
+ */
+const resetPassword = asyncHandler(async (req, res) => {
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+
+    if (!token) {
+        throw new ApiError(400, 'Reset token is missing');
+    }
+
+    if (!password || !confirmPassword) {
+        throw new ApiError(400, 'Password and confirm password are required');
+    }
+
+    if (password !== confirmPassword) {
+        throw new ApiError(400, 'Passwords do not match');
+    }
+
+    if (password.length < 8) {
+        throw new ApiError(400, 'Password must be at least 8 characters long');
+    }
+
+    // Hash the incoming raw token to compare with what's stored
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { $gt: new Date() }, // must not be expired
+    });
+
+    if (!user) {
+        throw new ApiError(400, 'Reset link is invalid or has expired. Please request a new one.');
+    }
+
+    // Update password and clear the reset token fields
+    user.password = await bcrypt.hash(password, 10);
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    // Also invalidate existing sessions
+    user.refreshToken = null;
+    await user.save({ validateBeforeSave: false });
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, 'Password reset successfully. You can now log in with your new password.')
+    );
+});
+
 export {
     registerUser,
     loginUser,
     LogoutUser,
     refreshAccessToken,
+    forgotPassword,
+    resetPassword,
 };

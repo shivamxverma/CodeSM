@@ -104,35 +104,34 @@ async function AnswerScore(question, answer) {
         Question: ${question}
         Answer: ${answer}`;
 
-        const payload = {
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "OBJECT",
-                    properties: {
-                        score: { type: "INTEGER" },
-                        analysis: { type: "STRING" }
-                    },
-                    propertyOrdering: ["score", "analysis"]
-                }
+    const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: "OBJECT",
+                properties: {
+                    score: { type: "INTEGER" },
+                    analysis: { type: "STRING" }
+                },
+                propertyOrdering: ["score", "analysis"]
             }
-        };
-
-        const result = await model.generateContent(payload);
-        // console.log("Result:", result);
-
-        let responseText;
-        if (result && result.response && typeof result.response.text === "function") {
-            responseText = result.response.text();
-        } else if (result && result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text) {
-            responseText = result.candidates[0].content.parts[0].text;
-        } else {
-            throw new Error("Unexpected response format from generative model.");
         }
+    };
 
-        const { score, analysis } = JSON.parse(responseText);
-        return { score, analysis };
+    const result = await model.generateContent(payload);
+
+    let responseText;
+    if (result && result.response && typeof result.response.text === "function") {
+        responseText = result.response.text();
+    } else if (result && result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text) {
+        responseText = result.candidates[0].content.parts[0].text;
+    } else {
+        throw new Error("Unexpected response format from generative model.");
+    }
+
+    const { score, analysis } = JSON.parse(responseText);
+    return { score, analysis };
 }
 
 export {
