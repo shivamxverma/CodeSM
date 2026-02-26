@@ -122,9 +122,10 @@ export const getScoreForQuestion = (currentQuestionIndex, questions, userAnswer)
   );
 }
 
-export const getAllDiscussion = () => {
-  return axios.get(`${BASE}/discussion`, {
-    withCredentials: true
+export const getAllDiscussion = (problemId) => {
+  return axios.get(`${BASE}/discussion${problemId ? `?problemId=${problemId}` : ''}`, {
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${accessToken}` }
   });
 }
 
@@ -138,15 +139,21 @@ export const createDiscussion = (payload) => {
 }
 
 export const likeDiscussion = (discussionId) => {
-  return axios.get(`${BASE}/${discussionId}/like`, { withCredentials: true });
+  return axios.get(`${BASE}/discussion/${discussionId}/like`, {
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
 }
 
 export const dislikeDiscussion = (discussionId) => {
-  return axios.get(`${BASE}/${discussionId}/dislike`, { withCredentials: true });
+  return axios.get(`${BASE}/discussion/${discussionId}/dislike`, {
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
 }
 
 export const createComment = (discussionId, comment) => {
-  return axios.post(`${BASE}/${discussionId}/comment`, comment, {
+  return axios.post(`${BASE}/discussion/${discussionId}/comment`, comment, {
     withCredentials: true,
     headers: { Authorization: `Bearer ${accessToken}` }
   })
