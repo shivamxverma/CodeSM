@@ -3,6 +3,7 @@ import Editor from "@monaco-editor/react";
 import { usePostHog } from "@posthog/react";
 import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import ProblemDiscussions from "./ProblemDiscussions";
 import { useAuth } from "@/auth/AuthContext";
 import {
   getProblem,
@@ -12,7 +13,7 @@ import {
   getJobResponse,
 } from "@/api/api";
 
-const TABS = ["Description", "Editorial", "Submissions", "Solutions", "Hints"];
+const TABS = ["Description", "Editorial", "Submissions", "Solutions", "Hints", "Discussions"];
 
 function getDifficultyFromRating(rating) {
   if (!rating)
@@ -614,6 +615,10 @@ int main(){
                   </button>
                 )}
               </div>
+            )}
+
+            {activeTab === "Discussions" && (
+              <ProblemDiscussions problemId={problemId} />
             )}
           </div>
         </div>

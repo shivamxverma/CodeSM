@@ -1,36 +1,40 @@
-import mongoose,{Schema} from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
 const discussionSchema = new Schema({
-    title : {
-        type : String,
-        required : true,
-        trim : true,
-        index : true
+    title: {
+        type: String,
+        required: true,
+        trim: true,
+        index: true
     },
-    content : {
-        type : String,
-        required : true,
-        trim : true
+    content: {
+        type: String,
+        required: true,
+        trim: true
     },
-    user : {
-        type : Schema.Types.ObjectId,
-        ref : 'User',
-        required : true
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
-    tags : [{
-        type : String,
-        trim : true,
+    problem: {
+        type: Schema.Types.ObjectId,
+        ref: 'Problem'
+    },
+    tags: [{
+        type: String,
+        trim: true,
     }],
-    comments : [{
-        user : {
-            type : Schema.Types.ObjectId,
-            ref : 'User',
-            required : true
+    comments: [{
+        user: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
         },
-        content : {
-            type : String,
-            required : true,
-            trim : true
+        content: {
+            type: String,
+            required: true,
+            trim: true
         }
     }],
     reactions: [{
@@ -41,19 +45,16 @@ const discussionSchema = new Schema({
         type: String,
         enum: ['active', 'flagged', 'deleted'],
         default: 'active'
+    },
+    like: {
+        type: Number,
+        default: 0
+    },
+    dislike: {
+        type: Number,
+        default: 0
     }
-
-
-    // like : {
-    //     type : Number,
-    //     default : 0
-    // },
-    // dislike : {
-    //     type : Number,
-    //     default : 0
-    // }
-
-},{timestamps: true});
+}, { timestamps: true });
 
 const Discussion = mongoose.model('Discussion', discussionSchema);
 
