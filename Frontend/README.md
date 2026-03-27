@@ -1,12 +1,43 @@
-# React + Vite
+# CodeSM — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 single-page app for CodeSM, built with [Vite](https://vitejs.dev/), Tailwind CSS 4, and Radix-style UI patterns. Includes Monaco / CodeMirror editing, charts, OAuth, and API calls to the backend.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js 18+
+- Backend running (default `http://localhost:8000` in development)
 
-## Expanding the ESLint configuration
+## Install
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+cd Frontend
+npm install
+```
+
+## Environment
+
+Create `.env` or `.env.local` in `Frontend/`:
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_API_URL` | Base URL for API calls (e.g. `http://localhost:8000/api/v1`) |
+| `VITE_GOOGLE_CLIENT_ID` | Google Sign-In client ID |
+| `VITE_PUBLIC_POSTHOG_KEY` / `VITE_PUBLIC_POSTHOG_HOST` | Optional PostHog analytics |
+
+`vite.config.js` proxies `/api` to `http://localhost:8000`, so relative `/api` requests work in dev without CORS issues.
+
+## Scripts
+
+```bash
+npm run dev      # Vite dev server (default port 5173)
+npm run build    # Production build to dist/
+npm run preview  # Preview production build
+npm run lint     # ESLint
+```
+
+## Project layout
+
+- `src/` — App shell, routes, views, API client (`src/api/api.js`), UI components
+- Alias `@` → `src/` (see `vite.config.js`)
+
+See the repository root `README.md` for the full CodeSM overview and how backend, workers, and this app fit together.

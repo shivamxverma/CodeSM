@@ -1,77 +1,93 @@
 # CodeSM
 
 ## Overview
-CodeSM is a multi-role platform that enables creators to design coding problems and users to solve them. It offers a secure, scalable environment for coding practice with features like role-based problem creation, secure code execution, engaging user profiles, and robust security measures.
+
+CodeSM is a multi-role platform where creators publish coding problems and users solve them. It provides problem authoring, secure code execution, profiles, contests, discussions, and rate limiting for reliability.
+
+## Repository layout
+
+This monorepo is organized into runnable packages:
+
+| Package | Role |
+|---------|------|
+| [backend/](backend/) | Express API, MongoDB, Redis/Bull, S3, OAuth |
+| [Frontend/](Frontend/) | React + Vite SPA |
+| [workers/](workers/) | Bull workers for code execution against Redis |
+
+Install and run each package from its own directory (see each `README.md`).
 
 ## Features
-- **Role-Based System**: Creators can author and store coding problems in AWS S3 buckets, with input test cases saved as text files in dedicated folders.
-- **Code Execution**: Users can select and solve problems, with submissions validated securely via Docker containers, providing output feedback.
-- **User Profiles**: Built with Shadcn UI, profiles display user details, profile images, and coding streaks for enhanced engagement.
-- **Security**: Rate-limiting algorithms protect against denial-of-service (DoS) attacks, ensuring platform reliability and performance.
 
-## Tech Stack
-- **Backend**: Node.js
-- **Frontend**: React.js
-- **Database**: MongoDB
-- **Storage**: AWS S3
-- **Containerization**: Docker
-- **UI Library**: Shadcn UI
+- **Roles**: Creators store problems and test cases (e.g. S3); users browse and submit solutions.
+- **Execution**: Submissions are processed via Docker-backed flows and Bull workers.
+- **Profiles**: User details, images, and engagement (e.g. streaks).
+- **Security**: Rate limiting to reduce abuse and DoS risk.
 
-## Installation
+## Tech stack
 
-### Prerequisites
-- Node.js (v22 or higher)
-- MongoDB
-- Docker
-- AWS account with S3 access
-- npm or yarn
+- **Backend**: Node.js (Express), MongoDB (Mongoose), Redis, Bull, AWS S3
+- **Frontend**: React, Vite, Tailwind
+- **Workers**: Node.js + Bull + Redis
+- **Optional**: Docker for isolated runs, Cloudinary, Google OAuth, email (Nodemailer)
 
-### Steps
-1. **Clone the Repository**:
+## Quick start
+
+1. **Clone**
+
    ```bash
    git clone https://github.com/shivamxverma/codesm.git
-   cd codeSM
+   cd codesm
    ```
 
-2. **Install Dependencies**:
+2. **Infrastructure**: Run MongoDB and Redis locally or use managed services.
+
+3. **Backend** — from `backend/`:
+
    ```bash
    npm install
    ```
 
-3. **Configure Environment Variables**:
-   Create a `.env` file in the root directory with the following:
-   ```env
-   PORT=8000
-   MONGODB_URI=mongodb+srv://user:pasword@cluster0.wecd3fsq.mongodb.net
-   CORS_ORIGIN=*
-   ACCESS_TOKEN_SECRET="Shivam-verma"
-   ACCESS_TOKEN_EXPIRY=1d
-   REFRESH_TOKEN_SECRET="Shivam_Verma"
-   REFRESH_TOKEN_EXPIRY=10d
-    
-   CLOUDINARY_CLOUD_NAME=
-   CLOUDINARY_API_KEY=
-   CLOUDINARY_API_SECRET=
+   Create `backend/.env` with at least `MONGO_URI`, JWT secrets, `REDIS_URL`, and any AWS/S3 or OAuth variables you need. See [backend/README.md](backend/README.md).
+
+   ```bash
+   npm run dev
    ```
 
-4. **Run MongoDB**:
-   Ensure MongoDB is running locally or provide a cloud-based MongoDB URI.
+   Default API: `http://localhost:8000`.
 
-5. **Start the Application**:
+4. **Frontend** — from `Frontend/`:
+
    ```bash
+   npm install
+   ```
+
+   Set `VITE_API_URL` and related variables (see [Frontend/README.md](Frontend/README.md)).
+
+   ```bash
+   npm run dev
+   ```
+
+   Default dev server: `http://localhost:5173` (proxies `/api` to port 8000).
+
+5. **Workers** — from `workers/` (for queued code execution):
+
+   ```bash
+   npm install
    npm start
    ```
 
-6. **Run with Docker** (optional):
-   Build and run the Docker container:
-   ```bash
-   docker build -t codesm .
-   docker run -p 3000:3000 codesm
-   ```
+   See [workers/README.md](workers/README.md).
+
+## Environment (summary)
+
+Do not commit real secrets. Use placeholders in docs and local `.env` files only.
+
+- **Backend**: `MONGO_URI`, `PORT`, `CLIENT_URL`, JWT secrets, `REDIS_URL`, AWS and optional Cloudinary / Google / email keys — details in [backend/README.md](backend/README.md).
+- **Frontend**: `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`, optional PostHog — details in [Frontend/README.md](Frontend/README.md).
+- **Workers**: `REDIS_URL`, AWS for S3 if used — details in [workers/README.md](workers/README.md).
 
 ## Usage
-- **Creators**: Log in with creator credentials, access the problem authoring dashboard, create coding problems, and upload test cases to AWS S3.
-- **Users**: Sign up or log in, browse coding problems, submit solutions, and view results after secure execution in Docker containers.
-- **Profile Management**: Update user details, upload profile images, and track coding streaks via the profile page.
 
-# Building Now 
+- **Creators**: Author problems, upload tests, manage content.
+- **Users**: Sign up, solve problems, view results after execution.
+- **Profiles**: Update profile and track activity where enabled.
