@@ -3,14 +3,18 @@ import Editor from "@monaco-editor/react";
 import { usePostHog } from "@posthog/react";
 import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ProblemDiscussions from "./ProblemDiscussions";
 import { useAuth } from "@/auth/AuthContext";
+import { useExecutionStore } from "@/stores/executionStore";
 import {
   getProblem,
-  runProblem,
+  runCode,
   getSubmissions,
   getProblemHints,
   getJobResponse,
+  createSubmission,
+  getSubmitJobResult,
 } from "@/api/api";
 
 const TABS = ["Description", "Editorial", "Submissions", "Solutions", "Hints", "Discussions"];
@@ -57,10 +61,29 @@ function getYouTubeEmbed(url) {
   return null;
 }
 
+/** Map persisted JobResult document to the same shape as queue execution payloads. */
+function normalizeStoredJobResult(doc) {
+  let execution = [];
+  try {
+    const parsed = JSON.parse(doc.output || "[]");
+    execution = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    execution = [];
+  }
+  const hasTLE = execution.some(
+    (t) => t?.isTLE || /exited/i.test(String(t?.output || t?.error || t?.actual || ""))
+  );
+  const allPassed = execution.length > 0 && execution.every((t) => !!t?.isPassed);
+  let status = "rejected";
+  if (doc.status === "failed") status = "failed";
+  else if (hasTLE) status = "tle";
+  else if (allPassed) status = "accepted";
+  return { status, execution };
+}
+
 export default function ProblemPage() {
-  const [result, setResult] = useState(null);
-  const [status, setStatus] = useState("idle");
-  const [jobId, setJobId] = useState(null);
+  const [runJobId, setRunJobId] = useState(null);
+  const [submitMeta, setSubmitMeta] = useState(null);
   const [problem, setProblem] = useState(null);
   const [activeTab, setActiveTab] = useState("Description");
   const [language] = useState("cpp");
@@ -68,7 +91,6 @@ export default function ProblemPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [statusBadge, setStatusBadge] = useState(null);
-  const [submissions, setSubmissions] = useState([]);
   const [consoleOutput, setConsoleOutput] = useState("");
   const consoleRef = useRef(null);
   const [hints, setHints] = useState([]);
@@ -80,6 +102,12 @@ export default function ProblemPage() {
   const { id: problemId } = useParams();
   const auth = useAuth();
   const posthog = usePostHog();
+  const queryClient = useQueryClient();
+  const setRunResult = useExecutionStore((s) => s.setRunResult);
+  const setSubmitResult = useExecutionStore((s) => s.setSubmitResult);
+  const handledRunRef = useRef(null);
+  const handledSubmitPollRef = useRef(null);
+  const handledSubmitStoredRef = useRef(null);
 
   const handleEditorChange = useCallback((value) => setCode(value || ""), []);
   const onEditorMount = useCallback((editor, monaco) => {
@@ -105,53 +133,227 @@ export default function ProblemPage() {
     fetchProblem();
   }, [problemId, posthog]);
 
+  const runJobQuery = useQuery({
+    queryKey: ["jobPoll", "run", runJobId, problemId],
+    queryFn: () => getJobResponse(runJobId, problemId).then((r) => r.data),
+    enabled: !!runJobId && !!problemId,
+    refetchInterval: (q) => {
+      const st = q.state.data?.data?.state;
+      if (st === "completed" || st === "failed") return false;
+      return 2000;
+    },
+  });
+
+  const submitJobQuery = useQuery({
+    queryKey: ["jobPoll", "submit", submitMeta?.jobId, problemId],
+    queryFn: () => getJobResponse(submitMeta.jobId, problemId).then((r) => r.data),
+    enabled: !!submitMeta?.jobId && !!problemId,
+    refetchInterval: (q) => {
+      const st = q.state.data?.data?.state;
+      if (st === "completed" || st === "failed") return false;
+      return 2000;
+    },
+  });
+
+  const submitStoredQuery = useQuery({
+    queryKey: ["submit-job-result", submitMeta?.submissionId],
+    queryFn: () =>
+      getSubmitJobResult(submitMeta.jobId, submitMeta.submissionId).then((r) => r.data),
+    enabled:
+      !!submitMeta?.jobId &&
+      !!submitMeta?.submissionId &&
+      submitJobQuery.data?.data?.state === "completed" &&
+      !!submitJobQuery.data?.data?.fetchStoredResult,
+    retry: (failureCount, err) =>
+      failureCount < 10 && (err?.response?.status === 404 || err?.response?.status === 400),
+    retryDelay: (i) => Math.min(1500 * (i + 1), 8000),
+  });
+
+  const {
+    data: submissions = [],
+    refetch: refetchSubmissions,
+  } = useQuery({
+    queryKey: ["problem-submissions", problemId],
+    queryFn: () => getSubmissions(problemId).then((r) => r.data.message || []),
+    enabled: activeTab === "Submissions" && !!problemId,
+  });
+
+  const runMutation = useMutation({
+    mutationFn: () => runCode(problemId, { code, language }),
+    onMutate: () => {
+      setIsRunning(true);
+      setStatusBadge(null);
+      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "▶️ Running...\n");
+      clearMarkers();
+    },
+    onError: (err) => {
+      const msg = err?.response?.data?.message || err?.message || "Execution failed";
+      setStatusBadge({ type: "error", text: "Error" });
+      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + `${msg}`);
+      setIsRunning(false);
+      posthog.capture("run_failed", { problem_id: problemId, error: String(msg) });
+    },
+    onSuccess: (res) => {
+      const id = res.data.message?.id;
+      handledRunRef.current = null;
+      if (id) setRunJobId(id);
+      else setIsRunning(false);
+    },
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: () => createSubmission(problemId, { code, language }),
+    onMutate: () => {
+      setIsSubmitting(true);
+      setStatusBadge(null);
+      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "▶️ Submitting...\n");
+      clearMarkers();
+      handledSubmitPollRef.current = null;
+      handledSubmitStoredRef.current = null;
+    },
+    onError: (err) => {
+      const msg = err?.response?.data?.message || err?.message || "Submission failed";
+      setStatusBadge({ type: "error", text: "Error" });
+      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + `${msg}`);
+      setIsSubmitting(false);
+      posthog.capture("submission_failed", { problem_id: problemId, error: String(msg) });
+    },
+    onSuccess: (res) => {
+      const id = res.data.message?.id;
+      const submissionId = res.data.message?.submissionId;
+      if (id && submissionId) setSubmitMeta({ jobId: id, submissionId });
+      else setIsSubmitting(false);
+    },
+  });
+
   useEffect(() => {
-    let intervalId;
-    if (jobId) {
-      intervalId = setInterval(async () => {
-        try {
-          const res = await getJobResponse(jobId, problemId);
-          const jobState = res.data.data.state;
-          setStatus(jobState);
+    if (!runJobId) return;
+    const wrapped = runJobQuery.data?.data;
+    const state = wrapped?.state;
+    if (!state || state === "waiting" || state === "active") return;
+    const token = `${runJobId}-${state}`;
+    if (handledRunRef.current === token) return;
 
-          if (jobState === "completed" || jobState === "failed") {
-            clearInterval(intervalId);
-            setResult(res.data.result);
+    const finish = () => {
+      handledRunRef.current = token;
+      setRunJobId(null);
+      setIsRunning(false);
+      queryClient.removeQueries({ queryKey: ["jobPoll", "run", runJobId, problemId] });
+    };
 
-            const resultPayload = res.data.data.result;
-            processExecutionResult(resultPayload);
-
-            posthog.capture(isSubmitting ? "submission_result" : "run_result", {
-              problem_id: problemId,
-              status: resultPayload?.status,
-              job_state: jobState,
-            });
-
-            setIsRunning(false);
-            setIsSubmitting(false);
-            setJobId(null);
-          }
-        } catch (err) {
-          console.error("Error fetching job response:", err);
-          clearInterval(intervalId);
-          setStatus("failed");
-          posthog.capture(isSubmitting ? "submission_failed" : "run_failed", {
-            problem_id: problemId,
-            error: "Failed to get job status",
-          });
-          setIsRunning(false);
-          setIsSubmitting(false);
-          setJobId(null);
-          setStatusBadge({ type: "error", text: "Execution Failed" });
-          setConsoleOutput(
-            (prev) => (prev ? prev + "\n" : "") + "Failed to get job status."
-          );
-        }
-      }, 2000);
+    if (state === "failed") {
+      posthog.capture("run_failed", {
+        problem_id: problemId,
+        error: "Job failed",
+      });
+      setStatusBadge({ type: "error", text: "Execution Failed" });
+      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "Run job failed.\n");
+      finish();
+      return;
     }
 
-    return () => clearInterval(intervalId);
-  }, [jobId]);
+    if (state === "completed") {
+      const payload = wrapped?.result;
+      if (payload) {
+        setRunResult(problemId, payload);
+        processExecutionResult(payload);
+      } else {
+        setStatusBadge({ type: "error", text: "No result received" });
+        setConsoleOutput(
+          (prev) => (prev ? prev + "\n" : "") + "No result was returned from the server.\n"
+        );
+      }
+      finish();
+    }
+  }, [runJobId, runJobQuery.data, problemId, posthog, queryClient, setRunResult]);
+
+  useEffect(() => {
+    if (!submitMeta) return;
+    const wrapped = submitJobQuery.data?.data;
+    const state = wrapped?.state;
+    if (!state || state === "waiting" || state === "active") return;
+
+    if (state === "failed") {
+      const token = `${submitMeta.jobId}-failed`;
+      if (handledSubmitPollRef.current === token) return;
+      handledSubmitPollRef.current = token;
+      posthog.capture("submission_failed", {
+        problem_id: problemId,
+        error: "Job failed",
+      });
+      setStatusBadge({ type: "error", text: "Execution Failed" });
+      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "Submission job failed.\n");
+      setSubmitMeta(null);
+      setIsSubmitting(false);
+      queryClient.removeQueries({ queryKey: ["jobPoll", "submit", submitMeta.jobId, problemId] });
+      return;
+    }
+
+    if (state === "completed") {
+      const { result: inlineResult, fetchStoredResult } = wrapped;
+      if (fetchStoredResult) return;
+      if (inlineResult == null) return;
+      const token = `${submitMeta.jobId}-completed-inline`;
+      if (handledSubmitPollRef.current === token) return;
+      handledSubmitPollRef.current = token;
+      setSubmitResult(problemId, { source: "queue", result: inlineResult });
+      processExecutionResult(inlineResult);
+      queryClient.invalidateQueries({ queryKey: ["problem-submissions", problemId] });
+      setSubmitMeta(null);
+      setIsSubmitting(false);
+      queryClient.removeQueries({ queryKey: ["jobPoll", "submit", submitMeta.jobId, problemId] });
+    }
+  }, [submitMeta, submitJobQuery.data, problemId, posthog, queryClient, setSubmitResult]);
+
+  useEffect(() => {
+    if (!submitMeta) return;
+    if (!submitStoredQuery.isSuccess || !submitStoredQuery.data) return;
+    const doc = submitStoredQuery.data?.data?.result;
+    if (!doc) return;
+    const token = `stored-${submitMeta.submissionId}`;
+    if (handledSubmitStoredRef.current === token) return;
+    handledSubmitStoredRef.current = token;
+
+    const payload = normalizeStoredJobResult(doc);
+    setSubmitResult(problemId, { source: "db", document: doc });
+    processExecutionResult(payload);
+    queryClient.invalidateQueries({ queryKey: ["problem-submissions", problemId] });
+    setSubmitMeta(null);
+    setIsSubmitting(false);
+    queryClient.removeQueries({ queryKey: ["jobPoll", "submit", submitMeta.jobId, problemId] });
+    queryClient.removeQueries({ queryKey: ["submit-job-result", submitMeta.submissionId] });
+  }, [submitMeta, submitStoredQuery.isSuccess, submitStoredQuery.data, problemId, queryClient, setSubmitResult]);
+
+  useEffect(() => {
+    if (!submitMeta || !submitStoredQuery.isError) return;
+    setStatusBadge({ type: "error", text: "Error" });
+    setConsoleOutput(
+      (prev) =>
+        (prev ? prev + "\n" : "") +
+        (submitStoredQuery.error?.response?.data?.message || "Could not load submission result.") +
+        "\n"
+    );
+    setSubmitMeta(null);
+    setIsSubmitting(false);
+  }, [submitMeta, submitStoredQuery.isError, submitStoredQuery.error]);
+
+  useEffect(() => {
+    if (!runJobId || !runJobQuery.isError) return;
+    setStatusBadge({ type: "error", text: "Execution Failed" });
+    setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "Failed to get job status.\n");
+    setRunJobId(null);
+    setIsRunning(false);
+    posthog.capture("run_failed", { problem_id: problemId, error: "poll_error" });
+  }, [runJobId, runJobQuery.isError, problemId, posthog]);
+
+  useEffect(() => {
+    if (!submitMeta || !submitJobQuery.isError) return;
+    setStatusBadge({ type: "error", text: "Execution Failed" });
+    setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "Failed to get submission job status.\n");
+    setSubmitMeta(null);
+    setIsSubmitting(false);
+    posthog.capture("submission_failed", { problem_id: problemId, error: "poll_error" });
+  }, [submitMeta, submitJobQuery.isError, problemId, posthog]);
 
   const processExecutionResult = (payload) => {
     if (!payload) {
@@ -172,15 +374,16 @@ export default function ProblemPage() {
     const lines = [];
     if (stdout && typeof stdout === "string") lines.push(stdout.trim());
     execution.forEach((tc, i) => {
-      if (tc?.isTLE || /exited/i.test(String(tc?.output || ""))) {
+      const outStr = tc?.output ?? tc?.actual ?? tc?.error;
+      if (tc?.isTLE || /exited/i.test(String(outStr || ""))) {
         lines.push(`⚠️ Test Case ${i + 1}: Time Limit Exceeded`);
       } else if (tc?.isPassed) {
         lines.push(`✅ Test Case ${i + 1}: Passed`);
       } else {
         lines.push(`❌ Test Case ${i + 1}: Failed`);
       }
-      if (tc?.output) {
-        lines.push(`Output: ${String(tc.output).trim()}`);
+      if (outStr != null && outStr !== "") {
+        lines.push(`Output: ${String(outStr).trim()}`);
       }
     });
 
@@ -192,7 +395,9 @@ export default function ProblemPage() {
     setConsoleOutput((prev) => (prev ? prev + "\n" : "") + lines.join("\n"));
 
     const allPassed = execution.length > 0 && execution.every((t) => !!t?.isPassed);
-    const hasTLE = execution.some((t) => t?.isTLE || /exited/i.test(String(t?.output || "")));
+    const hasTLE = execution.some(
+      (t) => t?.isTLE || /exited/i.test(String(t?.output ?? t?.actual ?? t?.error ?? ""))
+    );
 
     if (hasTLE) setStatusBadge({ type: "warn", text: "Time Limit Exceeded" });
     else if (allPassed) setStatusBadge({ type: "success", text: "Accepted" });
@@ -214,9 +419,6 @@ int main(){
   }, [consoleOutput]);
 
   useEffect(() => {
-    if (activeTab === "Submissions") {
-      getAllSubmission();
-    }
     if (activeTab === "Hints") {
       fetchHints();
     }
@@ -264,53 +466,8 @@ int main(){
     setConsoleOutput("");
   };
 
-  const execute = async ({ asSubmit }) => {
-    const setBusy = asSubmit ? setIsSubmitting : setIsRunning;
-    setBusy(true);
-    setStatusBadge(null);
-    setConsoleOutput(
-      (prev) => (prev ? prev + "\n" : "") + (asSubmit ? "▶️ Submitting...\n" : "▶️ Running...\n")
-    );
-    clearMarkers();
-    try {
-      const input = {
-        code,
-        language,
-        mode: asSubmit ? "submit" : "run",
-        dryRun: !asSubmit
-      };
-
-      const response = await runProblem(problemId, input);
-
-      const newJobId = response.data.message.id;
-      setJobId(newJobId);
-      posthog.capture(asSubmit ? "submission_attempt" : "run_attempt", {
-        problem_id: problemId,
-        language,
-      });
-    } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || "Execution failed";
-      setStatusBadge({ type: "error", text: "Error" });
-      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + `${msg}`);
-      posthog.capture(asSubmit ? "submission_error" : "run_error", {
-        problem_id: problemId,
-        error: msg,
-      });
-      setBusy(false);
-    }
-  };
-
-  const handleRun = () => execute({ asSubmit: false });
-  const handleSubmit = () => execute({ asSubmit: true });
-
-  const getAllSubmission = async () => {
-    try {
-      const res = await getSubmissions(problemId);
-      setSubmissions(res.data.message || []);
-    } catch (error) {
-      console.error("Error fetching submissions:", error);
-    }
-  };
+  const handleRun = () => runMutation.mutate();
+  const handleSubmit = () => submitMutation.mutate();
 
   async function fetchHints() {
     if (hints.length > 0 || hintsLoading) return;
@@ -514,7 +671,7 @@ int main(){
               <div className="h-full overflow-y-auto">
                 <button
                   className="mb-3 px-3 py-1 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750] text-xs"
-                  onClick={getAllSubmission}
+                  onClick={() => refetchSubmissions()}
                 >
                   Refresh Submissions
                 </button>

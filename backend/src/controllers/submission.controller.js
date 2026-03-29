@@ -6,11 +6,9 @@ import Problem from "../models/problem.model.js";
 import User from "../models/user.model.js";
 import { myQueue } from "../config/queue.config.js";
 
-const createSubmission = asyncHandler(async (req, res) => {
-
+const runCode = asyncHandler(async (req, res) => {
     const { code, language } = req.body;
     const { problemId } = req.params;
-    const dryRun = req.query.dryRun === "true";
 
     if ([problemId, code, language].some(field => typeof field !== "string" || !field.trim())) {
         throw new ApiError(400, "All fields are required");
@@ -19,19 +17,57 @@ const createSubmission = asyncHandler(async (req, res) => {
     const problem = await Problem.findById(problemId);
     const user = await User.findById(req.user._id).select("-password -refreshToken");
 
-
     if (!problem) {
         throw new ApiError(404, "Problem not found");
     }
 
     const job = await myQueue.add({
+        problemId : problem._id,
         code,
         language,
-        problem,
-        dryRun
+        dryRun: true
     });
 
-    res.status(201).json(new ApiResponse(201, { id: job.id }, "Submission created successfully"));
+    res.status(201).json(new ApiResponse(201, { id: job.id }, "Code execution started"));
+});
+
+const createSubmission = asyncHandler(async (req, res) => {
+    const { code, language } = req.body;
+    const { problemId } = req.params;
+
+    if ([problemId, code, language].some(field => typeof field !== "string" || !field.trim())) {
+        throw new ApiError(400, "All fields are required");
+    }
+
+    const problem = await Problem.findById(problemId);
+
+    if (!problem) {
+        throw new ApiError(404, "Problem not found");
+    }
+
+    const Submitted = await Submission.create({
+        user: req.user,
+        problem,
+        code: code,
+        language: language,
+    });
+
+    if (!Submitted) {
+        throw new ApiError(500, 'Failed to record submission');
+    }
+
+    const job = await myQueue.add({
+        submissionId : Submitted._id,
+        dryRun: false
+    });
+
+    res.status(201).json(
+        new ApiResponse(
+            201,
+            { id: job.id, submissionId: String(Submitted._id) },
+            "Submission created successfully"
+        )
+    );
 });
 
 const getAllSubmissionById = asyncHandler(async (req, res) => {
@@ -51,4 +87,4 @@ const getAllSubmissionById = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, submissions, "Submission fetched successfully"));
 });
 
-export { createSubmission, getAllSubmissionById };
+export { createSubmission, getAllSubmissionById, runCode };

@@ -10,11 +10,12 @@ dotenv.config({ path: './.env' });
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL || process.env.LOCAL_CALLBACK_URL,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL,
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         const googleEmail = profile.emails?.[0]?.value?.toLowerCase();
-
+         
+        console.log("shivam here",process.env.GOOGLE_CALLBACK_URL);
         // 1. Already linked via googleId
         let user = await User.findOne({ googleId: profile.id });
 

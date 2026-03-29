@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { promisify } from 'util';
 import { fetchTestcasesFromS3 } from '../services/aws.service.js';
 import dotenv from 'dotenv';
+import JobResult from '../models/jobresult.model.js';
 
 dotenv.config();
 const execAsync = promisify(exec);
@@ -12,15 +13,28 @@ const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../');
-const runnerDir = path.join(projectRoot, 'code');
-const codePath = path.join(runnerDir, 'user_code.cpp');
-const binPath = path.join(runnerDir, 'user_program');
 
-async function buildDockerImage() {
-  await execAsync('docker build -t cpp-runner .', { cwd: projectRoot });
+const returnFilePath = async (cppCode) => {
+  const runnerDir = path.join(projectRoot, 'code');
+  const codePath = path.join(runnerDir, 'user_code.cpp');
+
+  await fs.mkdir(runnerDir, { recursive: true });
+  await fs.writeFile(codePath, cppCode);
+  return { runnerDir, codePath };
+};
+
+/** Build cpp-runner only if missing — avoids paying `docker build` on every submission. */
+async function ensureCppRunnerImage(language) {
+  if (language !== 'cpp') return;
+  try {
+    await execAsync('docker image inspect cpp-runner', { cwd: projectRoot });
+  } catch {
+    await execAsync('docker build -t cpp-runner .', { cwd: projectRoot });
+  }
 }
 
-async function compileInContainer() {
+async function compileInContainer(runnerDir) {
+  const binPath = path.join(runnerDir, 'user_program');
   await fs.rm(binPath, { force: true });
   return new Promise((resolve) => {
     const args = [
@@ -62,7 +76,8 @@ async function compileInContainer() {
   });
 }
 
-function runBinaryInContainer(input) {
+/** Run the compiled binary once with the given stdin (one testcase). */
+function runBinaryInContainer(runnerDir, input) {
   return new Promise((resolve, reject) => {
     const proc = spawn(
       'docker',
@@ -89,57 +104,79 @@ function runBinaryInContainer(input) {
   });
 }
 
-const runCppCodeWithInput = async (cppCode, problem, dryRun) => {
-  await fs.mkdir(runnerDir, { recursive: true });
-  await fs.writeFile(codePath, cppCode);
+const normalizeOut = (s) => (s ?? '').toString().replace(/\r\n/g, '\n').trim();
 
-  console.log("Running C++ code with input for problem:", problem._id, "Dry run:", dryRun);
-
-  let testcases;
-  if (dryRun) {
-    if (problem.sampleTestcases && problem.sampleTestcases.length > 0) {
-      testcases = problem.sampleTestcases.map((tc, index) => ({
-        input: tc.input,
-        output: tc.output,
-        testCaseNumber: `${index + 1}`
-      }));
-    } else {
-
-      return { status: 'no_sample_testcases', error: 'No sample testcases provided for dry run.' };
-    }
-  } else {
-    try {
-      testcases = await fetchTestcasesFromS3(problem._id);
-    } catch (err) {
-      return { status: 'testcase_fetch_error', error: err.message };
-    }
+const executeCode = async (testcases, language, runnerDir) => {
+  const cases = Array.isArray(testcases)
+    ? testcases
+    : testcases?.testcases;
+  if (!Array.isArray(cases) || cases.length === 0) {
+    await fs.rm(runnerDir, { recursive: true, force: true });
+    return { status: 'testcase_fetch_error', error: 'Missing or invalid testcases' };
   }
 
   try {
-    await buildDockerImage();
+    await ensureCppRunnerImage(language);
   } catch (err) {
+    await fs.rm(runnerDir, { recursive: true, force: true });
     return { status: 'builderror', error: err.stderr || err.message };
   }
 
-  const compile = await compileInContainer();
+  const compile = await compileInContainer(runnerDir);
   if (!compile.ok) {
     await fs.rm(runnerDir, { recursive: true, force: true });
     return { status: 'compile_error', errors: compile.errors, raw: compile.raw };
   }
 
   const execution = [];
-  for (let i = 0; i < testcases.length; i++) {
-    const { input, output } = testcases[i];
+  for (let i = 0; i < cases.length; i++) {
+    const tc = cases[i];
+    const expectedNorm = normalizeOut(tc.output);
     try {
-      const actual = await runBinaryInContainer(input);
-      execution.push({ testCaseNumber: `${i + 1}`, isPassed: actual === String(output).trim(), output: actual });
+      const actual = await runBinaryInContainer(runnerDir, tc.input);
+      const isPassed = normalizeOut(actual) === expectedNorm;
+      execution.push({ index: i, isPassed, input: tc.input, expected: tc.output, actual });
     } catch (err) {
-      execution.push({ testCaseNumber: `${i + 1}`, isPassed: false, output: err.message });
+      execution.push({
+        index: i,
+        isPassed: false,
+        input: tc.input,
+        expected: tc.output,
+        error: err.message
+      });
     }
   }
 
   await fs.rm(runnerDir, { recursive: true, force: true });
   return { status: execution.every(r => r.isPassed) ? 'accepted' : 'rejected', execution };
+}
+
+const runCppCodeWithInput = async (cppCode, language, problemId, submissionId) => {
+  const { runnerDir } = await returnFilePath(cppCode);
+  let testcases;
+  try {
+    testcases = await fetchTestcasesFromS3(problemId);
+  } catch (err) {
+    return { status: 'testcase_fetch_error', error: err.message };
+  }
+  const result = await executeCode(testcases, language, runnerDir);
+  await JobResult.create({
+    submissionId: submissionId,
+    status: result.status === 'accepted' ? 'accepted' : 'rejected',
+    output: JSON.stringify(result.execution),
+    executionTime: result.execution.reduce((acc, curr) => acc + curr.executionTime, 0),
+    memoryUsage: result.execution.reduce((acc, curr) => acc + curr.memoryUsage, 0)
+  });
 };
 
+const dryRunCppCodeWithInput = async (cppCode, language, problem) => {
+  const { runnerDir } = await returnFilePath(cppCode);
+  const testcases = problem.sampleTestcases;
+  if (!testcases || testcases.length === 0) {
+    return { status: 'no_sample_testcases', error: 'No sample testcases provided for dry run.' };
+  }
+  return executeCode(testcases, language, runnerDir);
+};
+
+export { dryRunCppCodeWithInput };
 export default runCppCodeWithInput;

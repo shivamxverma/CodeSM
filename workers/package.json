@@ -4,7 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start" : "node src/worker.js"
+    "start" : "node src/worker.js",
+    "dev" : "node src/worker.js"
   },
   "keywords": [],
   "author": "",

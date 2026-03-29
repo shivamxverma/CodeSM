@@ -1,5 +1,6 @@
 import axios from "axios";
-const BASE = import.meta.env.VITE_API_URL;
+// const BASE = import.meta.env.VITE_API_URL;
+const BASE = "http://localhost:8000/api/v1";
 const accessToken = localStorage.getItem("accessToken");
 
 export const login = (payload) => {
@@ -44,9 +45,23 @@ export const createProblem = (payload) => {
   );
 }
 
-export const runProblem = async (problemId, payload, asSubmit = false) => {
+export const createSubmission = async (problemId, payload) => {
   return await axios.post(
-    `${BASE}/submission/${problemId}${asSubmit ? "" : "?dryRun=true"}`,
+    `${BASE}/submission/${problemId}/submit`,
+    payload,
+    {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+}
+
+export const runCode = async (problemId, payload) => {
+  return await axios.post(
+    `${BASE}/submission/${problemId}/run`,
     payload,
     {
       withCredentials: true,
@@ -59,11 +74,21 @@ export const runProblem = async (problemId, payload, asSubmit = false) => {
 }
 
 export const getJobResponse = (jobId, problemId) => {
+  const token = localStorage.getItem("accessToken");
   return axios.get(`${BASE}/job/${jobId}/problems/${problemId}`, {
     withCredentials: true,
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { Authorization: `Bearer ${token}` },
   });
-}
+};
+
+/** Persisted job result after a full submission (MongoDB jobResult). */
+export const getSubmitJobResult = (jobId, submissionId) => {
+  const token = localStorage.getItem("accessToken");
+  return axios.get(`${BASE}/job/${jobId}/get-result/${submissionId}`, {
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
 
 export const getSubmissions = (problemId) => {
   return axios.get(`${BASE}/submission/${problemId}`, {

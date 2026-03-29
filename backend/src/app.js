@@ -9,7 +9,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 const corsOptions = {
-  origin: [process.env.CLIENT_URL || 'http://localhost:5173', 'https://code-sm.vercel.app'],
+  origin: ['http://localhost:5173', 'https://code-sm.vercel.app'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
