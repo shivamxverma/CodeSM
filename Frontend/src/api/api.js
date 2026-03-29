@@ -130,10 +130,11 @@ export const getClock = (id) =>
 export const getLeaderboard = (id) =>
   axios.get(`${BASE}/contest/${id}/leaderboard`, { withCredentials: true });
 
-export const getQuestionsForInterview = (selectedRoleName, selectedExperienceName) => {
+export const getQuestionsForInterview = (selectedRoleName, selectedExperienceName, customRequirements = '') => {
   return axios.post(`${BASE}/interview`, {
     role: selectedRoleName,
-    experience: selectedExperienceName
+    experience: selectedExperienceName,
+    customRequirements
   }, {
     headers: { 'Content-Type': 'application/json' }
   });
