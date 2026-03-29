@@ -2,3 +2,10 @@ node_modules
 # Keep environment variables out of version control
 .env
 .DS_Store
+workers/node_modules
+backend/node_modules
+frontend/node_modules
+.DS_Store
+.env
+.pnpm-store
+.DS_Store
