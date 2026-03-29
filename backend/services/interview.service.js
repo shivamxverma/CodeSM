@@ -36,7 +36,7 @@ async function textToAudio(text) {
 }
 
 
-async function generateQuestions(role, experience) {
+async function generateQuestions(role, experience, customRequirements = '') {
     const prompt = `
 You are an expert technical interviewer for software development roles. Your task is to generate a set of high-quality, relevant interview questions tailored to the candidate's role and experience level.
 
@@ -50,9 +50,13 @@ EXPERIENCE DETAILS:
 - Name: ${experience.name}
 - Years: ${experience.years}
 
+CUSTOM REQUIREMENTS FROM CANDIDATE:
+${customRequirements?.trim() ? customRequirements : "No extra requirements provided. Focus on the selected role and experience."}
+
 INSTRUCTIONS:
 - Generate 10 questions that assess both technical skills and problem-solving abilities.
 - Vary the difficulty based on the candidate's experience.
+- Prioritize the candidate's custom requirements when they are provided.
 - Avoid generic questions; focus on practical scenarios, coding challenges, and conceptual understanding.
 - Ensure each question is clear, concise, and unambiguous.
 - Do not repeat questions.
