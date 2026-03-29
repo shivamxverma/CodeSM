@@ -25,6 +25,8 @@ const getSubmitJobResponse = asyncHandler(async (req, res) => {
 });
 
 const getJobResponse = asyncHandler(async (req, res) => {
+    console.log("getJobResponse");
+    console.log(req.params);
 
     const { jobId } = req.params;
     if (!jobId || typeof jobId !== 'string' || jobId.trim() === '') {

@@ -15,14 +15,13 @@ const runCode = asyncHandler(async (req, res) => {
     }
 
     const problem = await Problem.findById(problemId);
-    const user = await User.findById(req.user._id).select("-password -refreshToken");
 
     if (!problem) {
         throw new ApiError(404, "Problem not found");
     }
 
     const job = await myQueue.add({
-        problemId : problem._id,
+        problemId : problemId,
         code,
         language,
         dryRun: true
@@ -60,6 +59,7 @@ const createSubmission = asyncHandler(async (req, res) => {
         submissionId : Submitted._id,
         dryRun: false
     });
+    console.log(job);
 
     res.status(201).json(
         new ApiResponse(
@@ -71,6 +71,7 @@ const createSubmission = asyncHandler(async (req, res) => {
 });
 
 const getAllSubmissionById = asyncHandler(async (req, res) => {
+    console.log("getAllSubmissionById");
     const { problemId } = req.params;
     const problem = await Problem.findById(problemId);
     if (!problem) {

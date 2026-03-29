@@ -2,6 +2,7 @@ import myQueue from "./queue.js";
 import runCppCodeWithInput, { dryRunCppCodeWithInput } from "./runCode.js";
 import connectDB from "./db.config.js";
 import Submission from "../models/submission.model.js";
+import Problem from "../models/problem.model.js";
 
 connectDB()
 
@@ -12,16 +13,33 @@ connectDB()
       console.log("Work Reached Here");
       const { dryRun } = job.data;
 
-      if(dryRun) {
-        const { code, language, problem } = job.data;
-        const output = await dryRunCppCodeWithInput(code, language, problem);
-        return output;
+      console.log(job.data);
+
+      if (dryRun) {
+        const { code, language, problemId } = job.data;
+        const problem = await Problem.findById(problemId).lean();
+        if (!problem) {
+          return { status: "error", error: "Problem not found" };
+        }
+        return dryRunCppCodeWithInput(code, language, problem);
       }
-      
+      console.log("Dry Run is false");
+
       const { submissionId } = job.data;
-      const submission = await Submission.findById(submissionId);
-      const output = await runCppCodeWithInput(submission.code, submission.language, submission.problem._id, submissionId);
-      return output;
+      const submission = await Submission.findById(submissionId).lean();
+      if (!submission) {
+        throw new Error(`Submission not found: ${submissionId}`);
+      }
+      console.log("Submission found");
+      const problemId = submission.problem?._id ?? submission.problem;
+      console.log(problemId);
+      return runCppCodeWithInput(
+        submission.code,
+        submission.language,
+        problemId,
+        submissionId
+      );
+      // console.log(output);
     });
   })
   .catch(err => {

@@ -164,8 +164,14 @@ const runCppCodeWithInput = async (cppCode, language, problemId, submissionId) =
     submissionId: submissionId,
     status: result.status === 'accepted' ? 'accepted' : 'rejected',
     output: JSON.stringify(result.execution),
-    executionTime: result.execution.reduce((acc, curr) => acc + curr.executionTime, 0),
-    memoryUsage: result.execution.reduce((acc, curr) => acc + curr.memoryUsage, 0)
+    executionTime: result.execution.reduce(
+      (acc, curr) => acc + (curr.executionTime ?? 0),
+      0
+    ),
+    memoryUsage: result.execution.reduce(
+      (acc, curr) => acc + (curr.memoryUsage ?? 0),
+      0
+    ),
   });
 };
 
