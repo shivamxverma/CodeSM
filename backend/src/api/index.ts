@@ -5,10 +5,10 @@ import userRoutes from './user/user-route';
 // import interviewRoutes from './interview/interview.route';
 // import discussionRoutes from './discussion/discussion.route';
 // import jobRoutes from './job/job.route';
-import { Router } from 'express';
+// import { Router } from 'express';
 
 const routes = [
-    { path: '/auth' , router: userRoutes },
+    { path: '/user' , router: userRoutes },
     // { path: '/problem' , router: problemRoutes },
     // { path: '/submission' , router: submissionRoutes },
     // { path: '/contest' , router: contestRoutes },
@@ -17,13 +17,13 @@ const routes = [
     // { path: '/job' , router: jobRoutes }
 ]
 
-export default (): Router => {
-    const app = Router();
-    routes.forEach(({path, router}) => {
-        app.use(path , router);
-    })
-    return app;
-};
+// export default (): Router => {
+//     const app = Router();
+//     routes.forEach(({path, router}) => {
+//         app.use(path , router);
+//     })
+//     return app;
+// };
 
 
 

@@ -20,7 +20,11 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.12.0",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.12.0",
     "@types/pg": "^8.15.5",
+    "drizzle-kit": "^0.31.10",
     "drizzle-kit": "^0.31.10",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
@@ -33,7 +37,6 @@
     "@google-cloud/text-to-speech": "^6.2.0",
     "@google/generative-ai": "^0.24.1",
     "@paralleldrive/cuid2": "^3.3.0",
-    "@types/nodemailer": "^7.0.11",
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
     "bull": "^4.16.5",
@@ -53,11 +56,8 @@
     "pg": "8.20.0",
     "rate-limiter-flexible": "^7.2.0",
     "uuid": "^11.1.0",
-<<<<<<< HEAD
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
-=======
->>>>>>> b0064da (added yup schema for env file optimized backend db)
     "yup": "^1.7.1"
   }
 }
