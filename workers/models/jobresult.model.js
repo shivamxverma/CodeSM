@@ -8,20 +8,20 @@ const jobResultSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'completed', 'failed', 'accepted', 'rejected'],
+        enum: ['pending', 'completed', 'failed', 'accepted', 'rejected', 'TLE', 'MLE', 'RE', 'CE'],
         default: 'pending'
     },
     output: {
         type: String,
-        required: true
+        required: false
     },
     executionTime: {
         type: Number,
-        required: true
+        required: false
     },
     memoryUsage: {
         type: Number,
-        required: true
+        required: false
     }
 }, { timestamps: true });
 

@@ -3,10 +3,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import LoginCard from "./views/users/LoginCard";
 import SignUpCard from "./views/users/SignUpCard";
-import ProblemPage from "./views/problem/ProblemPage";
+import ProblemPage from "./views/problemPage/ProblemPage";
 import Dashboard from "./views/dashboard/DashBoard";
-import Problems from "./views/problem/problems";
-import NewProblem from "./views/problem/NewProblem";
+import Problems from "./views/problems/problems";
+import NewProblem from "./views/newProblem/NewProblem";
 import ContestListPage from "./views/contest/ContestListPage";
 import ContestCreatePage from "./views/contest/ContestCreatePage";
 import ContestLobbyAndRun from "./views/contest/ContestLobbyAndRun";
