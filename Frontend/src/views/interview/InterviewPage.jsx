@@ -6,6 +6,8 @@ import { usePostHog } from '@posthog/react';
 const InterviewAssistant = () => {
     const [selectedRole, setSelectedRole] = useState(null);
     const [selectedExperience, setSelectedExperience] = useState(null);
+    const [customRequirements, setCustomRequirements] = useState('');
+    const [startError, setStartError] = useState('');
     const posthog = usePostHog();
     const [currentPage, setCurrentPage] = useState('selection');
     const [showScore, setShowScore] = useState(false);
@@ -24,6 +26,7 @@ const InterviewAssistant = () => {
     const [timer, setTimer] = useState(0);
     const timerRef = useRef(null);
     const audioRef = useRef(null);
+    const recognitionRef = useRef(null);
 
     const roles = [
         { id: 'frontend', name: 'Frontend Developer', desc: 'React, Vue, Angular', icon: '💻' },
@@ -55,13 +58,23 @@ const InterviewAssistant = () => {
 
     const fetchQuestions = async () => {
         setIsLoading(true);
+        setStartError('');
         try {
             const selectedRoleData = roles.find(r => r.id === selectedRole);
             const selectedExperienceData = experienceLevels.find(e => e.id === selectedExperience);
-            const response = await getQuestionsForInterview(selectedRoleData, selectedExperienceData);
+            const response = await getQuestionsForInterview(
+                selectedRoleData,
+                selectedExperienceData,
+                customRequirements
+            );
 
-            const res = response.data.message;
-            const { interviewId, questions } = res;
+            const res = response?.data?.data || response?.data?.message;
+            const interviewId = res?.interviewId;
+            const questions = Array.isArray(res?.questions) ? res.questions : [];
+
+            if (!interviewId || questions.length === 0) {
+                throw new Error('Interview generation returned invalid data.');
+            }
 
 
             setInterviewId(interviewId);
@@ -81,6 +94,7 @@ const InterviewAssistant = () => {
             }
         } catch (error) {
             console.error("Error fetching questions:", error);
+            setStartError(error?.response?.data?.message || 'Could not start interview. Please try again.');
             setIsLoading(false);
         }
     };
@@ -118,6 +132,7 @@ const InterviewAssistant = () => {
 
     const handleGoBack = () => {
         setCurrentPage('selection');
+        setStartError('');
     };
 
     const handleSubmitAnswer = () => {
@@ -148,54 +163,61 @@ const InterviewAssistant = () => {
 
     const handleStartRecording = async () => {
         try {
+            setStartError('');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             audioStreamRef.current = stream;
 
-            const options = {
-                mimeType: "audio/webm; codecs=opus",
-                audioBitsPerSecond: 32000,
-            };
-
-            mediaRecorderRef.current = new MediaRecorder(stream, options);
+            const options = MediaRecorder.isTypeSupported("audio/webm; codecs=opus")
+                ? { mimeType: "audio/webm; codecs=opus", audioBitsPerSecond: 32000 }
+                : undefined;
+            mediaRecorderRef.current = options ? new MediaRecorder(stream, options) : new MediaRecorder(stream);
 
             mediaRecorderRef.current.ondataavailable = (event) => {
                 audioChunksRef.current.push(event.data);
             };
 
             mediaRecorderRef.current.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, {
-                    type: "audio/webm",
-                });
-
-                const reader = new FileReader();
-                reader.readAsDataURL(audioBlob);
-                reader.onloadend = () => {
-                    const base64data = reader.result;
-                    const audioFile = base64data.split(";base64,").pop() ?? "";
-                    const audioFileSize = (base64data.replace(/=/g, "").length * 0.75) / 1024;
-                    const audioData = {
-                        file: audioFile,
-                        fileType: "opus",
-                        filesize: parseFloat(audioFileSize.toFixed(2)),
-                    };
-                    // Set the audio data as user answer
-                    setUserAnswer(JSON.stringify(audioData));
-                };
-
                 audioChunksRef.current = [];
                 clearTimer();
             };
 
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition();
+                recognitionRef.current = recognition;
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+
+                recognition.onresult = (event) => {
+                    let transcript = '';
+                    for (let i = 0; i < event.results.length; i += 1) {
+                        transcript += `${event.results[i][0].transcript} `;
+                    }
+                    setUserAnswer(transcript.trim());
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                };
+
+                recognition.start();
+            } else {
+                setStartError('Speech-to-text is not supported in this browser. Mic recording started, but please type your answer.');
+            }
             mediaRecorderRef.current.start();
             setIsRecording(true);
+            setTimer(0);
             startTimer();
         } catch (err) {
             console.error("Error accessing the microphone", err);
+            setStartError('Could not access microphone. Please allow mic permission and try again.');
         }
     };
 
     const handleStopRecording = () => {
         setIsRecording(false);
+        recognitionRef.current?.stop();
         mediaRecorderRef.current?.stop();
         // Stop audio tracks explicitly
         if (audioStreamRef.current) {
@@ -229,7 +251,10 @@ const InterviewAssistant = () => {
     };
 
     useEffect(() => {
-        return () => clearTimer(); // Cleanup timer on unmount
+        return () => {
+            clearTimer();
+            recognitionRef.current?.stop();
+        }; // Cleanup timer/recognition on unmount
     }, []);
 
     const handleAudioPlay = () => {
@@ -342,6 +367,9 @@ const InterviewAssistant = () => {
                                     {isLoading ? 'Submitting...' : 'Submit Answer'}
                                 </button>
                             </div>
+                            {startError && (
+                                <p className="mt-3 text-sm text-red-400">{startError}</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -377,6 +405,11 @@ const InterviewAssistant = () => {
                         Selected: <span className="text-indigo-400 font-semibold">{roleName}</span> |
                         Experience: <span className="text-indigo-400 font-semibold">{experienceName}</span>
                     </p>
+                    {customRequirements.trim() && (
+                        <p className="text-sm text-gray-400 max-w-3xl mx-auto">
+                            Focus Areas: <span className="text-indigo-300">{customRequirements}</span>
+                        </p>
+                    )}
                     <button onClick={handleGoBack} className="text-sm text-gray-400 underline hover:text-white transition-colors duration-300">
                         Change Selection
                     </button>
@@ -450,6 +483,9 @@ const InterviewAssistant = () => {
                 >
                     {isLoading ? 'Loading...' : 'Start AI Interview'}
                 </button>
+                {startError && (
+                    <p className="text-red-400 text-sm text-center max-w-lg">{startError}</p>
+                )}
             </div>
         );
     }
@@ -500,6 +536,15 @@ const InterviewAssistant = () => {
                         </div>
                     ))}
                 </div>
+            </div>
+            <div className="w-full max-w-6xl">
+                <h2 className="text-2xl font-semibold mb-4">Customize Your Interview (Optional)</h2>
+                <textarea
+                    className="w-full min-h-28 bg-card border border-border rounded-xl p-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Example: Focus on React performance, system design for scalable APIs, and behavioral questions for leadership."
+                    value={customRequirements}
+                    onChange={(e) => setCustomRequirements(e.target.value)}
+                />
             </div>
             <button
                 onClick={handleStartInterview}
