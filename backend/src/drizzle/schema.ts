@@ -70,7 +70,7 @@ export const user = pgTable(
     {
         id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
         email: text('email'),
-        displayName: text('display_name').notNull(),
+        displayName: text('display_name'),
         avatarUrl: text('avatar_url'),
         username: text('username').notNull(),
         role: roleEnum('role').notNull().default('USER'),

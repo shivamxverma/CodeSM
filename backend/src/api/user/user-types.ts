@@ -1,7 +1,7 @@
 export interface EmailPasswordRegisterRequest {
-    username: string,
     email: string,
-    password: string
+    password: string,
+    username: string
 }
 
 export interface RegisterResponse {

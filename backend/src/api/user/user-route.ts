@@ -1,8 +1,11 @@
 import { Router } from "express";
 import { registerUser, loginUser, LogoutUser, refreshAccessToken, forgotPassword, resetPassword } from "./user.controller.js";
-import passport from "../../config/passport.config.js";
+import { validate } from '../../shared/middleware';
+import passport from '../../config/passport.config.js';
 // import {upload} from '../middlewares/multer.middleware.js';
 import { verifyJWT } from "../../middlewares/auth.middleware.js";
+import { emailPasswordRegister } from './user-controller'
+import { emailPasswordRegisterSchema } from "./user-schema";
 const router = Router();
 
 // Google OAuth entry point
@@ -18,7 +21,7 @@ const router = Router();
 //     }
 // );
 
-router.post("/register", registerUser);
+router.post("/register", validate('body', emailPasswordRegisterSchema), emailPasswordRegister);
 
 router.post("/login", loginUser);
 

@@ -8,6 +8,11 @@ import {
 } from './user-service';
 
 
-export const registerUser = asyncHandler(async (req: jwtReq, res: Response, next: NextFunction) => {
+export const emailPasswordRegister = asyncHandler(async (req: jwtReq, res: Response, next: NextFunction) => {
+    const response = await handleEmailPasswordRegister(req.body);
 
+    res.status(httpStatus.CREATED).json({
+        success : true,
+        message : response.message,
+    })
 });
