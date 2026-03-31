@@ -1,0 +1,8 @@
+{"level":"error","message":"Database connection closed","timestamp":"2026-03-31 11:43:54"}
+{"level":"error","message":"Database connection closed","timestamp":"2026-03-31 11:44:08"}
+{"level":"error","message":"Database connection closed","timestamp":"2026-03-31 11:49:06"}
+{"level":"error","message":"Database connection closed","timestamp":"2026-03-31 12:00:47"}
+{"code":"EADDRINUSE","errno":0,"level":"error","message":"Failed to start server. Is port 8000 in use?","stack":"Error\n    at serve (unknown)\n    at <anonymous> (node:_http_server:271:39)\n    at <anonymous> (node:_http_server:248:33)\n    at startServer (/Users/shivamverma/Desktop/personal-work/codesm/CodeSM/backend/src/index.ts:16:10)\n    at processTicksAndRejections (unknown:7:39)","syscall":"listen","timestamp":"2026-03-31 13:41:11"}
+{"code":"EADDRINUSE","errno":0,"level":"error","message":"Failed to start server. Is port 8000 in use?","stack":"Error\n    at serve (unknown)\n    at <anonymous> (node:_http_server:271:39)\n    at <anonymous> (node:_http_server:248:33)\n    at startServer (/Users/shivamverma/Desktop/personal-work/codesm/CodeSM/backend/src/index.ts:16:10)\n    at processTicksAndRejections (unknown:7:39)","syscall":"listen","timestamp":"2026-03-31 13:41:50"}
+{"level":"error","message":"Database connection closed","timestamp":"2026-03-31 13:42:22"}
+{"level":"error","message":"Database connection closed","timestamp":"2026-03-31 16:06:32"}

@@ -14,6 +14,5 @@ export const emailPasswordRegisterSchema = yup.object().shape({
         .string()
         .min(3, 'Username must be at least 4 characters')
         .max(16, 'Username must be lesser than the 20 characters')
-        .matches(/[a-z][A-Z]/, 'Username must contain at least one lower')
         .required('Username is required')
 });

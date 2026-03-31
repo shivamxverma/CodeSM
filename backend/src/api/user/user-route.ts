@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { registerUser, loginUser, LogoutUser, refreshAccessToken, forgotPassword, resetPassword } from "./user.controller.js";
+// import { registerUser, loginUser, LogoutUser, refreshAccessToken, forgotPassword, resetPassword } from "./user.controller.js";
 import { validate } from '../../shared/middleware';
 import passport from '../../config/passport.config.js';
 // import {upload} from '../middlewares/multer.middleware.js';
 import { verifyJWT } from "../../middlewares/auth.middleware.js";
-import { emailPasswordRegister } from './user-controller'
+import { emailPasswordRegister , verifyEmail } from './user-controller'
 import { emailPasswordRegisterSchema } from "./user-schema";
 const router = Router();
 
@@ -22,15 +22,16 @@ const router = Router();
 // );
 
 router.post("/register", validate('body', emailPasswordRegisterSchema), emailPasswordRegister);
+router.get('/verify-email', verifyEmail);
 
-router.post("/login", loginUser);
+// router.post("/login", loginUser);
 
-router.get("/logout", verifyJWT, LogoutUser);
+// router.get("/logout", verifyJWT, LogoutUser);
 
-router.post("/token", refreshAccessToken);
+// router.post("/token", refreshAccessToken);
 
-// ── Password Reset ──────────────────────────────────────────
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password/:token", resetPassword);
+// // ── Password Reset ──────────────────────────────────────────
+// router.post("/forgot-password", forgotPassword);
+// router.post("/reset-password/:token", resetPassword);
 
 export default router;

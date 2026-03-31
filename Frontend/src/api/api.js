@@ -11,10 +11,14 @@ export const login = (payload) => {
 }
 
 export const signup = (payload) => {
-  return axios.post(`${BASE}/users/register`, payload, {
+  return axios.post(`${BASE}/auth/register`, payload, {
     headers: { "Content-Type": "application/json" },
     withCredentials: true,
   });
+}
+
+export const verifyEmail = (token) => {
+  return axios.get(`${BASE}/auth/?token=${token}`);
 }
 
 export const logout = () => {
@@ -197,3 +201,4 @@ export const forgotPassword = (email) =>
 
 export const resetPassword = (token, password, confirmPassword) =>
   axios.post(`${BASE}/users/reset-password/${token}`, { password, confirmPassword });
+

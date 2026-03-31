@@ -5,7 +5,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import ProblemDiscussions from "../discussion/ProblemDiscussions";
-import { useAuth } from "@/auth/AuthContext";
+import { useAuth } from "@/utils/AuthContext";
 import { useExecutionStore } from "@/stores/executionStore";
 import {
   getProblem,

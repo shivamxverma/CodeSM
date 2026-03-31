@@ -1,8 +1,8 @@
-import { ApiError } from '../utils/ApiError.js';
-import { ApiResponse } from '../utils/ApiResponse.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import { myQueue } from '../config/queue.config.js';
-import JobResult from '../models/jobresult.model.js';
+import { ApiError } from '../../utils/ApiError';
+import { ApiResponse } from '../../utils/ApiResponse';
+import asyncHandler from '../../utils/asyncHandler';
+import { myQueue } from '../../config/queue.config';
+import JobResult from '../../models/jobresult.model';
 
 const getSubmitJobResponse = asyncHandler(async (req, res) => {
     const { submissionId } = req.params;

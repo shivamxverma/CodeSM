@@ -16,8 +16,9 @@ const KEY_PREFIX = 'rl_tb';
 export const rateLimitMiddleware = asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.user?.id;
+    // Per-user bucket only applies after auth; public routes must not be blocked here.
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return next();
     }
 
     const key = `${KEY_PREFIX}:${userId}`;       

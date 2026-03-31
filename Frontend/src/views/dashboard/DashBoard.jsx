@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 // ─── Safe auth hook (works even if AuthContext isn't wired up) ────────────────
 let useAuth;
 try {
-  useAuth = require("@/auth/AuthContext").useAuth;
+  useAuth = require("@/utils/AuthContext").useAuth;
 } catch {
   useAuth = () => ({ user: null });
 }

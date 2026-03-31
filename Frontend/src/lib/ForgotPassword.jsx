@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { forgotPassword } from "../../api/api.js";
+import { forgotPassword } from "../api/api";
 import { Link } from "react-router-dom";
 
 function ForgotPassword() {

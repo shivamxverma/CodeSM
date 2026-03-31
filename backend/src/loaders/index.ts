@@ -1,4 +1,4 @@
-// import express from './express';
+import express from './express';
 import logger from './logger';
 import Express from 'express';
 
@@ -7,7 +7,7 @@ export default async ({
 } : {
     expressApp : Express.Application;
 }) : Promise<void> => {
-    // express({ app : expressApp })
+    express({ app : expressApp })
     logger.info('🛡️  Express loaded  🛡️');
     logger.info('🛡️  All modules loaded!  🛡️');
 }

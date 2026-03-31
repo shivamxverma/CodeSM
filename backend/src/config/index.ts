@@ -9,13 +9,13 @@ const envSchema = yup.object().shape({
     DATABASE_URL : yup.string().required('Database URL is Required'),
     PORT : yup.string().default('8000'),
     ALLOWED_ORIGINS: yup.string(),
-    JWT_SECRET : yup.string().required(),
-    JWT_REFRESH_SECRET: yup.string().required(),
+    // JWT_SECRET : yup.string().required(),
+    // JWT_REFRESH_SECRET: yup.string().required(),
     GOOGLE_CLIENT_ID: yup.string().required(),
     GOOGLE_CLIENT_SECRET: yup.string().required(),
-    GOOGLE_REDIRECT_URI: yup.string().required(),
+    GOOGLE_CALLBACK_URL: yup.string().required(),
     GEMINI_API_KEYS: yup.string().optional(),
-    GOOGLE_CALLBACK_URL : yup.string().required(),
+    // GOOGLE_CALLBACK_URL : yup.string().required(),
     LOG_LEVEL: yup
     .string()
     .oneOf(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
@@ -36,7 +36,13 @@ const envSchema = yup.object().shape({
     AWS_ACCESS_KEY_ID: yup.string().required(),
     AWS_BUCKET_NAME: yup.string().required(),
     AWS_REGION : yup.string().required(),
-    VITE_API_URL : yup.string().required()
+    VITE_API_URL : yup.string().required(),
+    EMAIL_FROM: yup.string().required(),
+    EMAIL_HOST: yup.string().required(),
+    EMAIL_PASS: yup.string().required(),
+    EMAIL_PORT: yup.number().required(),
+    EMAIL_USER: yup.string().required(),
+    SMTP_VERIFY_URL : yup.string().required()
 })
 
 const parsedEnv = envSchema.validateSync(process.env, {

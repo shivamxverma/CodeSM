@@ -3,7 +3,7 @@ import { getContest, registerContest, getLeaderboard } from "../../api/api.js";
 import useContestClock from "../../hooks/useContestClock.jsx";
 import { Link, useParams } from "react-router-dom";
 import { set } from "zod";
-import { useAuth } from "../../auth/AuthContext.jsx";
+import { useAuth } from "../../utils/AuthContext.jsx";
 
 function msFmt(ms) {
   if (ms == null) return "--:--:--";

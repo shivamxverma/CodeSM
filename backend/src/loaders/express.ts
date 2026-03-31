@@ -14,20 +14,38 @@ const corsOptions = {
        : ['http://localhost:5173','https://code-sm.vercel.app'],
     credentials: true,
     methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-HMAC-Signature', 'X-Verly-Chatbot-Id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-HMAC-Signature'],
     exposedHeaders: [],
 }
 
 export default ({ app }: { app : express.Application }) : void => {
+    app.use(express.json());
     app.use(cors(corsOptions));
-    app.options('*', cors(corsOptions));
+    app.options('', cors(corsOptions));
     app.use(cookieParser());
 
-    app.use(rateLimitMiddleware);
+    // app.use(rateLimitMiddleware);
     app.get('/', (req, res) => {
         return res.status(200).send(
         "What are you doing here? 🧐 Go to <a href='https://dev.verlyai.xyz/'>Magic Link!!</a>"
         );
+    });
+
+    app.get('/health', (req, res) => {
+        const healthcheck = {
+          statusCode: 200,
+          success: true,
+          message: 'OK',
+          timestamp: new Date(),
+          uptime: process.uptime(),
+          application: 'WHALE-TERMINAL',
+        };
+    
+        try {
+          return res.json(healthcheck);
+        } catch (e) {
+          return res.status(503).send();
+        }
     });
 
     app.set('trust proxy', 1);

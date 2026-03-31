@@ -1,8 +1,8 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import LoginCard from "./views/users/LoginCard";
-import SignUpCard from "./views/users/SignUpCard";
+import LoginCard from "./auth/login/LoginCard";
+import SignUpCard from "./auth/signup/SignUpCard";
 import ProblemPage from "./views/problemPage/ProblemPage";
 import Dashboard from "./views/dashboard/DashBoard";
 import Problems from "./views/problems/problems";
@@ -13,20 +13,22 @@ import ContestLobbyAndRun from "./views/contest/ContestLobbyAndRun";
 import InterviewAssistant from "./views/interview/InterviewPage";
 import DiscussionPage from "./views/discussion/DiscussionPage";
 import AdminDashboard from "./views/admin/AdminDashboard";
-import OAuthSuccess from "./views/users/OAuthSuccess";
-import ForgotPassword from "./views/users/ForgotPassword";
-import ResetPassword from "./views/users/ResetPassword";
+import OAuthSuccess from "./lib/OAuthSuccess";
+import ForgotPassword from "./lib/ForgotPassword";
+import ResetPassword from "./lib/ResetPassword";
 
-import { AuthProvider } from "./auth/AuthContext";
-import RequireRole from "./auth/RequireRole";
-import ProtectedRoute from "./auth/ProtectedRoute";
+import { AuthProvider } from "./utils/AuthContext";
+import RequireRole from "./utils/RequireRole";
+import ProtectedRoute from "./utils/ProtectedRoute";
 import Layout from "./Layout";
+import VerifyEmailPage from "./auth/verify";
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/verify" element={<VerifyEmailPage />} />
           <Route path="/login" element={<LoginCard />} />
           <Route path="/signup" element={<SignUpCard />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

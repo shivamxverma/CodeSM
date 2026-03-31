@@ -10,14 +10,20 @@ async function startServer() {
     await loaders({ expressApp: app });
     await getDrizzleClient();
 
-    const port = Number(env.PORT) || 8020;
+    const port = Number(env.PORT) || 8000;
 
     const server = app
         .listen(port, '0.0.0.0', () => {
             logger.info(`🛡️ Server listening on port: ${port} 🛡️`);
         })
-        .on('error', (err) => {
-            logger.error(err);
+        .on('error', (err: NodeJS.ErrnoException) => {
+            if (err.code === 'EADDRINUSE') {
+                logger.error(
+                    `Port ${port} is already in use. Stop the other server (try: lsof -i :${port}) or set PORT to a free port in your env.`
+                );
+            } else {
+                logger.error(err);
+            }
             process.exit(1);
         });
 

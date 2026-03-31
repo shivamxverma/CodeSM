@@ -1,11 +1,11 @@
-import {Router} from 'express';
-import {generateInterviewQuestions,getAnswerScore} from './interview.controller.js';
-const router = Router();
+// import {Router} from 'express';
+// import {generateInterviewQuestions,getAnswerScore} from './interview.controller.js';
+// const router = Router();
 
-router.post('/', generateInterviewQuestions);
-router.post('/score', getAnswerScore);
+// router.post('/', generateInterviewQuestions);
+// router.post('/score', getAnswerScore);
 
-export default router;
+// export default router;
 
 
 
