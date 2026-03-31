@@ -371,6 +371,13 @@ export default function ProblemPage() {
       return;
     }
 
+    if (status && status !== "accepted" && status !== "rejected") {
+      const msg = payload.error || payload.raw || String(status);
+      setStatusBadge({ type: "error", text: "Error" });
+      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + msg);
+      return;
+    }
+
     const lines = [];
     if (stdout && typeof stdout === "string") lines.push(stdout.trim());
     execution.forEach((tc, i) => {

@@ -40,6 +40,16 @@ const problemSchema = new Schema({
             required: true
         }
     }],
+    testcases: [{
+        input: {
+            type: String,
+            required: true
+        },
+        output: {
+            type: String,
+            required: true
+        }
+    }],
     constraints: {
         type: String,
         required: true

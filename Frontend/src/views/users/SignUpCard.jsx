@@ -114,7 +114,9 @@ function SignUpCard() {
   // Sign-up with Google — same OAuth flow as login
   // passport.config.js will create a new user if they don't exist
   const handleGoogleSignUp = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/users/auth/google`;
+    // const BASE = "http://localhost:8000/api/v1";
+    const BASE = "https://codesm.onrender.com/api/v1";
+    window.location.href = `${BASE}/users/auth/google`;
   };
 
 

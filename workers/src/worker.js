@@ -21,12 +21,12 @@ connectDB()
         if (!problem) {
           return { status: "error", error: "Problem not found" };
         }
-        return dryRunCppCodeWithInput(code, language, problem);
+        const response = await dryRunCppCodeWithInput(code, language, problem);
+        return response;
       }
-      console.log("Dry Run is false");
 
       const { submissionId } = job.data;
-      const submission = await Submission.findById(submissionId).lean();
+      const submission = await Submission.findById(submissionId).populate("problem");
       if (!submission) {
         throw new Error(`Submission not found: ${submissionId}`);
       }

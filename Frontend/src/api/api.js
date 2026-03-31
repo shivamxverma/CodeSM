@@ -47,6 +47,7 @@ export const createProblem = (payload) => {
 }
 
 export const createSubmission = async (problemId, payload) => {
+  console.log("shivam here in submission");
   return await axios.post(
     `${BASE}/submission/${problemId}/submit`,
     payload,
