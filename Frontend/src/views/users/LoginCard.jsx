@@ -22,8 +22,7 @@ const validateForm = ({ email, username, password }) => {
 
 function LoginCard() {
   const navigate = useNavigate();
-  const { login } = useAuth(); // ✅ Get context login function
-  const posthog = usePostHog();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -79,11 +78,6 @@ function LoginCard() {
     } catch (err) {
       console.error(err);
       const errorMsg = err.response?.data?.message || err.message || "Invalid credentials";
-      posthog.capture("login_failure", {
-        email: formData.email,
-        username: formData.username,
-        error: errorMsg,
-      });
       setError(errorMsg);
     } finally {
       setLoading(false);
