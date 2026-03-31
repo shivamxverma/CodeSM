@@ -4,7 +4,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { login as apiLogin } from "../../api/api.js";
 // import { supabase } from "../../lib/supabase"; 
 import { useAuth } from "../../auth/AuthContext.jsx";
-import { usePostHog } from '@posthog/react'
 
 const emailSchema = z.string().email("Invalid email address");
 const usernameSchema = z.string().min(3, "Username must be at least 3 characters long");
@@ -42,10 +41,6 @@ function LoginCard() {
   };
 
   const handleSubmit = async (e) => {
-    posthog.capture("login_attempt", {
-      email: formData.email,
-      username: formData.username,
-    });
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -73,13 +68,7 @@ function LoginCard() {
 
       if (!token) throw new Error("No access token received");
 
-      // 3. ✅ Update Context (State + LocalStorage)
       login(token);
-
-      posthog.capture("login_success", {
-        email: formData.email,
-        username: formData.username,
-      });
 
       setSuccess("Login successful! Redirecting...");
 
@@ -180,7 +169,7 @@ function LoginCard() {
           onClick={() => {
             // Redirect to backend Google OAuth entry point
             // const base = import.meta.env.VITE_API_URL;
-            const BASE = "http://localhost:8000/api/v1";
+            const BASE = "https://codesm.onrender.com/api/v1";
             window.location.href = `${BASE}/users/auth/google`;
           }}
           className={`w-full py-3 px-6 mt-4 text-white text-lg rounded-lg transition ${googleLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
