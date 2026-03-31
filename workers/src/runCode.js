@@ -148,6 +148,7 @@ const executeCode = async (testcases, language, runnerDir) => {
   }
 
   await fs.rm(runnerDir, { recursive: true, force: true });
+  console.log("Here execution ", execution);
   return { status: execution.every(r => r.isPassed) ? 'accepted' : 'rejected', execution };
 }
 
@@ -173,6 +174,7 @@ const runCppCodeWithInput = async (cppCode, language, problemId, submissionId) =
       0
     ),
   });
+  return result;
 };
 
 const dryRunCppCodeWithInput = async (cppCode, language, problem) => {
@@ -181,7 +183,7 @@ const dryRunCppCodeWithInput = async (cppCode, language, problem) => {
   if (!testcases || testcases.length === 0) {
     return { status: 'no_sample_testcases', error: 'No sample testcases provided for dry run.' };
   }
-  return executeCode(testcases, language, runnerDir);
+  return await executeCode(testcases, language, runnerDir);
 };
 
 export { dryRunCppCodeWithInput };

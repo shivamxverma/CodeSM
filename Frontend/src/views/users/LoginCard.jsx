@@ -164,6 +164,7 @@ function LoginCard() {
             // Redirect to backend Google OAuth entry point
             // const base = import.meta.env.VITE_API_URL;
             const BASE = "https://codesm.onrender.com/api/v1";
+            // const BASE = "http://localhost:8000/api/v1";
             window.location.href = `${BASE}/users/auth/google`;
           }}
           className={`w-full py-3 px-6 mt-4 text-white text-lg rounded-lg transition ${googleLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}

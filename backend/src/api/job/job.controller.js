@@ -82,11 +82,12 @@ const getJobResponse = asyncHandler(async (req, res) => {
         );
     }
 
+    // BullMQ job state stays `completed` here; verdict (accepted/rejected/…) lives on `result.status`.
     return res.status(200).json(
         new ApiResponse(200, 'Job fetched successfully', {
             state,
             jobData,
-            result: jobResult.output,
+            result: jobResult,
         })
     );
 });
