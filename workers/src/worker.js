@@ -1,4 +1,4 @@
-import myQueue from "./queue.js";
+import {myQueue} from "./queue.js";
 import runCppCodeWithInput, { dryRunCppCodeWithInput } from "./runCode.js";
 import connectDB from "./db.config.js";
 import Submission from "../models/submission.model.js";
