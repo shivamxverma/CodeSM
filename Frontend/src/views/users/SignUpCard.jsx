@@ -115,7 +115,8 @@ function SignUpCard() {
   // passport.config.js will create a new user if they don't exist
   const handleGoogleSignUp = () => {
     // const BASE = "http://localhost:8000/api/v1";
-    const BASE = "https://codesm.onrender.com/api/v1";
+    // const BASE = "https://codesm.onrender.com/api/v1";
+    const BASE = "https://codesm.shivamworks.dev/api/v1";
     window.location.href = `${BASE}/users/auth/google`;
   };
 
