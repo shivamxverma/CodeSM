@@ -32,6 +32,24 @@ import interviewRoutes from './routes/interview.route.js';
 import discussionRoutes from './routes/discussion.route.js';
 import jobRoutes from './routes/job.route.js';
 
+// Health check API
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'Server is healthy',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Root route to check if server is running
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'running',
+    message: 'Welcome to the API server!',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.use("/api/v1/discussion", discussionRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/problem", problemRoutes);
