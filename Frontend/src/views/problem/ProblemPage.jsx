@@ -91,7 +91,9 @@ export default function ProblemPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [statusBadge, setStatusBadge] = useState(null);
-  const [consoleOutput, setConsoleOutput] = useState("");
+  /** Fresh execution UI: loading | compile errors | per-testcase tabs | plain error */
+  const [executionPanel, setExecutionPanel] = useState(null);
+  const [testcaseTab, setTestcaseTab] = useState(0);
   const consoleRef = useRef(null);
   const [hints, setHints] = useState([]);
   const [hintsLoading, setHintsLoading] = useState(false);
@@ -178,18 +180,99 @@ export default function ProblemPage() {
     enabled: activeTab === "Submissions" && !!problemId,
   });
 
+  const showCompileErrors = useCallback((errors) => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (editor && monaco) {
+      const model = editor.getModel();
+      const markers = (errors || []).map((e) => ({
+        startLineNumber: Number(e.line) || 1,
+        startColumn: Number(e.column) || 1,
+        endLineNumber: Number(e.line) || 1,
+        endColumn: (Number(e.column) || 1) + 1,
+        message: e.message || "Compilation failed",
+        severity: e.severity === "warning" ? monaco.MarkerSeverity.Warning : monaco.MarkerSeverity.Error,
+      }));
+      if (model) monaco.editor.setModelMarkers(model, "compile", markers);
+    }
+    setStatusBadge({ type: "error", text: "Compilation Error" });
+    setExecutionPanel({
+      type: "compile",
+      errors:
+        errors && errors.length
+          ? errors
+          : [{ message: "Compilation failed" }],
+    });
+  }, []);
+
+  const processExecutionResult = useCallback(
+    (payload) => {
+      if (!payload) {
+        setStatusBadge({ type: "error", text: "No result received" });
+        setExecutionPanel({ type: "error", message: "No result was returned from the server." });
+        return;
+      }
+
+      const { status, execution = [], errors = [], stderr, stdout } = payload;
+
+      if (status === "compile_error") {
+        showCompileErrors(errors || [{ message: stderr || "Compilation failed" }]);
+        return;
+      }
+
+      if (status && status !== "accepted" && status !== "rejected") {
+        const msg = payload.error || payload.raw || String(status);
+        setStatusBadge({ type: "error", text: "Error" });
+        setExecutionPanel({ type: "error", message: msg });
+        return;
+      }
+
+      setTestcaseTab(0);
+      const outS = typeof stdout === "string" ? stdout : "";
+      const errS = typeof stderr === "string" ? stderr : "";
+      if (
+        execution.length === 0 &&
+        !outS.trim() &&
+        !errS.trim()
+      ) {
+        setStatusBadge({ type: "error", text: "No result" });
+        setExecutionPanel({ type: "error", message: "No test results returned." });
+        return;
+      }
+
+      setExecutionPanel({
+        type: "tests",
+        items: execution,
+        stdout: outS,
+        stderr: errS,
+      });
+
+      const allPassed = execution.length > 0 && execution.every((t) => !!t?.isPassed);
+      const hasTLE = execution.some(
+        (t) => t?.isTLE || /exited|timeout/i.test(String(t?.output ?? t?.actual ?? t?.error ?? ""))
+      );
+
+      if (hasTLE) setStatusBadge({ type: "warn", text: "Time Limit Exceeded" });
+      else if (allPassed) setStatusBadge({ type: "success", text: "Accepted" });
+      else if (execution.length === 0) setStatusBadge(null);
+      else setStatusBadge({ type: "error", text: "Wrong Answer" });
+    },
+    [showCompileErrors]
+  );
+
   const runMutation = useMutation({
     mutationFn: () => runCode(problemId, { code, language }),
     onMutate: () => {
       setIsRunning(true);
       setStatusBadge(null);
-      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "▶️ Running...\n");
+      setTestcaseTab(0);
+      setExecutionPanel({ type: "loading", message: "Running on sample testcases…" });
       clearMarkers();
     },
     onError: (err) => {
       const msg = err?.response?.data?.message || err?.message || "Execution failed";
       setStatusBadge({ type: "error", text: "Error" });
-      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + `${msg}`);
+      setExecutionPanel({ type: "error", message: msg });
       setIsRunning(false);
       posthog.capture("run_failed", { problem_id: problemId, error: String(msg) });
     },
@@ -206,7 +289,8 @@ export default function ProblemPage() {
     onMutate: () => {
       setIsSubmitting(true);
       setStatusBadge(null);
-      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "▶️ Submitting...\n");
+      setTestcaseTab(0);
+      setExecutionPanel({ type: "loading", message: "Submitting — judging hidden testcases…" });
       clearMarkers();
       handledSubmitPollRef.current = null;
       handledSubmitStoredRef.current = null;
@@ -214,7 +298,7 @@ export default function ProblemPage() {
     onError: (err) => {
       const msg = err?.response?.data?.message || err?.message || "Submission failed";
       setStatusBadge({ type: "error", text: "Error" });
-      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + `${msg}`);
+      setExecutionPanel({ type: "error", message: msg });
       setIsSubmitting(false);
       posthog.capture("submission_failed", { problem_id: problemId, error: String(msg) });
     },
@@ -247,7 +331,7 @@ export default function ProblemPage() {
         error: "Job failed",
       });
       setStatusBadge({ type: "error", text: "Execution Failed" });
-      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "Run job failed.\n");
+      setExecutionPanel({ type: "error", message: "Run job failed." });
       finish();
       return;
     }
@@ -259,13 +343,11 @@ export default function ProblemPage() {
         processExecutionResult(payload);
       } else {
         setStatusBadge({ type: "error", text: "No result received" });
-        setConsoleOutput(
-          (prev) => (prev ? prev + "\n" : "") + "No result was returned from the server.\n"
-        );
+        setExecutionPanel({ type: "error", message: "No result was returned from the server." });
       }
       finish();
     }
-  }, [runJobId, runJobQuery.data, problemId, posthog, queryClient, setRunResult]);
+  }, [runJobId, runJobQuery.data, problemId, posthog, queryClient, setRunResult, processExecutionResult]);
 
   useEffect(() => {
     if (!submitMeta) return;
@@ -282,7 +364,7 @@ export default function ProblemPage() {
         error: "Job failed",
       });
       setStatusBadge({ type: "error", text: "Execution Failed" });
-      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "Submission job failed.\n");
+      setExecutionPanel({ type: "error", message: "Submission job failed." });
       setSubmitMeta(null);
       setIsSubmitting(false);
       queryClient.removeQueries({ queryKey: ["jobPoll", "submit", submitMeta.jobId, problemId] });
@@ -303,7 +385,7 @@ export default function ProblemPage() {
       setIsSubmitting(false);
       queryClient.removeQueries({ queryKey: ["jobPoll", "submit", submitMeta.jobId, problemId] });
     }
-  }, [submitMeta, submitJobQuery.data, problemId, posthog, queryClient, setSubmitResult]);
+  }, [submitMeta, submitJobQuery.data, problemId, posthog, queryClient, setSubmitResult, processExecutionResult]);
 
   useEffect(() => {
     if (!submitMeta) return;
@@ -322,17 +404,16 @@ export default function ProblemPage() {
     setIsSubmitting(false);
     queryClient.removeQueries({ queryKey: ["jobPoll", "submit", submitMeta.jobId, problemId] });
     queryClient.removeQueries({ queryKey: ["submit-job-result", submitMeta.submissionId] });
-  }, [submitMeta, submitStoredQuery.isSuccess, submitStoredQuery.data, problemId, queryClient, setSubmitResult]);
+  }, [submitMeta, submitStoredQuery.isSuccess, submitStoredQuery.data, problemId, queryClient, setSubmitResult, processExecutionResult]);
 
   useEffect(() => {
     if (!submitMeta || !submitStoredQuery.isError) return;
     setStatusBadge({ type: "error", text: "Error" });
-    setConsoleOutput(
-      (prev) =>
-        (prev ? prev + "\n" : "") +
-        (submitStoredQuery.error?.response?.data?.message || "Could not load submission result.") +
-        "\n"
-    );
+    setExecutionPanel({
+      type: "error",
+      message:
+        submitStoredQuery.error?.response?.data?.message || "Could not load submission result.",
+    });
     setSubmitMeta(null);
     setIsSubmitting(false);
   }, [submitMeta, submitStoredQuery.isError, submitStoredQuery.error]);
@@ -340,7 +421,7 @@ export default function ProblemPage() {
   useEffect(() => {
     if (!runJobId || !runJobQuery.isError) return;
     setStatusBadge({ type: "error", text: "Execution Failed" });
-    setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "Failed to get job status.\n");
+    setExecutionPanel({ type: "error", message: "Failed to get job status." });
     setRunJobId(null);
     setIsRunning(false);
     posthog.capture("run_failed", { problem_id: problemId, error: "poll_error" });
@@ -349,67 +430,11 @@ export default function ProblemPage() {
   useEffect(() => {
     if (!submitMeta || !submitJobQuery.isError) return;
     setStatusBadge({ type: "error", text: "Execution Failed" });
-    setConsoleOutput((prev) => (prev ? prev + "\n" : "") + "Failed to get submission job status.\n");
+    setExecutionPanel({ type: "error", message: "Failed to get submission job status." });
     setSubmitMeta(null);
     setIsSubmitting(false);
     posthog.capture("submission_failed", { problem_id: problemId, error: "poll_error" });
   }, [submitMeta, submitJobQuery.isError, problemId, posthog]);
-
-  const processExecutionResult = (payload) => {
-    if (!payload) {
-      setStatusBadge({ type: "error", text: "No result received" });
-      setConsoleOutput(
-        (prev) => (prev ? prev + "\n" : "") + "No result was returned from the server."
-      );
-      return;
-    }
-
-    const { status, execution = [], errors = [], stderr, stdout } = payload;
-
-    if (status === "compile_error") {
-      showCompileErrors(errors || [{ message: stderr || "Compilation failed" }]);
-      return;
-    }
-
-    if (status && status !== "accepted" && status !== "rejected") {
-      const msg = payload.error || payload.raw || String(status);
-      setStatusBadge({ type: "error", text: "Error" });
-      setConsoleOutput((prev) => (prev ? prev + "\n" : "") + msg);
-      return;
-    }
-
-    const lines = [];
-    if (stdout && typeof stdout === "string") lines.push(stdout.trim());
-    execution.forEach((tc, i) => {
-      const outStr = tc?.output ?? tc?.actual ?? tc?.error;
-      if (tc?.isTLE || /exited/i.test(String(outStr || ""))) {
-        lines.push(`⚠️ Test Case ${i + 1}: Time Limit Exceeded`);
-      } else if (tc?.isPassed) {
-        lines.push(`✅ Test Case ${i + 1}: Passed`);
-      } else {
-        lines.push(`❌ Test Case ${i + 1}: Failed`);
-      }
-      if (outStr != null && outStr !== "") {
-        lines.push(`Output: ${String(outStr).trim()}`);
-      }
-    });
-
-    if (!execution.length && !stdout && !stderr) {
-      lines.push("No test results returned.");
-    }
-    if (stderr) lines.push(`stderr: ${String(stderr).trim()}`);
-
-    setConsoleOutput((prev) => (prev ? prev + "\n" : "") + lines.join("\n"));
-
-    const allPassed = execution.length > 0 && execution.every((t) => !!t?.isPassed);
-    const hasTLE = execution.some(
-      (t) => t?.isTLE || /exited/i.test(String(t?.output ?? t?.actual ?? t?.error ?? ""))
-    );
-
-    if (hasTLE) setStatusBadge({ type: "warn", text: "Time Limit Exceeded" });
-    else if (allPassed) setStatusBadge({ type: "success", text: "Accepted" });
-    else setStatusBadge({ type: "error", text: "Wrong Answer" });
-  };
 
   useEffect(() => {
     setCode(`#include <bits/stdc++.h>
@@ -421,38 +446,15 @@ int main(){
 
   useEffect(() => {
     if (consoleRef.current) {
-      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+      consoleRef.current.scrollTop = 0;
     }
-  }, [consoleOutput]);
+  }, [executionPanel, testcaseTab]);
 
   useEffect(() => {
     if (activeTab === "Hints") {
       fetchHints();
     }
   }, [activeTab]);
-
-  function showCompileErrors(errors) {
-    const editor = editorRef.current;
-    const monaco = monacoRef.current;
-    if (!editor || !monaco) return;
-    const model = editor.getModel();
-    const markers = errors.map((e) => ({
-      startLineNumber: Number(e.line) || 1,
-      startColumn: Number(e.column) || 1,
-      endLineNumber: Number(e.line) || 1,
-      endColumn: (Number(e.column) || 1) + 1,
-      message: e.message || "Compilation failed",
-      severity: e.severity === "warning" ? monaco.MarkerSeverity.Warning : monaco.MarkerSeverity.Error,
-    }));
-    if (model) monaco.editor.setModelMarkers(model, "compile", markers);
-
-    setStatusBadge({ type: "error", text: "Compilation Error" });
-    setConsoleOutput(
-      (errors && errors.length
-        ? errors.map((e) => `${e.message}${e.line ? ` (Line ${e.line})` : ""}`).join("\n")
-        : "Compilation failed") + "\n"
-    );
-  }
 
   function clearMarkers() {
     const editor = editorRef.current;
@@ -470,7 +472,8 @@ int main(){
 }`);
     clearMarkers();
     setStatusBadge(null);
-    setConsoleOutput("");
+    setExecutionPanel(null);
+    setTestcaseTab(0);
   };
 
   const handleRun = () => runMutation.mutate();
@@ -788,13 +791,13 @@ int main(){
         </div>
       </div>
 
-      <div className="relative flex-1 flex flex-col">
+      <div className="relative flex-1 flex flex-col min-h-0">
         <div className="px-5 py-3 bg-[#0f141b] border-b border-[#1b2330] flex items-center gap-3">
           <div className="xl:hidden text-sm truncate">{problem?.title || "Loading..."}</div>
           <div className="ml-auto flex items-center gap-2">
             {statusBadge && (
               <span className={`text-xs px-2 py-1 rounded border ${statusClass}`}>
-                Console: {statusBadge.text}
+                {statusBadge.text}
               </span>
             )}
             {problem?.acceptance != null && (
@@ -817,7 +820,7 @@ int main(){
           </div>
         </div>
 
-        <div className="flex-1 bg-[#0b0f13]">
+        <div className="flex-1 bg-[#0b0f13] min-h-0">
           <Editor
             height="100%"
             language="cpp"
@@ -834,45 +837,179 @@ int main(){
           />
         </div>
 
-        <div className="bg-[#0f141b] border-t border-[#1b2330]">
-          <div className="px-5 py-2 text-xs text-gray-400 flex items-center justify-between">
-            <span className="font-medium text-gray-300">Console</span>
-            <div className="flex items-center gap-2">
-              <button
-                className="text-[11px] px-2 py-1 rounded border border-[#233046] hover:bg-[#162134]"
-                onClick={() => setConsoleOutput("")}
-              >
-                Clear
-              </button>
-            </div>
+        <div className="bg-[#0f141b] border-t border-[#1b2330] shrink-0">
+          <div className="px-5 py-2.5 text-xs flex items-center justify-between border-b border-[#1b2330]/90">
+            <span className="font-semibold text-gray-200 tracking-wide">Console</span>
+            <button
+              type="button"
+              className="text-[11px] px-2.5 py-1 rounded-md border border-[#2a3750] text-gray-400 hover:bg-[#162134] hover:text-gray-200 transition-colors"
+              onClick={() => {
+                setExecutionPanel(null);
+                setTestcaseTab(0);
+              }}
+            >
+              Clear
+            </button>
           </div>
-          {problem?.sampleTestcases?.length > 0 ? (
-            <div className="px-5 pb-2">
-              <h4 className="text-xs text-blue-300 font-semibold mb-1">Sample Testcases</h4>
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {problem.sampleTestcases.map((tc, i) => (
-                  <div key={i} className="min-w-[200px] max-w-[300px] flex-shrink-0">
-                    <div className="rounded border border-[#233046] bg-[#0c1219] p-2 text-xs">
-                      <div className="mb-1">
-                        <span className="text-blue-200 font-semibold">Input:</span>
-                        <pre className="mt-1">{tc.input}</pre>
-                      </div>
-                      <div>
-                        <span className="text-blue-200 font-semibold">Output:</span>
-                        <pre className="mt-1">{tc.output}</pre>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
 
           <div
             ref={consoleRef}
-            className="h-44 overflow-y-auto px-5 pb-4 font-mono text-sm whitespace-pre-wrap bg-[#0c1219]"
+            className="min-h-[200px] max-h-[min(40vh,360px)] overflow-y-auto px-5 py-4 bg-[#080b10]"
           >
-            {consoleOutput || "Console output will appear here..."}
+            {!executionPanel && (
+              <p className="text-sm text-gray-500 font-mono leading-relaxed">
+                Run (sample tests) or Submit to see a fresh result here.
+              </p>
+            )}
+
+            {executionPanel?.type === "loading" && (
+              <p className="text-sm text-sky-400/95 animate-pulse font-medium">{executionPanel.message}</p>
+            )}
+
+            {executionPanel?.type === "error" && (
+              <p className="text-sm text-red-400 font-mono whitespace-pre-wrap leading-relaxed">
+                {executionPanel.message}
+              </p>
+            )}
+
+            {executionPanel?.type === "compile" && (
+              <ul className="space-y-2">
+                {executionPanel.errors.map((e, i) => (
+                  <li
+                    key={i}
+                    className="text-sm text-red-200 font-mono bg-[#1a0c10] border border-red-900/35 rounded-lg px-3 py-2.5 leading-relaxed"
+                  >
+                    {e.message}
+                    {e.line != null ? <span className="text-red-400/80"> (line {e.line})</span> : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {executionPanel?.type === "tests" && (
+              <div className="space-y-3">
+                {executionPanel.items.length > 0 ? (
+                  <>
+                    <div className="flex gap-0.5 border-b border-[#233046] overflow-x-auto -mx-1 px-1 pb-px">
+                      {executionPanel.items.map((tc, i) => {
+                        const errStr = String(tc?.error ?? "");
+                        const tle = tc?.isTLE || /exited|timeout/i.test(errStr);
+                        const passed = !!tc?.isPassed && !tle;
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setTestcaseTab(i)}
+                            className={`shrink-0 px-3 py-2 text-xs font-semibold rounded-t-md border border-b-0 transition-colors ${testcaseTab === i
+                              ? "bg-[#0f141b] border-[#2f4a63] text-gray-100 -mb-px relative z-[1]"
+                              : "bg-transparent border-transparent text-gray-500 hover:text-gray-300"
+                              } ${tle
+                                ? testcaseTab === i
+                                  ? "text-amber-300"
+                                  : "text-amber-500/85"
+                                : passed
+                                  ? testcaseTab === i
+                                    ? "text-emerald-300"
+                                    : "text-emerald-500/85"
+                                  : testcaseTab === i
+                                    ? "text-red-300"
+                                    : "text-red-400/85"
+                              }`}
+                          >
+                            Case {i + 1}
+                            <span className="ml-1 opacity-90">{tle ? "· TLE" : passed ? "· AC" : "· WA"}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {executionPanel.items.map((tc, i) => {
+                      if (i !== testcaseTab) return null;
+                      const errStr = String(tc?.error ?? "");
+                      const tle = tc?.isTLE || /exited|timeout/i.test(errStr);
+                      const passed = !!tc?.isPassed && !tle;
+                      const expected = tc.expected ?? tc.output ?? "—";
+                      const actualRaw = tc.actual ?? tc.output ?? "";
+                      const actualDisplay = tle
+                        ? errStr || "—"
+                        : actualRaw !== "" && actualRaw != null
+                          ? String(actualRaw)
+                          : errStr || "—";
+
+                      return (
+                        <div key={i} className="space-y-3 text-sm">
+                          <div
+                            className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border ${tle
+                              ? "bg-amber-950/45 border-amber-800/70 text-amber-300"
+                              : passed
+                                ? "bg-emerald-950/40 border-emerald-800/70 text-emerald-300"
+                                : "bg-red-950/35 border-red-900/55 text-red-300"
+                              }`}
+                          >
+                            {tle ? "Time limit exceeded" : passed ? "Passed" : "Failed"}
+                          </div>
+
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1">
+                              Input
+                            </div>
+                            <pre className="text-gray-200 bg-[#0c1219] border border-[#233046] rounded-lg p-3 text-xs font-mono whitespace-pre-wrap overflow-x-auto leading-relaxed">
+                              {tc.input != null && tc.input !== "" ? String(tc.input) : "—"}
+                            </pre>
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1">
+                              Expected output
+                            </div>
+                            <pre className="text-gray-200 bg-[#0c1219] border border-[#233046] rounded-lg p-3 text-xs font-mono whitespace-pre-wrap overflow-x-auto leading-relaxed">
+                              {expected !== "—" ? String(expected) : "—"}
+                            </pre>
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1">
+                              Your output (actual)
+                            </div>
+                            <pre
+                              className={`rounded-lg p-3 text-xs font-mono whitespace-pre-wrap overflow-x-auto leading-relaxed border ${passed && !tle
+                                ? "bg-emerald-950/25 border-emerald-900/40 text-emerald-100"
+                                : "bg-red-950/20 border-red-900/45 text-red-100"
+                                }`}
+                            >
+                              {actualDisplay}
+                            </pre>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                ) : null}
+
+                {(executionPanel.stdout?.trim() || executionPanel.stderr?.trim()) && (
+                  <div className={`space-y-2 ${executionPanel.items.length > 0 ? "pt-2 border-t border-[#233046]/80" : ""}`}>
+                    {executionPanel.stdout?.trim() ? (
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1">
+                          stdout
+                        </div>
+                        <pre className="text-gray-300 bg-[#0c1219] border border-[#233046] rounded-lg p-3 text-xs font-mono whitespace-pre-wrap overflow-x-auto">
+                          {executionPanel.stdout.trim()}
+                        </pre>
+                      </div>
+                    ) : null}
+                    {executionPanel.stderr?.trim() ? (
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1">
+                          stderr
+                        </div>
+                        <pre className="text-amber-100/90 bg-[#1a1508] border border-amber-900/35 rounded-lg p-3 text-xs font-mono whitespace-pre-wrap overflow-x-auto">
+                          {executionPanel.stderr.trim()}
+                        </pre>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
