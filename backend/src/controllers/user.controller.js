@@ -9,6 +9,19 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { sendPasswordResetEmail } from '../utils/email.js';
 
+/** Shared with Google OAuth callback — keep login + OAuth cookie behavior identical. */
+export const AUTH_COOKIE_OPTIONS = {
+    httpOnly: true,
+    secure: true,
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: 'Strict',
+};
+
+export function setAuthCookies(res, accessToken, refreshToken) {
+    res.cookie('accessToken', accessToken, AUTH_COOKIE_OPTIONS);
+    res.cookie('refreshToken', refreshToken, AUTH_COOKIE_OPTIONS);
+}
+
 const generateAccessTokenAndRefreshToken = async (user) => {
 
     try {
@@ -123,18 +136,8 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const loggedInUser = await User.findById(user._id).select('-password -refreshToken');
 
-
-    const options = {
-        httpOnly: true,
-        secure: true,
-        maxAge: 24 * 60 * 60 * 1000,
-        sameSite: 'Strict',
-    }
-
-    res
-        .status(200)
-        .cookie('accessToken', accessToken, options)
-        .cookie('refreshToken', refreshToken, options);
+    res.status(200);
+    setAuthCookies(res, accessToken, refreshToken);
 
     return res.json(
         new ApiResponse(
@@ -162,17 +165,10 @@ const LogoutUser = asyncHandler(async (req, res) => {
         }
     );
 
-    const options = {
-        httpOnly: true,
-        secure: true,
-        maxAge: 24 * 60 * 60 * 1000,
-        sameSite: 'Strict',
-    }
-
     return res
         .status(200)
-        .clearCookie("accessToken", options)
-        .clearCookie("refreshToken", options)
+        .clearCookie("accessToken", AUTH_COOKIE_OPTIONS)
+        .clearCookie("refreshToken", AUTH_COOKIE_OPTIONS)
         .json(new ApiResponse(200, {}, "User logged out"));
 });
 

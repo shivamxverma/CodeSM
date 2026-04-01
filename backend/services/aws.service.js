@@ -19,7 +19,7 @@ const s3Client = new S3Client({
 async function generateUploadURL(problemId) {
   const params = new PutObjectCommand({
     Bucket: process.env.AWS_BUCKET_NAME,
-    Key: `/problems/${problemId}/testcases.json`,
+    Key: `problems/${problemId}/testcases.json`,
     ContentType: "application/json",
   });
   const url = await getSignedUrl(s3Client, params, { expiresIn: 3600 });
@@ -38,7 +38,7 @@ async function fetchTestcasesFromS3(problemId) {
   try {
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `/problems/${problemId}/testcases.json`,
+      Key: `problems/${problemId}/testcases.json`,
     });
 
     const response = await s3Client.send(command);

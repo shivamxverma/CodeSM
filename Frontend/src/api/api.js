@@ -1,9 +1,11 @@
 import axios from "axios";
-// const BASE = import.meta.env.VITE_API_URL;
-// const BASE = "http://localhost:8000/api/v1";
-// const BASE = "https://codesm.onrender.com/api/v1";
-const BASE = "https://codesm.shivamworks.dev/api/v1"
-const accessToken = localStorage.getItem("accessToken");
+const BASE = import.meta.env.VITE_API_URL;
+
+/** Read token per request — module-level capture stays null after login until reload. */
+function authBearerHeader() {
+  const t = localStorage.getItem("accessToken");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
 
 export const login = (payload) => {
   return axios.post(`${BASE}/users/login`, payload, {
@@ -21,7 +23,7 @@ export const signup = (payload) => {
 export const logout = () => {
   return axios.post(`${BASE}/users/logout`, {}, {
     withCredentials: true,
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { ...authBearerHeader() },
   });
 }
 
@@ -41,14 +43,13 @@ export const createProblem = (payload) => {
       withCredentials: true,
       headers: {
         "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${accessToken}`,
+        ...authBearerHeader(),
       },
     }
   );
 }
 
 export const createSubmission = async (problemId, payload) => {
-  console.log("shivam here in submission");
   return await axios.post(
     `${BASE}/submission/${problemId}/submit`,
     payload,
@@ -56,7 +57,7 @@ export const createSubmission = async (problemId, payload) => {
       withCredentials: true,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
+        ...authBearerHeader(),
       },
     }
   );
@@ -70,7 +71,7 @@ export const runCode = async (problemId, payload) => {
       withCredentials: true,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
+        ...authBearerHeader(),
       },
     }
   );
@@ -96,7 +97,7 @@ export const getSubmitJobResult = (jobId, submissionId) => {
 export const getSubmissions = (problemId) => {
   return axios.get(`${BASE}/submission/${problemId}`, {
     withCredentials: true,
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { ...authBearerHeader() },
   });
 }
 
@@ -110,7 +111,7 @@ export const listContests = () =>
 export const createContest = (payload) =>
   axios.post(`${BASE}/contest`, payload, {
     withCredentials: true,
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { ...authBearerHeader() },
   });
 
 export const getContest = (id) =>
@@ -119,14 +120,17 @@ export const getContest = (id) =>
 export const registerContest = (id) =>
   axios.post(`${BASE}/contest/${id}/register`, {}, {
     withCredentials: true,
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { ...authBearerHeader() },
   });
 
 export const getClock = (id) =>
   axios.get(`${BASE}/contest/${id}/clock`, { withCredentials: true });
 
 export const getLeaderboard = (id) =>
-  axios.get(`${BASE}/contest/${id}/leaderboard`, { withCredentials: true });
+  axios.get(`${BASE}/contest/${id}/leaderboard`, {
+    withCredentials: true,
+    headers: { ...authBearerHeader() },
+  });
 
 export const getQuestionsForInterview = (selectedRoleName, selectedExperienceName, customRequirements = '') => {
   return axios.post(`${BASE}/interview`, {
@@ -154,7 +158,7 @@ export const getScoreForQuestion = (currentQuestionIndex, questions, userAnswer)
 export const getAllDiscussion = (problemId) => {
   return axios.get(`${BASE}/discussion${problemId ? `?problemId=${problemId}` : ''}`, {
     withCredentials: true,
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { ...authBearerHeader() },
   });
 }
 
@@ -163,35 +167,35 @@ export const createDiscussion = (payload) => {
     payload,
     {
       withCredentials: true,
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { ...authBearerHeader() },
     })
 }
 
 export const likeDiscussion = (discussionId) => {
   return axios.get(`${BASE}/discussion/${discussionId}/like`, {
     withCredentials: true,
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { ...authBearerHeader() },
   });
 }
 
 export const dislikeDiscussion = (discussionId) => {
   return axios.get(`${BASE}/discussion/${discussionId}/dislike`, {
     withCredentials: true,
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { ...authBearerHeader() },
   });
 }
 
 export const createComment = (discussionId, comment) => {
   return axios.post(`${BASE}/discussion/${discussionId}/comment`, comment, {
     withCredentials: true,
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { ...authBearerHeader() },
   })
 }
 
 export const getAllRequest = () => {
   return axios.get(`${BASE}/admin`, {
     withCredentials: true,
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { ...authBearerHeader() },
   })
 }
 
