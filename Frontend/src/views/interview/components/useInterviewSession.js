@@ -173,7 +173,9 @@ export function useInterviewSession() {
                 ...(roundUsesCodeEditor(interviewRound) ? { coding_language: codingLanguage } : {}),
             });
 
-            if (qs.length > 0 && qs[0].audioUrl) {
+            // For code-editor rounds (Technical/DSA and LLD), we don't want the interviewer
+            // voice to dictate the question. The question text is shown in the UI.
+            if (!roundUsesCodeEditor(interviewRound) && qs.length > 0 && qs[0].audioUrl) {
                 playAudio(qs[0].audioUrl);
             }
         } catch (error) {
@@ -263,7 +265,7 @@ export function useInterviewSession() {
             if (idx < questions.length - 1) {
                 const nextIndex = idx + 1;
                 setCurrentQuestionIndex(nextIndex);
-                if (questions[nextIndex]?.audioUrl) {
+                if (!roundUsesCodeEditor(interviewRound) && questions[nextIndex]?.audioUrl) {
                     playAudio(questions[nextIndex].audioUrl);
                 }
             } else {

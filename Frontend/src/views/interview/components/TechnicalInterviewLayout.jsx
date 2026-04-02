@@ -3,7 +3,6 @@ import { InterviewProgressBar } from './InterviewProgressBar.jsx';
 import { TechnicalProblemPanel } from './TechnicalProblemPanel.jsx';
 import { CodingAnswerPanel } from './CodingAnswerPanel.jsx';
 import { FloatingInterviewVideo } from './FloatingInterviewVideo.jsx';
-import { useInterviewSpeech } from './useInterviewSpeech.js';
 
 function formatElapsed(total) {
     const s = Math.max(0, total);
@@ -36,28 +35,16 @@ export function TechnicalInterviewLayout({
     roundLabel,
     onSubmitAnswer,
 }) {
-    const speech = useInterviewSpeech();
     const editorRef = useRef(null);
     const [runNotice, setRunNotice] = useState(false);
     const [sessionRecording, setSessionRecording] = useState(false);
     const mediaRecorderRef = useRef(null);
     const recordChunksRef = useRef([]);
 
-    const speakPlain = [questionTitle, questionText].filter(Boolean).join('\n\n');
-
     const triggerRun = useCallback(() => {
         setRunNotice(true);
         window.setTimeout(() => setRunNotice(false), 4500);
     }, []);
-
-    const toggleSpeechShortcut = useCallback(() => {
-        if (!speech.supported) return;
-        if (speech.status === 'playing' || speech.status === 'paused') {
-            speech.togglePause();
-        } else {
-            speech.speak(speakPlain);
-        }
-    }, [speech, speakPlain]);
 
     useEffect(() => {
         const onKey = (e) => {
@@ -72,14 +59,10 @@ export function TechnicalInterviewLayout({
                 triggerRun();
                 return;
             }
-            if (e.altKey && (e.key === 's' || e.key === 'S')) {
-                e.preventDefault();
-                toggleSpeechShortcut();
-            }
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [canSubmit, onSubmitAnswer, triggerRun, toggleSpeechShortcut]);
+    }, [canSubmit, onSubmitAnswer, triggerRun]);
 
     const pickRecorderMime = () => {
         if (typeof MediaRecorder === 'undefined') return '';
@@ -194,8 +177,7 @@ export function TechnicalInterviewLayout({
                     <p className="text-[11px] text-muted-foreground mt-1">
                         Shortcuts: <kbd className="px-1 rounded bg-muted">⌘/Ctrl</kbd>+<kbd className="px-1 rounded bg-muted">Enter</kbd> run
                         hint · <kbd className="px-1 rounded bg-muted">⌘/Ctrl</kbd>+<kbd className="px-1 rounded bg-muted">⇧</kbd>+
-                        <kbd className="px-1 rounded bg-muted">Enter</kbd> submit ·{' '}
-                        <kbd className="px-1 rounded bg-muted">Alt</kbd>+<kbd className="px-1 rounded bg-muted">S</kbd> speech
+                        <kbd className="px-1 rounded bg-muted">Enter</kbd> submit
                     </p>
                 </div>
             </header>
@@ -206,11 +188,6 @@ export function TechnicalInterviewLayout({
                     questionText={questionText}
                     interviewLevel={interviewLevel}
                     isSpeaking={isSpeaking}
-                    speechSupported={speech.supported}
-                    speechStatus={speech.status}
-                    onSpeak={speech.speak}
-                    onSpeechTogglePause={speech.togglePause}
-                    onSpeechStop={speech.stop}
                 />
                 <div className="flex flex-col min-h-[480px]">
                     {runNotice && (

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import ReactMarkdown from 'react-markdown';
 
 const LEVEL_BADGE = {
@@ -8,26 +8,63 @@ const LEVEL_BADGE = {
     mixed: 'bg-violet-500/20 text-violet-600 dark:text-violet-400',
 };
 
+function splitQuestionTextIntoSections(questionText) {
+    const text = (questionText || '').trim();
+    if (!text) return { description: '', inputFormat: '', outputFormat: '' };
+
+    // Prefer explicit "Input Format" / "Output Format" markers.
+    const inputRegex = /(^|\n)\s*(?:#{1,6}\s*)?input\s*format\s*:?\s*/i;
+    const outputRegex = /(^|\n)\s*(?:#{1,6}\s*)?output\s*format\s*:?\s*/i;
+
+    // Fallback for problems that use "Input:" / "Output:" instead.
+    const inputAltRegex = /(^|\n)\s*(?:#{1,6}\s*)?input\s*:?\s*/i;
+    const outputAltRegex = /(^|\n)\s*(?:#{1,6}\s*)?output\s*:?\s*/i;
+
+    const inputMatch = inputRegex.exec(text) ?? inputAltRegex.exec(text);
+    const outputMatch = outputRegex.exec(text) ?? outputAltRegex.exec(text);
+
+    const inputStart = inputMatch?.index ?? -1;
+    const inputContentStart = inputMatch ? inputMatch.index + inputMatch[0].length : -1;
+
+    const outputStart = outputMatch?.index ?? -1;
+    const outputContentStart = outputMatch ? outputMatch.index + outputMatch[0].length : -1;
+
+    // Expected order: Description -> Input Format -> Output Format.
+    if (inputStart >= 0 && outputStart >= 0 && inputStart < outputStart) {
+        return {
+            description: text.slice(0, inputStart).trim(),
+            inputFormat: text.slice(inputContentStart, outputStart).trim(),
+            outputFormat: text.slice(outputContentStart).trim(),
+        };
+    }
+
+    if (inputStart >= 0) {
+        return {
+            description: text.slice(0, inputStart).trim(),
+            inputFormat: text.slice(inputContentStart).trim(),
+            outputFormat: '',
+        };
+    }
+
+    if (outputStart >= 0) {
+        return {
+            description: text.slice(0, outputStart).trim(),
+            inputFormat: '',
+            outputFormat: text.slice(outputContentStart).trim(),
+        };
+    }
+
+    return { description: text, inputFormat: '', outputFormat: '' };
+}
+
 export function TechnicalProblemPanel({
     questionTitle,
     questionText,
     interviewLevel,
     isSpeaking,
-    speechSupported,
-    speechStatus,
-    onSpeak,
-    onSpeechTogglePause,
-    onSpeechStop,
 }) {
-    const plainForSpeech = [questionTitle, questionText].filter(Boolean).join('. ');
-
-    useEffect(() => {
-        return () => {
-            onSpeechStop();
-        };
-    }, [questionText, onSpeechStop]);
-
     const levelClass = LEVEL_BADGE[interviewLevel] || LEVEL_BADGE.medium;
+    const { description, inputFormat, outputFormat } = splitQuestionTextIntoSections(questionText);
 
     return (
         <section
@@ -49,37 +86,6 @@ export function TechnicalProblemPanel({
                         {interviewLevel}
                     </span>
                 </div>
-                {speechSupported ? (
-                    <div className="flex items-center gap-1 shrink-0">
-                        <button
-                            type="button"
-                            onClick={() => onSpeak(plainForSpeech)}
-                            className="rounded-lg bg-primary/15 px-2.5 py-1 text-xs font-medium text-foreground hover:bg-primary/25"
-                        >
-                            {speechStatus === 'playing' ? 'Replay' : 'Read aloud'}
-                        </button>
-                        {(speechStatus === 'playing' || speechStatus === 'paused') && (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={onSpeechTogglePause}
-                                    className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-muted/50"
-                                >
-                                    {speechStatus === 'paused' ? 'Resume' : 'Pause'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={onSpeechStop}
-                                    className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-muted/50"
-                                >
-                                    Stop
-                                </button>
-                            </>
-                        )}
-                    </div>
-                ) : (
-                    <span className="text-[11px] text-muted-foreground">Speech not supported</span>
-                )}
             </div>
 
             <div className="aspect-video max-h-[200px] shrink-0 bg-black/90 flex items-center justify-center border-b border-border">
@@ -87,7 +93,7 @@ export function TechnicalProblemPanel({
                     <video src="/video.mp4" autoPlay muted loop className="h-full w-full object-cover" />
                 ) : (
                     <p className="text-muted-foreground text-sm px-4 text-center">
-                        Listen to the question audio, or use <span className="text-foreground">Read aloud</span>.
+                        Read the formatted question description below, then start coding.
                     </p>
                 )}
             </div>
@@ -96,8 +102,37 @@ export function TechnicalProblemPanel({
                 {questionTitle && (
                     <h2 className="text-lg font-semibold text-foreground mb-3 leading-snug">{questionTitle}</h2>
                 )}
-                <div className="prose prose-sm dark:prose-invert max-w-none text-foreground/90 [&_pre]:bg-muted [&_pre]:rounded-lg [&_code]:text-sm">
-                    <ReactMarkdown>{questionText || '_Loading…_'}</ReactMarkdown>
+                <div className="space-y-5">
+                    {description ? (
+                        <div>
+                            <h3 className="font-semibold mb-2 text-blue-300">Description</h3>
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground/90 [&_pre]:bg-muted [&_pre]:rounded-lg [&_code]:text-sm">
+                                <ReactMarkdown>{description}</ReactMarkdown>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="prose prose-sm dark:prose-invert max-w-none text-foreground/90">
+                            <ReactMarkdown>{questionText || '_Loading…_'}</ReactMarkdown>
+                        </div>
+                    )}
+
+                    {inputFormat && (
+                        <div>
+                            <h3 className="font-semibold mb-2 text-blue-300">Input Format</h3>
+                            <pre className="rounded border border-border bg-muted/20 p-3 text-sm overflow-x-auto whitespace-pre-wrap">
+                                {inputFormat}
+                            </pre>
+                        </div>
+                    )}
+
+                    {outputFormat && (
+                        <div>
+                            <h3 className="font-semibold mb-2 text-blue-300">Output Format</h3>
+                            <pre className="rounded border border-border bg-muted/20 p-3 text-sm overflow-x-auto whitespace-pre-wrap">
+                                {outputFormat}
+                            </pre>
+                        </div>
+                    )}
                 </div>
             </div>
         </section>
