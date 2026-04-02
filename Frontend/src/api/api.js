@@ -136,22 +136,21 @@ export const getLeaderboard = (id) =>
     headers: { ...authBearerHeader() },
   });
 
-export const getQuestionsForInterview = (selectedRoleName, selectedExperienceName, customRequirements = '') => {
-  return axios.post(`${BASE}/interview`, {
-    role: selectedRoleName,
-    experience: selectedExperienceName,
-    customRequirements
-  }, {
+export const getQuestionsForInterview = (payload) => {
+  return axios.post(`${BASE}/interview`, payload, {
     headers: { 'Content-Type': 'application/json' }
   });
 }
 
-export const getScoreForQuestion = (currentQuestionIndex, questions, userAnswer) => {
+export const getScoreForQuestion = (currentQuestionIndex, questions, userAnswer, meta = {}) => {
+  const { round, codingLanguage } = meta;
   return axios.post(
     `${BASE}/interview/score`,
     {
       question: questions[currentQuestionIndex].text,
-      answer: userAnswer
+      answer: userAnswer,
+      ...(round ? { round } : {}),
+      ...(codingLanguage ? { codingLanguage } : {}),
     },
     {
       headers: { 'Content-Type': 'application/json' }
