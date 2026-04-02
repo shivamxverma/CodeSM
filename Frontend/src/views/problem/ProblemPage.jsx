@@ -509,9 +509,255 @@ int main(){
           : "bg-[#182432] border-[#233046] text-gray-300";
 
   const embedUrl = getYouTubeEmbed(problem?.editorialLink);
+  const renderActiveTabContent = () => {
+    if (activeTab === "Description") {
+      return (
+        <div className="space-y-6">
+          <p className="leading-7 whitespace-pre-wrap break-words">{problem?.description}</p>
+          {problem?.sampleTestcases?.length > 0 ? (
+            <div className="space-y-4">
+              <h3 className="font-semibold text-blue-300">Sample Testcases</h3>
+              {problem.sampleTestcases.map((tc, i) => (
+                <div
+                  key={i}
+                  className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm shadow"
+                >
+                  <div className="mb-2">
+                    <span className="font-semibold text-blue-200">Input:</span>
+                    <pre className="rounded bg-[#10151c] p-2 mt-1 whitespace-pre-wrap break-words">{tc.input}</pre>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-blue-200">Output:</span>
+                    <pre className="rounded bg-[#10151c] p-2 mt-1 whitespace-pre-wrap break-words">{tc.output}</pre>
+                  </div>
+                  {tc.explanation && (
+                    <div className="mt-2 text-gray-400">
+                      <span className="font-semibold text-blue-200">Explanation:</span>{" "}
+                      {tc.explanation}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {problem?.examples?.length ? (
+            <div className="space-y-4">
+              <h3 className="font-semibold text-blue-300">Examples</h3>
+              {problem.examples.map((ex, i) => (
+                <div
+                  key={i}
+                  className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm shadow"
+                >
+                  <div className="text-gray-300 mb-2">
+                    Input: <code className="font-mono">{ex.input}</code>
+                  </div>
+                  <div className="text-gray-300 mb-2">
+                    Output: <code className="font-mono">{ex.output}</code>
+                  </div>
+                  {ex.explanation && (
+                    <div className="text-gray-400">Explanation: {ex.explanation}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {problem?.constraints && (
+            <div>
+              <h3 className="font-semibold mb-2 text-blue-300">Constraints</h3>
+              <div className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm whitespace-pre-wrap break-words">
+                {problem.constraints}
+              </div>
+            </div>
+          )}
+          {problem?.inputFormat && (
+            <div>
+              <h3 className="font-semibold mb-2 text-blue-300">Input Format</h3>
+              <pre className="rounded border border-[#233046] bg-[#0c1219] p-3 text-sm whitespace-pre-wrap break-words">
+                {problem.inputFormat}
+              </pre>
+            </div>
+          )}
+          {problem?.outputFormat && (
+            <div>
+              <h3 className="font-semibold mb-2 text-blue-300">Output Format</h3>
+              <pre className="rounded border border-[#233046] bg-[#0c1219] p-3 text-sm whitespace-pre-wrap break-words">
+                {problem.outputFormat}
+              </pre>
+            </div>
+          )}
+          {(problem?.tags || []).length ? (
+            <div className="flex flex-wrap gap-2">
+              {problem.tags.map((tag, i) => (
+                <span
+                  key={i}
+                  className="text-xs px-2 py-1 rounded-full bg-[#13202b] border border-[#224056] text-blue-200"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+
+    if (activeTab === "Editorial") {
+      return (
+        <div className="space-y-4">
+          {embedUrl && (
+            <div className="aspect-video w-full overflow-hidden rounded-lg border border-[#233046] bg-black shadow">
+              <iframe
+                title="Editorial Video"
+                src={embedUrl}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          )}
+          {problem?.editorialLink && !embedUrl && (
+            <a
+              href={problem.editorialLink}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-blue-300 hover:underline"
+            >
+              Open editorial link
+            </a>
+          )}
+          {problem?.editorial ? (
+            <div className="prose prose-invert max-w-none prose-pre:bg-[#0c1219] prose-code:text-gray-200">
+              <ReactMarkdown>{problem.editorial}</ReactMarkdown>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-400">No editorial provided.</div>
+          )}
+        </div>
+      );
+    }
+
+    if (activeTab === "Submissions") {
+      return (
+        <div className="h-full overflow-y-auto">
+          <button
+            className="mb-3 px-3 py-1 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750] text-xs"
+            onClick={() => refetchSubmissions()}
+          >
+            Refresh Submissions
+          </button>
+          {submissions.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-sm text-gray-400">
+              No submissions found.
+            </div>
+          ) : (
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-[#121923]">
+                  <th className="border border-[#233046] px-2 py-1">#</th>
+                  <th className="border border-[#233046] px-2 py-1">Username</th>
+                  <th className="border border-[#233046] px-2 py-1">Status</th>
+                  <th className="border border-[#233046] px-2 py-1">Language</th>
+                  <th className="border border-[#233046] px-2 py-1">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {submissions.map((sub, idx) => (
+                  <tr key={sub._id || idx} className="bg-[#0c1219]">
+                    <td className="border border-[#233046] px-2 py-1">{idx + 1}</td>
+                    <td className="border border-[#233046] px-2 py-1">
+                      {sub.user.username || "N/A"}
+                    </td>
+                    <td className="border border-[#233046] px-2 py-1">
+                      {sub.status || "N/A"}
+                    </td>
+                    <td className="border border-[#233046] px-2 py-1">
+                      {sub.language || "N/A"}
+                    </td>
+                    <td className="border border-[#233046] px-2 py-1">
+                      {sub.createdAt
+                        ? new Date(sub.createdAt).toLocaleString()
+                        : "N/A"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      );
+    }
+
+    if (activeTab === "Solutions") {
+      return (
+        <div className="space-y-3">
+          {problem?.solution ? (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-1 rounded bg-[#182432] border border-[#233046]">
+                  Language: C++
+                </span>
+                <span className="text-xs px-2 py-1 rounded bg-[#10202a] border border-[#1e3a4b]">
+                  Official Solution
+                </span>
+              </div>
+              <pre className="rounded-lg border border-[#233046] bg-[#0c1219] p-4 text-sm overflow-x-auto">
+                {problem.solution}
+              </pre>
+            </>
+          ) : (
+            <div className="text-sm text-gray-400">No official solution available.</div>
+          )}
+        </div>
+      );
+    }
+
+    if (activeTab === "Hints") {
+      return (
+        <div className="space-y-4">
+          {hintsLoading && (
+            <div className="text-sm text-gray-400">🧠 Generating hints for you...</div>
+          )}
+          {hintsError && <div className="text-sm text-red-400">{hintsError}</div>}
+          {!hintsLoading && hints.length === 0 && (
+            <div className="text-sm text-gray-400">
+              No hints available for this problem.
+            </div>
+          )}
+
+          {hints.slice(0, revealedHintIndex + 1).map((hint, index) => (
+            <div
+              key={index}
+              className="rounded border border-[#233046] bg-[#0c1219] p-4 shadow animate-fade-in"
+            >
+              <h3 className="font-semibold text-blue-300 mb-2">{hint.title}</h3>
+              <p className="text-gray-300 whitespace-pre-line">{hint.content}</p>
+            </div>
+          ))}
+
+          {!hintsLoading && revealedHintIndex < hints.length - 1 && (
+            <button
+              onClick={() => {
+                setRevealedHintIndex((prev) => prev + 1);
+                posthog.capture("hint_revealed", { problem_id: problemId, hint_index: revealedHintIndex + 1 });
+              }}
+              className="w-full px-3 py-2 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750] text-sm font-medium transition-colors"
+            >
+              Reveal Next Hint
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    if (activeTab === "Discussions") {
+      return <ProblemDiscussions problemId={problemId} />;
+    }
+
+    return null;
+  };
 
   return (
-    <div className="flex h-screen w-screen bg-gradient-to-br from-[#0b0f13] via-[#10151c] to-[#1a2230] text-gray-200">
+    <div className="flex h-full w-full flex-col xl:flex-row overflow-y-auto xl:overflow-hidden bg-gradient-to-br from-[#0b0f13] via-[#10151c] to-[#1a2230] text-gray-200">
       <div className="hidden xl:flex w-2/5 min-w-[480px] max-w-[720px] flex-col border-r border-[#1b2330] shadow-lg bg-[#10151c]/80">
         <div className="px-5 py-3 bg-[#0f141b] border-b border-[#1b2330] flex items-center gap-3">
           <Link to="/problems" className="text-sm hover:underline transition-colors">
@@ -538,8 +784,8 @@ int main(){
           </div>
         </div>
 
-        <div className="mt-3 px-2">
-          <div className="flex gap-2 px-3">
+        <div className="mt-3 px-2 flex-1 min-h-0 flex flex-col">
+          <div className="flex gap-2 px-3 shrink-0">
             {TABS.map((t) => (
               <button
                 key={t}
@@ -554,239 +800,8 @@ int main(){
             ))}
           </div>
 
-          <div className="border border-[#233046] rounded-b rounded-tr bg-[#0f141b] p-5 h-[calc(100vh-170px)] overflow-y-auto">
-            {activeTab === "Description" && (
-              <div className="space-y-6">
-                <p className="leading-7 whitespace-pre-line">{problem?.description}</p>
-                {problem?.sampleTestcases?.length > 0 ? (
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-blue-300">Sample Testcases</h3>
-                    {problem.sampleTestcases.map((tc, i) => (
-                      <div
-                        key={i}
-                        className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm shadow"
-                      >
-                        <div className="mb-2">
-                          <span className="font-semibold text-blue-200">Input:</span>
-                          <pre className="rounded bg-[#10151c] p-2 mt-1">{tc.input}</pre>
-                        </div>
-                        <div>
-                          <span className="font-semibold text-blue-200">Output:</span>
-                          <pre className="rounded bg-[#10151c] p-2 mt-1">{tc.output}</pre>
-                        </div>
-                        {tc.explanation && (
-                          <div className="mt-2 text-gray-400">
-                            <span className="font-semibold text-blue-200">Explanation:</span>{" "}
-                            {tc.explanation}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                {problem?.examples?.length ? (
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-blue-300">Examples</h3>
-                    {problem.examples.map((ex, i) => (
-                      <div
-                        key={i}
-                        className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm shadow"
-                      >
-                        <div className="text-gray-300 mb-2">
-                          Input: <code className="font-mono">{ex.input}</code>
-                        </div>
-                        <div className="text-gray-300 mb-2">
-                          Output: <code className="font-mono">{ex.output}</code>
-                        </div>
-                        {ex.explanation && (
-                          <div className="text-gray-400">Explanation: {ex.explanation}</div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                {problem?.constraints && (
-                  <div>
-                    <h3 className="font-semibold mb-2 text-blue-300">Constraints</h3>
-                    <div className="rounded border border-[#233046] bg-[#0c1219] p-4 text-sm whitespace-pre-line">
-                      {problem.constraints}
-                    </div>
-                  </div>
-                )}
-                {problem?.inputFormat && (
-                  <div>
-                    <h3 className="font-semibold mb-2 text-blue-300">Input Format</h3>
-                    <pre className="rounded border border-[#233046] bg-[#0c1219] p-3 text-sm overflow-x-auto">
-                      {problem.inputFormat}
-                    </pre>
-                  </div>
-                )}
-                {problem?.outputFormat && (
-                  <div>
-                    <h3 className="font-semibold mb-2 text-blue-300">Output Format</h3>
-                    <pre className="rounded border border-[#233046] bg-[#0c1219] p-3 text-sm overflow-x-auto">
-                      {problem.outputFormat}
-                    </pre>
-                  </div>
-                )}
-                {(problem?.tags || []).length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {problem.tags.map((tag, i) => (
-                      <span
-                        key={i}
-                        className="text-xs px-2 py-1 rounded-full bg-[#13202b] border border-[#224056] text-blue-200"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            )}
-
-            {activeTab === "Editorial" && (
-              <div className="space-y-4">
-                {embedUrl && (
-                  <div className="aspect-video w-full overflow-hidden rounded-lg border border-[#233046] bg-black shadow">
-                    <iframe
-                      title="Editorial Video"
-                      src={embedUrl}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                      className="w-full h-full"
-                    />
-                  </div>
-                )}
-                {problem?.editorialLink && !embedUrl && (
-                  <a
-                    href={problem.editorialLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-blue-300 hover:underline"
-                  >
-                    Open editorial link
-                  </a>
-                )}
-                {problem?.editorial ? (
-                  <div className="prose prose-invert max-w-none prose-pre:bg-[#0c1219] prose-code:text-gray-200">
-                    <ReactMarkdown>{problem.editorial}</ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-400">No editorial provided.</div>
-                )}
-              </div>
-            )}
-
-            {activeTab === "Submissions" && (
-              <div className="h-full overflow-y-auto">
-                <button
-                  className="mb-3 px-3 py-1 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750] text-xs"
-                  onClick={() => refetchSubmissions()}
-                >
-                  Refresh Submissions
-                </button>
-                {submissions.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-sm text-gray-400">
-                    No submissions found.
-                  </div>
-                ) : (
-                  <table className="w-full text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-[#121923]">
-                        <th className="border border-[#233046] px-2 py-1">#</th>
-                        <th className="border border-[#233046] px-2 py-1">Username</th>
-                        <th className="border border-[#233046] px-2 py-1">Status</th>
-                        <th className="border border-[#233046] px-2 py-1">Language</th>
-                        <th className="border border-[#233046] px-2 py-1">Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {submissions.map((sub, idx) => (
-                        <tr key={sub._id || idx} className="bg-[#0c1219]">
-                          <td className="border border-[#233046] px-2 py-1">{idx + 1}</td>
-                          <td className="border border-[#233046] px-2 py-1">
-                            {sub.user.username || "N/A"}
-                          </td>
-                          <td className="border border-[#233046] px-2 py-1">
-                            {sub.status || "N/A"}
-                          </td>
-                          <td className="border border-[#233046] px-2 py-1">
-                            {sub.language || "N/A"}
-                          </td>
-                          <td className="border border-[#233046] px-2 py-1">
-                            {sub.createdAt
-                              ? new Date(sub.createdAt).toLocaleString()
-                              : "N/A"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
-
-            {activeTab === "Solutions" && (
-              <div className="space-y-3">
-                {problem?.solution ? (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-1 rounded bg-[#182432] border border-[#233046]">
-                        Language: C++
-                      </span>
-                      <span className="text-xs px-2 py-1 rounded bg-[#10202a] border border-[#1e3a4b]">
-                        Official Solution
-                      </span>
-                    </div>
-                    <pre className="rounded-lg border border-[#233046] bg-[#0c1219] p-4 text-sm overflow-x-auto">
-                      {problem.solution}
-                    </pre>
-                  </>
-                ) : (
-                  <div className="text-sm text-gray-400">No official solution available.</div>
-                )}
-              </div>
-            )}
-
-            {activeTab === "Hints" && (
-              <div className="space-y-4">
-                {hintsLoading && (
-                  <div className="text-sm text-gray-400">🧠 Generating hints for you...</div>
-                )}
-                {hintsError && <div className="text-sm text-red-400">{hintsError}</div>}
-                {!hintsLoading && hints.length === 0 && (
-                  <div className="text-sm text-gray-400">
-                    No hints available for this problem.
-                  </div>
-                )}
-
-                {hints.slice(0, revealedHintIndex + 1).map((hint, index) => (
-                  <div
-                    key={index}
-                    className="rounded border border-[#233046] bg-[#0c1219] p-4 shadow animate-fade-in"
-                  >
-                    <h3 className="font-semibold text-blue-300 mb-2">{hint.title}</h3>
-                    <p className="text-gray-300 whitespace-pre-line">{hint.content}</p>
-                  </div>
-                ))}
-
-                {!hintsLoading && revealedHintIndex < hints.length - 1 && (
-                  <button
-                    onClick={() => {
-                      setRevealedHintIndex((prev) => prev + 1);
-                      posthog.capture("hint_revealed", { problem_id: problemId, hint_index: revealedHintIndex + 1 });
-                    }}
-                    className="w-full px-3 py-2 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750] text-sm font-medium transition-colors"
-                  >
-                    Reveal Next Hint
-                  </button>
-                )}
-              </div>
-            )}
-
-            {activeTab === "Discussions" && (
-              <ProblemDiscussions problemId={problemId} />
-            )}
+          <div className="border border-[#233046] rounded-b rounded-tr bg-[#0f141b] p-5 flex-1 min-h-0 overflow-y-auto scroll-smooth [overscroll-behavior:contain] [scrollbar-gutter:stable]">
+            {renderActiveTabContent()}
           </div>
         </div>
       </div>
@@ -820,7 +835,27 @@ int main(){
           </div>
         </div>
 
-        <div className="flex-1 bg-[#0b0f13] min-h-0">
+        <div className="xl:hidden border-b border-[#1b2330] bg-[#0f141b]">
+          <div className="flex gap-2 overflow-x-auto px-3 pt-2 [scrollbar-width:none]">
+            {TABS.map((t) => (
+              <button
+                key={t}
+                onClick={() => setActiveTab(t)}
+                className={`shrink-0 px-3 py-2 text-xs rounded-t font-medium transition-colors ${activeTab === t
+                  ? "bg-[#121923] border-x border-t border-[#233046] text-blue-300"
+                  : "text-gray-400 hover:text-gray-200"
+                  }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          <div className="border-t border-[#233046] bg-[#0f141b] p-4">
+            {renderActiveTabContent()}
+          </div>
+        </div>
+
+        <div className="h-[46vh] min-h-[280px] xl:flex-1 xl:h-auto bg-[#0b0f13] min-h-0">
           <Editor
             height="100%"
             language="cpp"
@@ -832,7 +867,13 @@ int main(){
               fontSize: 14,
               minimap: { enabled: false },
               automaticLayout: true,
-              scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+              smoothScrolling: true,
+              scrollBeyondLastLine: false,
+              scrollbar: {
+                verticalScrollbarSize: 8,
+                horizontalScrollbarSize: 8,
+                alwaysConsumeMouseWheel: false,
+              },
             }}
           />
         </div>
@@ -854,7 +895,7 @@ int main(){
 
           <div
             ref={consoleRef}
-            className="min-h-[200px] max-h-[min(40vh,360px)] overflow-y-auto px-5 py-4 bg-[#080b10]"
+            className="min-h-[200px] max-h-[min(40vh,360px)] overflow-y-auto px-5 py-4 bg-[#080b10] scroll-smooth [overscroll-behavior:contain] [scrollbar-gutter:stable]"
           >
             {!executionPanel && (
               <p className="text-sm text-gray-500 font-mono leading-relaxed">
@@ -1014,11 +1055,11 @@ int main(){
         </div>
 
         {auth.user ? (
-          <div className="pointer-events-none absolute right-4 bottom-4 flex gap-2">
+          <div className="fixed right-4 bottom-4 z-40 flex gap-2">
             <button
               onClick={handleRun}
               disabled={isRunning || isSubmitting}
-              className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${isRunning || isSubmitting
+              className={`rounded-lg px-4 py-2 text-sm border shadow-lg ${isRunning || isSubmitting
                 ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
                 : "bg-[#1e3046] hover:bg-[#264060] border-[#2a4a73]"
                 }`}
@@ -1028,7 +1069,7 @@ int main(){
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || isRunning}
-              className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${isSubmitting || isRunning
+              className={`rounded-lg px-4 py-2 text-sm border shadow-lg ${isSubmitting || isRunning
                 ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
                 : "bg-[#0c5bd5] hover:bg-[#0a4fb9] border-[#0c5bd5]"
                 }`}
@@ -1037,9 +1078,9 @@ int main(){
             </button>
           </div>
         ) : (
-          <div className="pointer-events-none absolute right-6 bottom-4 text-sm bg-[#f3f6fa]/80 text-gray-800">
+          <div className="fixed right-6 bottom-4 z-40 text-sm">
             <Link to="/login">
-              <button className="bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500">
+              <button className="bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-indigo-500 border border-indigo-500">
                 Please log in to run or submit code.
               </button>
             </Link>
