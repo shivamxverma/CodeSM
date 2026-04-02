@@ -511,7 +511,7 @@ int main(){
   const embedUrl = getYouTubeEmbed(problem?.editorialLink);
 
   return (
-    <div className="flex h-screen w-screen bg-gradient-to-br from-[#0b0f13] via-[#10151c] to-[#1a2230] text-gray-200">
+    <div className="flex h-full w-full overflow-hidden bg-gradient-to-br from-[#0b0f13] via-[#10151c] to-[#1a2230] text-gray-200">
       <div className="hidden xl:flex w-2/5 min-w-[480px] max-w-[720px] flex-col border-r border-[#1b2330] shadow-lg bg-[#10151c]/80">
         <div className="px-5 py-3 bg-[#0f141b] border-b border-[#1b2330] flex items-center gap-3">
           <Link to="/problems" className="text-sm hover:underline transition-colors">
@@ -538,8 +538,8 @@ int main(){
           </div>
         </div>
 
-        <div className="mt-3 px-2">
-          <div className="flex gap-2 px-3">
+        <div className="mt-3 px-2 flex-1 min-h-0 flex flex-col">
+          <div className="flex gap-2 px-3 shrink-0">
             {TABS.map((t) => (
               <button
                 key={t}
@@ -554,7 +554,7 @@ int main(){
             ))}
           </div>
 
-          <div className="border border-[#233046] rounded-b rounded-tr bg-[#0f141b] p-5 h-[calc(100vh-170px)] overflow-y-auto">
+          <div className="border border-[#233046] rounded-b rounded-tr bg-[#0f141b] p-5 flex-1 min-h-0 overflow-y-auto scroll-smooth [overscroll-behavior:contain] [scrollbar-gutter:stable]">
             {activeTab === "Description" && (
               <div className="space-y-6">
                 <p className="leading-7 whitespace-pre-line">{problem?.description}</p>
@@ -832,7 +832,13 @@ int main(){
               fontSize: 14,
               minimap: { enabled: false },
               automaticLayout: true,
-              scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+              smoothScrolling: true,
+              scrollBeyondLastLine: false,
+              scrollbar: {
+                verticalScrollbarSize: 8,
+                horizontalScrollbarSize: 8,
+                alwaysConsumeMouseWheel: false,
+              },
             }}
           />
         </div>
@@ -854,7 +860,7 @@ int main(){
 
           <div
             ref={consoleRef}
-            className="min-h-[200px] max-h-[min(40vh,360px)] overflow-y-auto px-5 py-4 bg-[#080b10]"
+            className="min-h-[200px] max-h-[min(40vh,360px)] overflow-y-auto px-5 py-4 bg-[#080b10] scroll-smooth [overscroll-behavior:contain] [scrollbar-gutter:stable]"
           >
             {!executionPanel && (
               <p className="text-sm text-gray-500 font-mono leading-relaxed">
@@ -1014,11 +1020,11 @@ int main(){
         </div>
 
         {auth.user ? (
-          <div className="pointer-events-none absolute right-4 bottom-4 flex gap-2">
+          <div className="fixed right-4 bottom-4 z-40 flex gap-2">
             <button
               onClick={handleRun}
               disabled={isRunning || isSubmitting}
-              className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${isRunning || isSubmitting
+              className={`rounded-lg px-4 py-2 text-sm border shadow-lg ${isRunning || isSubmitting
                 ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
                 : "bg-[#1e3046] hover:bg-[#264060] border-[#2a4a73]"
                 }`}
@@ -1028,7 +1034,7 @@ int main(){
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || isRunning}
-              className={`pointer-events-auto rounded-lg px-4 py-2 text-sm border ${isSubmitting || isRunning
+              className={`rounded-lg px-4 py-2 text-sm border shadow-lg ${isSubmitting || isRunning
                 ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
                 : "bg-[#0c5bd5] hover:bg-[#0a4fb9] border-[#0c5bd5]"
                 }`}
@@ -1037,9 +1043,9 @@ int main(){
             </button>
           </div>
         ) : (
-          <div className="pointer-events-none absolute right-6 bottom-4 text-sm bg-[#f3f6fa]/80 text-gray-800">
+          <div className="fixed right-6 bottom-4 z-40 text-sm">
             <Link to="/login">
-              <button className="bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500">
+              <button className="bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-indigo-500 border border-indigo-500">
                 Please log in to run or submit code.
               </button>
             </Link>
