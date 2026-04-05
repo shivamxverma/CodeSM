@@ -1,5 +1,9 @@
 // add-problems.js
 // Run with: mongosh <your-db-name> add-problems.js
+//
+// Wipes the entire `problems` collection (local/dev only — not for shared DBs).
+
+db.problems.deleteMany({});
 
 db.problems.insertMany([
     {
