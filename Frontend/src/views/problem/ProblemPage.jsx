@@ -111,6 +111,63 @@ export default function ProblemPage() {
   const handledSubmitPollRef = useRef(null);
   const handledSubmitStoredRef = useRef(null);
 
+  // Resizable panel state
+  const [editorHeightPct, setEditorHeightPct] = useState(60); // % of right column for editor
+  const [leftWidthPct, setLeftWidthPct] = useState(40);       // % of total width for left panel
+  const [isEditorFullscreen, setIsEditorFullscreen] = useState(false);
+  const isDraggingVertical = useRef(false);
+  const isDraggingHorizontal = useRef(false);
+  const rightColRef = useRef(null);
+  const rootRef = useRef(null);
+
+  // Vertical drag (editor/console split)
+  const onVerticalDragStart = useCallback((e) => {
+    e.preventDefault();
+    isDraggingVertical.current = true;
+    const onMove = (ev) => {
+      if (!isDraggingVertical.current || !rightColRef.current) return;
+      const rect = rightColRef.current.getBoundingClientRect();
+      const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+      const pct = ((clientY - rect.top) / rect.height) * 100;
+      setEditorHeightPct(Math.min(85, Math.max(20, pct)));
+    };
+    const onUp = () => {
+      isDraggingVertical.current = false;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onUp);
+  }, []);
+
+  // Horizontal drag (left/right panel split)
+  const onHorizontalDragStart = useCallback((e) => {
+    e.preventDefault();
+    isDraggingHorizontal.current = true;
+    const onMove = (ev) => {
+      if (!isDraggingHorizontal.current || !rootRef.current) return;
+      const rect = rootRef.current.getBoundingClientRect();
+      const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const pct = ((clientX - rect.left) / rect.width) * 100;
+      setLeftWidthPct(Math.min(60, Math.max(25, pct)));
+    };
+    const onUp = () => {
+      isDraggingHorizontal.current = false;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onUp);
+  }, []);
+
   const handleEditorChange = useCallback((value) => setCode(value || ""), []);
   const onEditorMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
@@ -757,8 +814,12 @@ int main(){
   };
 
   return (
-    <div className="flex h-full w-full flex-col xl:flex-row overflow-y-auto xl:overflow-hidden bg-gradient-to-br from-[#0b0f13] via-[#10151c] to-[#1a2230] text-gray-200">
-      <div className="hidden xl:flex w-2/5 min-w-[480px] max-w-[720px] flex-col border-r border-[#1b2330] shadow-lg bg-[#10151c]/80">
+    <div ref={rootRef} className="flex w-full flex-col xl:flex-row overflow-y-auto xl:overflow-hidden bg-gradient-to-br from-[#0b0f13] via-[#10151c] to-[#1a2230] text-gray-200" style={{ height: "calc(100dvh - 56px)" }}>
+      {/* LEFT PANEL — problem description */}
+      <div
+        className={`hidden xl:flex flex-col border-r border-[#1b2330] shadow-lg bg-[#10151c]/80 shrink-0 overflow-hidden ${isEditorFullscreen ? "xl:hidden" : ""}`}
+        style={{ width: `${leftWidthPct}%` }}
+      >
         <div className="px-5 py-3 bg-[#0f141b] border-b border-[#1b2330] flex items-center gap-3">
           <Link to="/problems" className="text-sm hover:underline transition-colors">
             Back to Problems
@@ -806,7 +867,20 @@ int main(){
         </div>
       </div>
 
-      <div className="relative flex-1 flex flex-col min-h-0">
+      {/* HORIZONTAL RESIZE HANDLE */}
+      {!isEditorFullscreen && (
+        <div
+          onMouseDown={onHorizontalDragStart}
+          onTouchStart={onHorizontalDragStart}
+          className="hidden xl:flex items-center justify-center w-1.5 cursor-col-resize shrink-0 bg-[#1b2330] hover:bg-[#2a4a73] transition-colors group z-10"
+          title="Drag to resize panels"
+        >
+          <div className="w-0.5 h-8 rounded-full bg-[#2a3750] group-hover:bg-[#4a7ab5] transition-colors" />
+        </div>
+      )}
+
+      {/* RIGHT PANEL — editor + console */}
+      <div ref={rightColRef} className={`relative flex-1 flex flex-col min-h-0 overflow-hidden ${isEditorFullscreen ? "xl:w-full" : ""}`}>
         <div className="px-5 py-3 bg-[#0f141b] border-b border-[#1b2330] flex items-center gap-3">
           <div className="xl:hidden text-sm truncate">{problem?.title || "Loading..."}</div>
           <div className="ml-auto flex items-center gap-2">
@@ -826,6 +900,13 @@ int main(){
             <span className="text-xs px-2 py-1 rounded bg-[#182432] border border-[#233046]">
               Language: C++
             </span>
+            <button
+              onClick={() => setIsEditorFullscreen((v) => !v)}
+              className="text-xs px-3 py-1.5 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750]"
+              title={isEditorFullscreen ? "Exit fullscreen" : "Fullscreen editor"}
+            >
+              {isEditorFullscreen ? "⊠ Exit Full" : "⛶ Fullscreen"}
+            </button>
             <button
               onClick={resetCode}
               className="text-xs px-3 py-1.5 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750]"
@@ -855,7 +936,10 @@ int main(){
           </div>
         </div>
 
-        <div className="h-[46vh] min-h-[280px] xl:flex-1 xl:h-auto bg-[#0b0f13] min-h-0">
+        <div
+          className="xl:shrink-0 bg-[#0b0f13] h-[46vh] min-h-[280px] xl:h-auto"
+          style={{ flex: `0 0 ${editorHeightPct}%` }}
+        >
           <Editor
             height="100%"
             language="cpp"
@@ -878,7 +962,17 @@ int main(){
           />
         </div>
 
-        <div className="bg-[#0f141b] border-t border-[#1b2330] shrink-0">
+        {/* VERTICAL RESIZE HANDLE */}
+        <div
+          onMouseDown={onVerticalDragStart}
+          onTouchStart={onVerticalDragStart}
+          className="hidden xl:flex items-center justify-center h-1.5 cursor-row-resize shrink-0 bg-[#1b2330] hover:bg-[#2a4a73] transition-colors group z-10"
+          title="Drag to resize editor / console"
+        >
+          <div className="h-0.5 w-8 rounded-full bg-[#2a3750] group-hover:bg-[#4a7ab5] transition-colors" />
+        </div>
+
+        <div className="bg-[#0f141b] border-t border-[#1b2330] flex-1 flex flex-col min-h-0 overflow-hidden">
           <div className="px-5 py-2.5 text-xs flex items-center justify-between border-b border-[#1b2330]/90">
             <span className="font-semibold text-gray-200 tracking-wide">Console</span>
             <button
@@ -895,7 +989,7 @@ int main(){
 
           <div
             ref={consoleRef}
-            className="min-h-[200px] max-h-[min(40vh,360px)] overflow-y-auto px-5 py-4 bg-[#080b10] scroll-smooth [overscroll-behavior:contain] [scrollbar-gutter:stable]"
+            className="flex-1 overflow-y-auto px-5 py-4 bg-[#080b10] scroll-smooth [overscroll-behavior:contain] [scrollbar-gutter:stable]"
           >
             {!executionPanel && (
               <p className="text-sm text-gray-500 font-mono leading-relaxed">
