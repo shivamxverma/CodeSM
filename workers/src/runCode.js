@@ -14,6 +14,55 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../');
 
+const CPP_RUNNER_IMAGE = process.env.CPP_RUNNER_IMAGE || 'codesm-cpp-runner:latest';
+const CPP_RUNNER_DOCKERFILE = path.join(projectRoot, 'docker', 'cpp-runner', 'Dockerfile');
+const CPP_RUNNER_BUILD_CONTEXT = path.join(projectRoot, 'docker', 'cpp-runner');
+
+/** In production, pre-pull the image (CI/registry). Auto-build only when explicitly allowed or non-production. */
+function shouldAutoBuildCppRunner() {
+  if (process.env.CPP_RUNNER_AUTO_BUILD === 'true') return true;
+  if (process.env.CPP_RUNNER_AUTO_BUILD === 'false') return false;
+  return process.env.NODE_ENV !== 'production';
+}
+
+function parsePositiveInt(name, fallback) {
+  const v = parseInt(process.env[name] || String(fallback), 10);
+  return Number.isFinite(v) && v > 0 ? v : fallback;
+}
+
+const SANDBOX_MEMORY = process.env.SANDBOX_MEMORY || '256m';
+const SANDBOX_CPUS = process.env.SANDBOX_CPUS || '0.5';
+const SANDBOX_PIDS_LIMIT = process.env.SANDBOX_PIDS_LIMIT || '64';
+const COMPILE_TIMEOUT_SEC = parsePositiveInt('CPP_COMPILE_TIMEOUT_SEC', 60);
+const RUN_TIMEOUT_SEC = parsePositiveInt('CPP_RUN_TIMEOUT_SEC', 2);
+const MAX_TESTCASE_INPUT_BYTES = parsePositiveInt('MAX_TESTCASE_INPUT_BYTES', 256 * 1024);
+const MAX_PROGRAM_OUTPUT_BYTES = parsePositiveInt('MAX_PROGRAM_OUTPUT_BYTES', 256 * 1024);
+
+function dockerUserArgs() {
+  if (process.platform === 'win32') return [];
+  const uid = typeof process.getuid === 'function' ? process.getuid() : undefined;
+  const gid = typeof process.getgid === 'function' ? process.getgid() : undefined;
+  if (typeof uid === 'number' && typeof gid === 'number') {
+    return ['--user', `${uid}:${gid}`];
+  }
+  return [];
+}
+
+/** Shared cgroup / isolation flags for compile and run sandboxes. */
+function dockerResourceAndSecurityArgs() {
+  return [
+    '--memory', SANDBOX_MEMORY,
+    '--memory-swap', SANDBOX_MEMORY,
+    '--cpus', SANDBOX_CPUS,
+    '--pids-limit', SANDBOX_PIDS_LIMIT,
+    '--network', 'none',
+    '--security-opt', 'no-new-privileges:true',
+    '--cap-drop', 'ALL',
+    '--stop-timeout', '5',
+    ...dockerUserArgs(),
+  ];
+}
+
 const returnFilePath = async (cppCode) => {
   const runnerDir = path.join(projectRoot, 'code');
   const codePath = path.join(runnerDir, 'user_code.cpp');
@@ -23,31 +72,64 @@ const returnFilePath = async (cppCode) => {
   return { runnerDir, codePath };
 };
 
-/** Build cpp-runner only if missing — avoids paying `docker build` on every submission. */
 async function ensureCppRunnerImage(language) {
   if (language !== 'cpp') return;
   try {
-    await execAsync('docker image inspect cpp-runner', { cwd: projectRoot });
+    await execAsync(`docker image inspect ${JSON.stringify(CPP_RUNNER_IMAGE)}`, { cwd: projectRoot });
+    return;
   } catch {
-    await execAsync('docker build -t cpp-runner .', { cwd: projectRoot });
+    if (!shouldAutoBuildCppRunner()) {
+      throw new Error(
+        `Sandbox image ${CPP_RUNNER_IMAGE} is missing. Pre-build or pull it, or set CPP_RUNNER_AUTO_BUILD=true (not recommended in production).`
+      );
+    }
+    const buildCmd = [
+      'docker',
+      'build',
+      '-f',
+      CPP_RUNNER_DOCKERFILE,
+      '-t',
+      CPP_RUNNER_IMAGE,
+      CPP_RUNNER_BUILD_CONTEXT,
+    ];
+    await execAsync(buildCmd.map((a) => JSON.stringify(a)).join(' '), { cwd: projectRoot });
   }
 }
 
 async function compileInContainer(runnerDir) {
   const binPath = path.join(runnerDir, 'user_program');
   await fs.rm(binPath, { force: true });
+  const inner = [
+    'cd /tmp && cp /host_code/user_code.cpp . &&',
+    `timeout ${COMPILE_TIMEOUT_SEC}s g++ user_code.cpp -O2 -std=c++17 -fdiagnostics-color=never -o user_program 2> /tmp/compile.err &&`,
+    'cp /tmp/user_program /host_code/user_program || true;',
+    'cat /tmp/compile.err',
+  ].join(' ');
+
   return new Promise((resolve) => {
     const args = [
       'run', '--rm',
+      ...dockerResourceAndSecurityArgs(),
       '-v', `${runnerDir}:/host_code:rw`,
-      'cpp-runner',
-      'bash', '-lc',
-      `cd /tmp && cp /host_code/user_code.cpp . && g++ user_code.cpp -O2 -std=c++17 -fdiagnostics-color=never -o user_program 2> /tmp/compile.err && cp /tmp/user_program /host_code/user_program || true; cat /tmp/compile.err`
+      CPP_RUNNER_IMAGE,
+      'bash', '-lc', inner,
     ];
     const proc = spawn('docker', args, { cwd: projectRoot });
-    let stderr = '', stdout = '';
-    proc.stdout.on('data', d => stdout += d.toString());
-    proc.stderr.on('data', d => stderr += d.toString());
+    let stderr = '';
+    let stdout = '';
+    let outBytes = 0;
+    const onChunk = (buf, which) => {
+      const s = buf.toString();
+      outBytes += Buffer.byteLength(s, 'utf8');
+      if (outBytes > MAX_PROGRAM_OUTPUT_BYTES) {
+        proc.kill('SIGKILL');
+        return;
+      }
+      if (which === 'stderr') stderr += s;
+      else stdout += s;
+    };
+    proc.stdout.on('data', (d) => onChunk(d, 'stdout'));
+    proc.stderr.on('data', (d) => onChunk(d, 'stderr'));
     proc.on('close', async () => {
       try {
         await fs.access(binPath);
@@ -63,13 +145,13 @@ async function compileInContainer(runnerDir) {
             line: parseInt(m.groups.line, 10),
             column: parseInt(m.groups.col, 10),
             severity: m.groups.sev,
-            message: m.groups.msg.trim()
+            message: m.groups.msg.trim(),
           });
         }
         resolve({
           ok: false,
           errors: diag.length ? diag : [{ file: 'user_code.cpp', line: 1, column: 1, severity: 'error', message: text }],
-          raw: text
+          raw: text,
         });
       }
     });
@@ -78,28 +160,49 @@ async function compileInContainer(runnerDir) {
 
 /** Run the compiled binary once with the given stdin (one testcase). */
 function runBinaryInContainer(runnerDir, input) {
+  const inputStr = input ?? '';
+  if (Buffer.byteLength(inputStr, 'utf8') > MAX_TESTCASE_INPUT_BYTES) {
+    return Promise.reject(new Error(`Input exceeds ${MAX_TESTCASE_INPUT_BYTES} bytes`));
+  }
+
+  const inner = [
+    'cd /tmp &&',
+    'cp /host_code/user_program . && chmod +x user_program &&',
+    `timeout ${RUN_TIMEOUT_SEC}s ./user_program`,
+  ].join(' ');
+
   return new Promise((resolve, reject) => {
-    const proc = spawn(
-      'docker',
-      [
-        'run', '--rm', '-i',
-        '--memory=256m', '--cpus=0.5', '--pids-limit=100',
-        '-v', `${runnerDir}:/host_code:ro`,
-        'cpp-runner',
-        'bash', '-lc',
-        `cd /tmp && cp /host_code/user_program . && timeout 2s ./user_program`
-      ],
-      { cwd: projectRoot }
-    );
-    let stdout = '', stderr = '';
-    proc.stdout.on('data', d => stdout += d.toString());
-    proc.stderr.on('data', d => stderr += d.toString());
+    const args = [
+      'run', '--rm', '-i',
+      ...dockerResourceAndSecurityArgs(),
+      '--read-only',
+      '--tmpfs', '/tmp:rw,nosuid,nodev,exec,size=64m',
+      '-v', `${runnerDir}:/host_code:ro`,
+      CPP_RUNNER_IMAGE,
+      'bash', '-lc', inner,
+    ];
+    const proc = spawn('docker', args, { cwd: projectRoot });
+    let stdout = '';
+    let stderr = '';
+    let outBytes = 0;
+    const onChunk = (buf, which) => {
+      const s = buf.toString();
+      outBytes += Buffer.byteLength(s, 'utf8');
+      if (outBytes > MAX_PROGRAM_OUTPUT_BYTES) {
+        proc.kill('SIGKILL');
+        return;
+      }
+      if (which === 'stderr') stderr += s;
+      else stdout += s;
+    };
+    proc.stdout.on('data', (d) => onChunk(d, 'stdout'));
+    proc.stderr.on('data', (d) => onChunk(d, 'stderr'));
     proc.on('error', reject);
-    proc.on('close', code => {
+    proc.on('close', (code) => {
       if (code === 0) resolve(stdout.trim());
       else reject(new Error((stderr || stdout || `Exited ${code}`).trim()));
     });
-    proc.stdin.write(input ?? '');
+    proc.stdin.write(inputStr);
     proc.stdin.end();
   });
 }
@@ -107,9 +210,7 @@ function runBinaryInContainer(runnerDir, input) {
 const normalizeOut = (s) => (s ?? '').toString().replace(/\r\n/g, '\n').trim();
 
 const executeCode = async (testcases, language, runnerDir) => {
-  const cases = Array.isArray(testcases)
-    ? testcases
-    : testcases?.testcases;
+  const cases = Array.isArray(testcases) ? testcases : testcases?.testcases;
   if (!Array.isArray(cases) || cases.length === 0) {
     await fs.rm(runnerDir, { recursive: true, force: true });
     return { status: 'testcase_fetch_error', error: 'Missing or invalid testcases' };
@@ -142,15 +243,15 @@ const executeCode = async (testcases, language, runnerDir) => {
         isPassed: false,
         input: tc.input,
         expected: tc.output,
-        error: err.message
+        error: err.message,
       });
     }
   }
 
   await fs.rm(runnerDir, { recursive: true, force: true });
-  console.log("Here execution ", execution);
-  return { status: execution.every(r => r.isPassed) ? 'accepted' : 'rejected', execution };
-}
+  console.log('Here execution ', execution);
+  return { status: execution.every((r) => r.isPassed) ? 'accepted' : 'rejected', execution };
+};
 
 const runCppCodeWithInput = async (cppCode, language, problemId, submissionId) => {
   const { runnerDir } = await returnFilePath(cppCode);
@@ -165,14 +266,8 @@ const runCppCodeWithInput = async (cppCode, language, problemId, submissionId) =
     submissionId: submissionId,
     status: result.status === 'accepted' ? 'accepted' : 'rejected',
     output: JSON.stringify(result.execution),
-    executionTime: result.execution.reduce(
-      (acc, curr) => acc + (curr.executionTime ?? 0),
-      0
-    ),
-    memoryUsage: result.execution.reduce(
-      (acc, curr) => acc + (curr.memoryUsage ?? 0),
-      0
-    ),
+    executionTime: result.execution.reduce((acc, curr) => acc + (curr.executionTime ?? 0), 0),
+    memoryUsage: result.execution.reduce((acc, curr) => acc + (curr.memoryUsage ?? 0), 0),
   });
   return result;
 };

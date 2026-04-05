@@ -49,19 +49,19 @@ export const createProblem = (payload) => {
   );
 }
 
-export const createSubmission = async (problemId, payload) => {
-  return await axios.post(
-    `${BASE}/submission/${problemId}/submit`,
-    payload,
-    {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "application/json",
-        ...authBearerHeader(),
-      },
-    }
-  );
-}
+export const createSubmission = async (problemId, payload, idempotencyKey) => {
+  const headers = {
+    "Content-Type": "application/json",
+    ...authBearerHeader(),
+  };
+  if (idempotencyKey) {
+    headers["Idempotency-Key"] = idempotencyKey;
+  }
+  return await axios.post(`${BASE}/submission/${problemId}/submit`, payload, {
+    withCredentials: true,
+    headers,
+  });
+};
 
 export const runCode = async (problemId, payload) => {
   return await axios.post(

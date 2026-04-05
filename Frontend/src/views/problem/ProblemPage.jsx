@@ -110,6 +110,8 @@ export default function ProblemPage() {
   const handledRunRef = useRef(null);
   const handledSubmitPollRef = useRef(null);
   const handledSubmitStoredRef = useRef(null);
+  /** One UUID per submit attempt; reused if React Query retries mutationFn for the same mutate(). */
+  const submitIdempotencyKeyRef = useRef(null);
 
   const handleEditorChange = useCallback((value) => setCode(value || ""), []);
   const onEditorMount = useCallback((editor, monaco) => {
@@ -285,8 +287,14 @@ export default function ProblemPage() {
   });
 
   const submitMutation = useMutation({
-    mutationFn: () => createSubmission(problemId, { code, language }),
+    mutationFn: () =>
+      createSubmission(problemId, { code, language }, submitIdempotencyKeyRef.current),
+    retry: 0,
     onMutate: () => {
+      submitIdempotencyKeyRef.current =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
       setIsSubmitting(true);
       setStatusBadge(null);
       setTestcaseTab(0);
@@ -307,6 +315,9 @@ export default function ProblemPage() {
       const submissionId = res.data.message?.submissionId;
       if (id && submissionId) setSubmitMeta({ jobId: id, submissionId });
       else setIsSubmitting(false);
+    },
+    onSettled: () => {
+      submitIdempotencyKeyRef.current = null;
     },
   });
 
