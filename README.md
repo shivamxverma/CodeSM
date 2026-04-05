@@ -82,6 +82,63 @@ High-level layers, components, and sequence flows (submit, dry run, results) are
 
    See [workers/README.md](workers/README.md).
 
+## Adding problems to the local database (mongosh)
+
+The API stores problems in MongoDB database **`codesm`** (see [backend/src/constants.js](backend/src/constants.js)). Mongoose maps the `Problem` model to the **`problems`** collection.
+
+Recommended flow: **set up `mongosh` and point it at `codesm`**, then **run the bundled seed file** [backend/src/scripts/add-problems.js](backend/src/scripts/add-problems.js). That file is a **mongosh** script (it calls `db.problems.insertMany([...])`), not a Node program.
+
+### Step 1 — Set up `mongosh` and the database
+
+1. **Install the MongoDB Shell** on your machine:
+
+   | OS | How to install |
+   |----|----------------|
+   | **macOS** | [Homebrew](https://brew.sh/): `brew install mongosh` — or install “MongoDB Shell” from the [MongoDB Download Center](https://www.mongodb.com/try/download/shell). |
+   | **Windows** | Install the **MongoDB Shell** MSI from the [MongoDB Download Center](https://www.mongodb.com/try/download/shell), or use **winget** if a `MongoDB.Shell` (or similarly named) package is available in your catalog. |
+   | **Linux** | Follow [Install mongosh](https://www.mongodb.com/docs/mongodb-shell/install/) for your distro (`.deb` / `.rpm`, tarball, or package manager). Example (Debian/Ubuntu): MongoDB’s official repo, then `sudo apt-get install -y mongosh`. |
+
+2. **Check the shell**:
+
+   ```bash
+   mongosh --version
+   ```
+
+3. **Start MongoDB** (local `mongod`, Docker, or Atlas) so a server is reachable.
+
+4. **Know your connection string** for database **`codesm`** (same DB the backend uses: `MONGO_URI` in `.env` plus the `codesm` suffix — see [backend/README.md](backend/README.md)). Examples:
+   - Local: `mongodb://127.0.0.1:27017/codesm`
+   - Atlas: `mongodb+srv://<user>:<password>@<cluster>/codesm?retryWrites=true&w=majority` (adjust query params as in your cluster)
+
+5. **Optional sanity check** — open an interactive session and confirm the DB:
+
+   ```bash
+   mongosh "mongodb://127.0.0.1:27017/codesm"
+   ```
+
+   Then in the shell: `show collections` (you should see `users`, `problems`, etc. after the app or seeds have run).
+
+### Step 2 — Run [backend/src/scripts/add-problems.js](backend/src/scripts/add-problems.js)
+
+From the **repository root** (adjust the URI if you use Atlas or a non-default host/port):
+
+```bash
+mongosh "mongodb://127.0.0.1:27017/codesm" backend/src/scripts/add-problems.js
+```
+
+Or from **`backend/`**:
+
+```bash
+cd backend
+mongosh "mongodb://127.0.0.1:27017/codesm" src/scripts/add-problems.js
+```
+
+The script loads many problem documents at once. It contains fixed **`_id`** and **`author`** values: ensure a **`users`** document exists with that `author` ObjectId (for example seed an admin with [backend/src/scripts/seed-admin.js](backend/src/scripts/seed-admin.js), then either align the script’s `author` field with your user’s `_id` or adjust the script before running). If you run the script twice, MongoDB may report duplicate key errors on `_id` or `title` — that is expected unless you remove existing rows or change identifiers in the file.
+
+### Optional — Add or edit problems by hand in `mongosh`
+
+Field requirements match [backend/src/models/problem.model.js](backend/src/models/problem.model.js). Resolve an author with `db.users.findOne({}, { _id: 1, username: 1 })`, then use `db.problems.insertOne({ ... })` with the same shape as in the seed script.
+
 ## Environment (summary)
 
 Do not commit real secrets. Use placeholders in docs and local `.env` files only.
