@@ -1,0 +1,44 @@
+# Production-oriented worker stack: Node worker talks to the host Docker engine via socket
+# to spawn short-lived cpp-runner containers (see src/runCode.js).
+#
+# Usage:
+#   1. Build sandbox image: docker build -f docker/cpp-runner/Dockerfile -t codesm-cpp-runner:latest docker/cpp-runner
+#   2. From workers/: docker compose -f docker-compose.worker.yml --env-file .env up -d --build
+#
+# This file includes Redis. The worker's REDIS_URL is set to redis://redis:6379 here so it overrides
+# REDIS_URL=redis://localhost:6379 from .env (needed because localhost inside the worker container is not the host).
+# MongoDB can stay on Atlas via MONGO_URI in .env.
+#
+# Security notes:
+# - Mounting /var/run/docker.sock grants the worker API-level control over the host's Docker
+#   engine. Run the worker on a dedicated node, restrict who can reach it, and keep the image
+#   pinned by digest in production.
+# - Prefer a remote Docker host with TLS or a dedicated sandbox runner service for stronger isolation.
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # No host port publish — avoids clashing with a local Redis on 6379; worker uses redis://redis:6379
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      CPP_RUNNER_IMAGE: ${CPP_RUNNER_IMAGE:-codesm-cpp-runner:latest}
+      CPP_RUNNER_AUTO_BUILD: ${CPP_RUNNER_AUTO_BUILD:-false}
+      # Overrides .env localhost — use bundled Redis service
+      REDIS_URL: redis://redis:6379
+      # MONGO_URI, AWS_* come from env_file (.env)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    # Map host user into container so --user in runCode matches volume file ownership (optional).
+    # user: "1000:1000"
+    # If you set user, ensure /var/run/docker.sock is readable (group docker) or use rootless.
