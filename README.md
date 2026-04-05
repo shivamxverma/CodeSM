@@ -23,6 +23,10 @@ Install and run each package from its own directory (see each `README.md`).
 - **Profiles**: User details, images, and engagement (e.g. streaks).
 - **Security**: Rate limiting to reduce abuse and DoS risk.
 
+## Software design architecture
+
+High-level layers, components, and sequence flows (submit, dry run, results) are documented in **[docs/architecture.md](docs/architecture.md)**.
+
 ## Tech stack
 
 - **Backend**: Node.js (Express), MongoDB (Mongoose), Redis, Bull, AWS S3
