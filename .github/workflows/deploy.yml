@@ -17,10 +17,13 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/ubuntu/CodeSM
-            git pull origin main
+            cd CodeSM
+            git pull origin main --rebase
 
             cd backend
-            npm install
+            npm install --production
 
-            pm2 restart all
+            cd ../workers
+            npm install --production
+
+            pm2 reload all
