@@ -10,12 +10,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Multiline PEM in Docker -e INPUT_KEY often breaks; write to workspace and use key_path.
+      - name: Write SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > "$GITHUB_WORKSPACE/.deploy_ssh_key"
+          chmod 600 "$GITHUB_WORKSPACE/.deploy_ssh_key"
+
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key_path: .deploy_ssh_key
           script: |
             cd CodeSM
             git pull origin main --rebase
