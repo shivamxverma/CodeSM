@@ -15,15 +15,21 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
-          echo "$SSH_PRIVATE_KEY" > "$GITHUB_WORKSPACE/.deploy_ssh_key"
-          chmod 600 "$GITHUB_WORKSPACE/.deploy_ssh_key"
+          echo "$SSH_PRIVATE_KEY" > "${{ github.workspace }}/.deploy_ssh_key"
+          chmod 600 "${{ github.workspace }}/.deploy_ssh_key"
+
+      - name: Verify SSH key file
+        run: |
+          KEY_FILE="${{ github.workspace }}/.deploy_ssh_key"
+          test -s "$KEY_FILE" || { echo "EC2_SSH_KEY is empty or not set in repo secrets."; exit 1; }
+          head -n 1 "$KEY_FILE" | grep -q 'BEGIN' || { echo "EC2_SSH_KEY must be a PEM private key (starts with -----BEGIN)."; exit 1; }
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key_path: .deploy_ssh_key
+          key_path: ${{ github.workspace }}/.deploy_ssh_key
           script: |
             cd CodeSM
             git pull origin main --rebase
