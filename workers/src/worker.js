@@ -1,5 +1,5 @@
 import {myQueue} from "./queue.js";
-import runCppCodeWithInput, { dryRunCppCodeWithInput } from "./runCode.js";
+import runCodeWithInput, { dryRunCodeWithInput } from "./runCode.js";
 import connectDB from "./db.config.js";
 import Submission from "../models/submission.model.js";
 import Problem from "../models/problem.model.js";
@@ -21,7 +21,7 @@ connectDB()
         if (!problem) {
           return { status: "error", error: "Problem not found" };
         }
-        const response = await dryRunCppCodeWithInput(code, language, problem);
+        const response = await dryRunCodeWithInput(code, language, problem);
         return response;
       }
 
@@ -33,7 +33,7 @@ connectDB()
       console.log("Submission found");
       const problemId = submission.problem?._id ?? submission.problem;
       console.log(problemId);
-      return runCppCodeWithInput(
+      return runCodeWithInput(
         submission.code,
         submission.language,
         problemId,
