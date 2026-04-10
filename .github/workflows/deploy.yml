@@ -10,34 +10,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Multiline PEM in Docker -e INPUT_KEY often breaks; write to workspace and use key_path.
-      - name: Write SSH key
+      - name: Configure SSH key
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
-          echo "$SSH_PRIVATE_KEY" > "${{ github.workspace }}/.deploy_ssh_key"
-          chmod 600 "${{ github.workspace }}/.deploy_ssh_key"
-
-      - name: Verify SSH key file
-        run: |
-          KEY_FILE="${{ github.workspace }}/.deploy_ssh_key"
-          test -s "$KEY_FILE" || { echo "EC2_SSH_KEY is empty or not set in repo secrets."; exit 1; }
-          head -n 1 "$KEY_FILE" | grep -q 'BEGIN' || { echo "EC2_SSH_KEY must be a PEM private key (starts with -----BEGIN)."; exit 1; }
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/ec2_deploy_key
+          chmod 600 ~/.ssh/ec2_deploy_key
+          test -s ~/.ssh/ec2_deploy_key || { echo "EC2_SSH_KEY is empty or not set in repo secrets."; exit 1; }
+          head -n 1 ~/.ssh/ec2_deploy_key | grep -q 'BEGIN' || { echo "EC2_SSH_KEY must be a PEM private key (starts with -----BEGIN)."; exit 1; }
 
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key_path: ${{ github.workspace }}/.deploy_ssh_key
-          script: |
-            cd CodeSM
-            git pull origin main --rebase
+        env:
+          REMOTE_HOST: ${{ secrets.EC2_HOST }}
+          REMOTE_USER: ${{ secrets.EC2_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/ec2_deploy_key \
+            -o StrictHostKeyChecking=accept-new \
+            -o ServerAliveInterval=60 \
+            "${REMOTE_USER}@${REMOTE_HOST}" \
+            bash -s <<'ENDSSH'
+          set -euo pipefail
+          cd CodeSM
+          git pull origin main --rebase
 
-            cd backend
-            npm install --production
+          cd backend
+          npm install --production
 
-            cd ../workers
-            npm install --production
+          cd ../workers
+          npm install --production
 
-            pm2 reload all
+          pm2 reload all
+          ENDSSH
