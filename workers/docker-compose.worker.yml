@@ -32,8 +32,8 @@ services:
       - .env
     environment:
       NODE_ENV: production
-      CPP_RUNNER_IMAGE: ${CPP_RUNNER_IMAGE:-codesm-cpp-runner:latest}
-      CPP_RUNNER_AUTO_BUILD: ${CPP_RUNNER_AUTO_BUILD:-false}
+      RUNNER_IMAGE: ${RUNNER_IMAGE:-codesm-sandbox-runner:latest}
+      RUNNER_AUTO_BUILD: ${RUNNER_AUTO_BUILD:-false}
       # Overrides .env localhost — use bundled Redis service
       REDIS_URL: redis://redis:6379
       # MONGO_URI, AWS_* come from env_file (.env)

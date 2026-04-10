@@ -14,12 +14,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../');
 
-const CPP_RUNNER_IMAGE = process.env.CPP_RUNNER_IMAGE || 'codesm-cpp-runner:latest';
-const CPP_RUNNER_DOCKERFILE = path.join(projectRoot, 'docker', 'cpp-runner', 'Dockerfile');
-const CPP_RUNNER_BUILD_CONTEXT = path.join(projectRoot, 'docker', 'cpp-runner');
+// Backwards compatible env var: CPP_RUNNER_IMAGE; prefer RUNNER_IMAGE for multi-lang sandbox.
+const RUNNER_IMAGE =
+  process.env.RUNNER_IMAGE ||
+  process.env.CPP_RUNNER_IMAGE ||
+  'codesm-sandbox-runner:latest';
+const RUNNER_DOCKERFILE = path.join(projectRoot, 'docker', 'sandbox-runner', 'Dockerfile');
+const RUNNER_BUILD_CONTEXT = path.join(projectRoot, 'docker', 'sandbox-runner');
 
 /** In production, pre-pull the image (CI/registry). Auto-build only when explicitly allowed or non-production. */
-function shouldAutoBuildCppRunner() {
+function shouldAutoBuildRunner() {
+  if (process.env.RUNNER_AUTO_BUILD === 'true') return true;
+  if (process.env.RUNNER_AUTO_BUILD === 'false') return false;
   if (process.env.CPP_RUNNER_AUTO_BUILD === 'true') return true;
   if (process.env.CPP_RUNNER_AUTO_BUILD === 'false') return false;
   return process.env.NODE_ENV !== 'production';
@@ -33,8 +39,10 @@ function parsePositiveInt(name, fallback) {
 const SANDBOX_MEMORY = process.env.SANDBOX_MEMORY || '256m';
 const SANDBOX_CPUS = process.env.SANDBOX_CPUS || '0.5';
 const SANDBOX_PIDS_LIMIT = process.env.SANDBOX_PIDS_LIMIT || '64';
-const COMPILE_TIMEOUT_SEC = parsePositiveInt('CPP_COMPILE_TIMEOUT_SEC', 60);
-const RUN_TIMEOUT_SEC = parsePositiveInt('CPP_RUN_TIMEOUT_SEC', 2);
+const COMPILE_TIMEOUT_SEC =
+  parsePositiveInt('COMPILE_TIMEOUT_SEC', parsePositiveInt('CPP_COMPILE_TIMEOUT_SEC', 60));
+const RUN_TIMEOUT_SEC =
+  parsePositiveInt('RUN_TIMEOUT_SEC', parsePositiveInt('CPP_RUN_TIMEOUT_SEC', 2));
 const MAX_TESTCASE_INPUT_BYTES = parsePositiveInt('MAX_TESTCASE_INPUT_BYTES', 256 * 1024);
 const MAX_PROGRAM_OUTPUT_BYTES = parsePositiveInt('MAX_PROGRAM_OUTPUT_BYTES', 256 * 1024);
 
@@ -63,46 +71,123 @@ function dockerResourceAndSecurityArgs() {
   ];
 }
 
-const returnFilePath = async (cppCode) => {
+function normalizeLanguage(language) {
+  const raw = String(language || '').toLowerCase().trim();
+  if (raw === 'golang') return 'go';
+  if (raw === 'js') return 'javascript';
+  if (raw === 'py') return 'python';
+  if (raw === 'c++') return 'cpp';
+  return raw;
+}
+
+function languageSpec(language) {
+  const lang = normalizeLanguage(language);
+  /** @type {Record<string, {id:string, filename:string, kind:'compiled'|'interpreted', compile?:string, run:string, artifacts?: { type: 'binary', path: string } | { type: 'class', className: string } }>} */
+  const specs = {
+    cpp: {
+      id: 'cpp',
+      filename: 'main.cpp',
+      kind: 'compiled',
+      compile:
+        `timeout ${COMPILE_TIMEOUT_SEC}s g++ main.cpp -O2 -std=c++17 -fdiagnostics-color=never -o user_program 2> /tmp/compile.err`,
+      run: `timeout ${RUN_TIMEOUT_SEC}s ./user_program`,
+      artifacts: { type: 'binary', path: 'user_program' },
+    },
+    c: {
+      id: 'c',
+      filename: 'main.c',
+      kind: 'compiled',
+      compile:
+        `timeout ${COMPILE_TIMEOUT_SEC}s gcc main.c -O2 -std=c11 -fdiagnostics-color=never -o user_program 2> /tmp/compile.err`,
+      run: `timeout ${RUN_TIMEOUT_SEC}s ./user_program`,
+      artifacts: { type: 'binary', path: 'user_program' },
+    },
+    java: {
+      id: 'java',
+      filename: 'Main.java',
+      kind: 'compiled',
+      compile:
+        `timeout ${COMPILE_TIMEOUT_SEC}s javac -J-Dfile.encoding=UTF-8 -encoding UTF-8 Main.java 2> /tmp/compile.err`,
+      run: `timeout ${RUN_TIMEOUT_SEC}s java -Dfile.encoding=UTF-8 -cp /tmp Main`,
+      artifacts: { type: 'class', className: 'Main' },
+    },
+    go: {
+      id: 'go',
+      filename: 'main.go',
+      kind: 'compiled',
+      compile:
+        `timeout ${COMPILE_TIMEOUT_SEC}s bash -lc 'GOMODCACHE=/tmp/gomodcache GOPATH=/tmp/gopath GOCACHE=/tmp/gocache go build -o user_program main.go' 2> /tmp/compile.err`,
+      run: `timeout ${RUN_TIMEOUT_SEC}s ./user_program`,
+      artifacts: { type: 'binary', path: 'user_program' },
+    },
+    python: {
+      id: 'python',
+      filename: 'main.py',
+      kind: 'interpreted',
+      run: `timeout ${RUN_TIMEOUT_SEC}s python3 -B main.py`,
+    },
+    javascript: {
+      id: 'javascript',
+      filename: 'main.js',
+      kind: 'interpreted',
+      run: `timeout ${RUN_TIMEOUT_SEC}s node main.js`,
+    },
+  };
+  return specs[lang] || null;
+}
+
+const writeCodeToRunnerDir = async (code, language) => {
   const runnerDir = path.join(projectRoot, 'code');
-  const codePath = path.join(runnerDir, 'user_code.cpp');
+  const spec = languageSpec(language);
+  if (!spec) throw new Error(`Unsupported language: ${language}`);
+  const codePath = path.join(runnerDir, spec.filename);
 
   await fs.mkdir(runnerDir, { recursive: true });
-  await fs.writeFile(codePath, cppCode);
-  return { runnerDir, codePath };
+  await fs.writeFile(codePath, code);
+  return { runnerDir, codePath, spec };
 };
 
-async function ensureCppRunnerImage(language) {
-  if (language !== 'cpp') return;
+async function ensureRunnerImage() {
   try {
-    await execAsync(`docker image inspect ${JSON.stringify(CPP_RUNNER_IMAGE)}`, { cwd: projectRoot });
+    await execAsync(`docker image inspect ${JSON.stringify(RUNNER_IMAGE)}`, { cwd: projectRoot });
     return;
   } catch {
-    if (!shouldAutoBuildCppRunner()) {
+    if (!shouldAutoBuildRunner()) {
       throw new Error(
-        `Sandbox image ${CPP_RUNNER_IMAGE} is missing. Pre-build or pull it, or set CPP_RUNNER_AUTO_BUILD=true (not recommended in production).`
+        `Sandbox image ${RUNNER_IMAGE} is missing. Pre-build or pull it, or set RUNNER_AUTO_BUILD=true (not recommended in production).`
       );
     }
     const buildCmd = [
       'docker',
       'build',
       '-f',
-      CPP_RUNNER_DOCKERFILE,
+      RUNNER_DOCKERFILE,
       '-t',
-      CPP_RUNNER_IMAGE,
-      CPP_RUNNER_BUILD_CONTEXT,
+      RUNNER_IMAGE,
+      RUNNER_BUILD_CONTEXT,
     ];
     await execAsync(buildCmd.map((a) => JSON.stringify(a)).join(' '), { cwd: projectRoot });
   }
 }
 
-async function compileInContainer(runnerDir) {
+async function compileInContainer(runnerDir, spec) {
   const binPath = path.join(runnerDir, 'user_program');
+  const javaClassPath =
+    spec?.artifacts?.type === 'class'
+      ? path.join(runnerDir, `${spec.artifacts.className}.class`)
+      : null;
+
   await fs.rm(binPath, { force: true });
+  if (javaClassPath) await fs.rm(javaClassPath, { force: true });
+  const innerCompile = spec.compile
+    ? spec.compile
+    : `bash -lc 'echo "no compile" >/dev/null'`;
   const inner = [
-    'cd /tmp && cp /host_code/user_code.cpp . &&',
-    `timeout ${COMPILE_TIMEOUT_SEC}s g++ user_code.cpp -O2 -std=c++17 -fdiagnostics-color=never -o user_program 2> /tmp/compile.err &&`,
-    'cp /tmp/user_program /host_code/user_program || true;',
+    'cd /tmp &&',
+    `cp /host_code/${spec.filename} . &&`,
+    `${innerCompile} &&`,
+    'cp /tmp/user_program /host_code/user_program 2>/dev/null || true;',
+    'cp /tmp/*.class /host_code/ 2>/dev/null || true;',
     'cat /tmp/compile.err',
   ].join(' ');
 
@@ -111,7 +196,7 @@ async function compileInContainer(runnerDir) {
       'run', '--rm',
       ...dockerResourceAndSecurityArgs(),
       '-v', `${runnerDir}:/host_code:rw`,
-      CPP_RUNNER_IMAGE,
+      RUNNER_IMAGE,
       'bash', '-lc', inner,
     ];
     const proc = spawn('docker', args, { cwd: projectRoot });
@@ -132,6 +217,15 @@ async function compileInContainer(runnerDir) {
     proc.stderr.on('data', (d) => onChunk(d, 'stderr'));
     proc.on('close', async () => {
       try {
+        if (spec.kind === 'interpreted') {
+          resolve({ ok: true });
+          return;
+        }
+        if (spec?.artifacts?.type === 'class' && javaClassPath) {
+          await fs.access(javaClassPath);
+          resolve({ ok: true });
+          return;
+        }
         await fs.access(binPath);
         resolve({ ok: true });
       } catch {
@@ -150,7 +244,7 @@ async function compileInContainer(runnerDir) {
         }
         resolve({
           ok: false,
-          errors: diag.length ? diag : [{ file: 'user_code.cpp', line: 1, column: 1, severity: 'error', message: text }],
+          errors: diag.length ? diag : [{ file: spec.filename, line: 1, column: 1, severity: 'error', message: text }],
           raw: text,
         });
       }
@@ -158,17 +252,23 @@ async function compileInContainer(runnerDir) {
   });
 }
 
-/** Run the compiled binary once with the given stdin (one testcase). */
-function runBinaryInContainer(runnerDir, input) {
+/** Run one testcase with stdin. */
+function runInContainer(runnerDir, spec, input) {
   const inputStr = input ?? '';
   if (Buffer.byteLength(inputStr, 'utf8') > MAX_TESTCASE_INPUT_BYTES) {
     return Promise.reject(new Error(`Input exceeds ${MAX_TESTCASE_INPUT_BYTES} bytes`));
   }
 
+  const bootstrap =
+    spec.kind === 'compiled'
+      ? spec?.artifacts?.type === 'class'
+        ? 'cp /host_code/*.class . 2>/dev/null || true'
+        : 'cp /host_code/user_program . && chmod +x user_program'
+      : `cp /host_code/${spec.filename} .`;
   const inner = [
     'cd /tmp &&',
-    'cp /host_code/user_program . && chmod +x user_program &&',
-    `timeout ${RUN_TIMEOUT_SEC}s ./user_program`,
+    `${bootstrap} &&`,
+    spec.run,
   ].join(' ');
 
   return new Promise((resolve, reject) => {
@@ -178,7 +278,7 @@ function runBinaryInContainer(runnerDir, input) {
       '--read-only',
       '--tmpfs', '/tmp:rw,nosuid,nodev,exec,size=64m',
       '-v', `${runnerDir}:/host_code:ro`,
-      CPP_RUNNER_IMAGE,
+      RUNNER_IMAGE,
       'bash', '-lc', inner,
     ];
     const proc = spawn('docker', args, { cwd: projectRoot });
@@ -216,14 +316,20 @@ const executeCode = async (testcases, language, runnerDir) => {
     return { status: 'testcase_fetch_error', error: 'Missing or invalid testcases' };
   }
 
+  const spec = languageSpec(language);
+  if (!spec) {
+    await fs.rm(runnerDir, { recursive: true, force: true });
+    return { status: 'builderror', error: `Unsupported language: ${language}` };
+  }
+
   try {
-    await ensureCppRunnerImage(language);
+    await ensureRunnerImage();
   } catch (err) {
     await fs.rm(runnerDir, { recursive: true, force: true });
     return { status: 'builderror', error: err.stderr || err.message };
   }
 
-  const compile = await compileInContainer(runnerDir);
+  const compile = await compileInContainer(runnerDir, spec);
   if (!compile.ok) {
     await fs.rm(runnerDir, { recursive: true, force: true });
     return { status: 'compile_error', errors: compile.errors, raw: compile.raw };
@@ -234,7 +340,7 @@ const executeCode = async (testcases, language, runnerDir) => {
     const tc = cases[i];
     const expectedNorm = normalizeOut(tc.output);
     try {
-      const actual = await runBinaryInContainer(runnerDir, tc.input);
+      const actual = await runInContainer(runnerDir, spec, tc.input);
       const isPassed = normalizeOut(actual) === expectedNorm;
       execution.push({ index: i, isPassed, input: tc.input, expected: tc.output, actual });
     } catch (err) {
@@ -253,8 +359,8 @@ const executeCode = async (testcases, language, runnerDir) => {
   return { status: execution.every((r) => r.isPassed) ? 'accepted' : 'rejected', execution };
 };
 
-const runCppCodeWithInput = async (cppCode, language, problemId, submissionId) => {
-  const { runnerDir } = await returnFilePath(cppCode);
+const runCodeWithInput = async (code, language, problemId, submissionId) => {
+  const { runnerDir } = await writeCodeToRunnerDir(code, language);
   let testcases;
   try {
     testcases = await fetchTestcasesFromS3(problemId);
@@ -272,8 +378,8 @@ const runCppCodeWithInput = async (cppCode, language, problemId, submissionId) =
   return result;
 };
 
-const dryRunCppCodeWithInput = async (cppCode, language, problem) => {
-  const { runnerDir } = await returnFilePath(cppCode);
+const dryRunCodeWithInput = async (code, language, problem) => {
+  const { runnerDir } = await writeCodeToRunnerDir(code, language);
   const testcases = problem.sampleTestcases;
   if (!testcases || testcases.length === 0) {
     return { status: 'no_sample_testcases', error: 'No sample testcases provided for dry run.' };
@@ -281,5 +387,5 @@ const dryRunCppCodeWithInput = async (cppCode, language, problem) => {
   return await executeCode(testcases, language, runnerDir);
 };
 
-export { dryRunCppCodeWithInput };
-export default runCppCodeWithInput;
+export { dryRunCodeWithInput };
+export default runCodeWithInput;
