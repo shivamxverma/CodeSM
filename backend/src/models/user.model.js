@@ -26,6 +26,10 @@ const userSchema = new Schema(
       required: false,
       minlength: [8, "Password must be at least 8 characters long"],
     },
+    emailVerified: {
+      type: Boolean,
+      default: false
+    },
     googleId: {
       type: String,
       required: false,

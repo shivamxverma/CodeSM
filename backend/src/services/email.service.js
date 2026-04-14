@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
-import logger from '../../loaders/logger';
-import env from '../../config';
+// import logger from '../../loaders/logger.js';
+import env from '../config/index.js';
 
 const transporter =
   nodemailer.createTransport({
@@ -36,10 +36,10 @@ export const sendEmail = async (options) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    logger.info(`Email sent to ${to}: ${info.messageId}`);
+    // console.log(`Email sent to ${to}: ${info.messageId}`);
     return true;
   } catch (error) {
-    logger.error('Error sending email:', {
+    console.log('Error sending email:', {
       message: error.message,
       code: error.code,
       stack: error.stack,
@@ -47,6 +47,3 @@ export const sendEmail = async (options) => {
     throw error;
   }
 };
-
-
-export * from './emails/verification';

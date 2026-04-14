@@ -2,11 +2,14 @@ import env from '../config/index.js';
 import crypto from 'crypto';
 import asyncHandler from '../utils/asyncHandler.js';
 import User from '../models/user.model.js';
+import UserToken from '../models/token.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { sendPasswordResetEmail } from '../services/email/email.js';
+import { sendVerificationEmail } from '../services/email/verification.js';
+import { v4 as uuidv4 } from 'uuid';
 
 /** Shared with Google OAuth callback — keep login + OAuth cookie behavior identical. */
 export const AUTH_COOKIE_OPTIONS = {
@@ -103,6 +106,21 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(500, "SomeThing Went Wrong Registering User");
     }
 
+    const emailVerificationToken = uuidv4();
+
+    const user_token = await UserToken.create({
+        user: user,
+        token: emailVerificationToken,
+        tokenType: 'EMAIL_VERIFY',
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000)
+    });
+
+    if(!user_token) {
+        throw new ApiError(500, "User Token is not stored into db");
+    }
+    
+    await sendVerificationEmail(email, emailVerificationToken);
+
     return res.status(201).json(
         new ApiResponse(200, CreatedUser, "User Registered Succesfully")
     );
@@ -119,6 +137,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
     if (!user) {
         throw new ApiError(404, "User doesn't Exist");
+    }
+
+    if(!user.emailVerified) {
+        throw new ApiError(400, "Email Verification is required");
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -309,6 +331,39 @@ const resetPassword = asyncHandler(async (req, res) => {
     );
 });
 
+const verifyEmail = asyncHandler(async (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    throw new ApiError(400, 'Verification token is required');
+  }
+
+  const userToken = await UserToken.findOne({
+    token : token,
+    tokenType: 'EMAIL_VERIFY',
+    expiresAt: { $gt: new Date() }
+  }).populate('user');
+
+  if (!userToken) {
+    throw new ApiError(404, 'Invalid or expired token');
+  }
+
+  if (!userToken.user) {
+    throw new ApiError(404, 'User not found');
+  }
+
+  await User.findByIdAndUpdate(userToken.user._id, {
+    emailVerified: true
+  });
+
+  await UserToken.findByIdAndDelete(userToken._id);
+
+  return res.status(200).json({
+    success: true,
+    message: 'Email verified successfully. You can now login.',
+  });
+});
+
 export {
     registerUser,
     loginUser,
@@ -316,4 +371,5 @@ export {
     refreshAccessToken,
     forgotPassword,
     resetPassword,
+    verifyEmail
 };

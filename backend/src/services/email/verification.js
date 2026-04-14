@@ -1,4 +1,5 @@
-import { sendEmail } from '../email.service';
+import { sendEmail } from '../email.service.js';
+import env from '../../config/index.js';
 
 export const sendVerificationEmail = async (email, token) => {
     const verificationUrl = `${env.SMTP_VERIFY_URL}/verify?token=${token}`;
