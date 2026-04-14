@@ -5,9 +5,10 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import Problem from "../models/problem.model.js";
 import { myQueue } from "../config/queue.config.js";
 import redis from "../config/redis.config.js";
+import env from "../config/index.js";
 
 const IDEMPOTENCY_SUBMIT_TTL_SEC = Math.min(
-    Math.max(parseInt(process.env.IDEMPOTENCY_SUBMIT_TTL_SEC || "86400", 10) || 86400, 60),
+    Math.max(parseInt(env.IDEMPOTENCY_SUBMIT_TTL_SEC || "86400", 10) || 86400, 60),
     7 * 24 * 3600
 );
 
@@ -136,7 +137,6 @@ const createSubmission = asyncHandler(async (req, res) => {
 });
 
 const getAllSubmissionById = asyncHandler(async (req, res) => {
-    console.log("getAllSubmissionById");
     const { problemId } = req.params;
     const problem = await Problem.findById(problemId);
     if (!problem) {
@@ -144,7 +144,6 @@ const getAllSubmissionById = asyncHandler(async (req, res) => {
     }
 
     const submissions = await Submission.find({ problem: problem._id, user: req.user }).populate('user', 'username');
-
 
     if (!submissions) {
         throw new ApiError(404, "Submissions Not Found");

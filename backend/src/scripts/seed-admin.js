@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
+import env from '../config/index.js'
 
 export async function seedAdmin() {
 
@@ -9,7 +10,7 @@ export async function seedAdmin() {
     process.exit(0);
   }
 
-  const { ADMIN_USERNAME,ADMIN_FULLNAME, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
+  const { ADMIN_USERNAME,ADMIN_FULLNAME, ADMIN_EMAIL, ADMIN_PASSWORD } = env;
   if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
     throw new Error("ADMIN_EMAIL / ADMIN_PASSWORD missing");
   }

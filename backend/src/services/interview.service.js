@@ -1,12 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { v4 as uuidv4 } from 'uuid';
 import axios from "axios";
+import env from '../config/index.js';
 
-if (!process.env.GEMINI_API_KEY) {
+if (!env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is not set in environment variables.");
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 
 
 const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -38,7 +39,7 @@ async function textToAudio(text) {
                 headers: {
                     "Content-Type": "application/json",
                     Accept: "application/json",
-                    "api-key": process.env.MURF_API_KEY,
+                    "api-key": env.MURF_API_KEY,
                 },
             }
         );

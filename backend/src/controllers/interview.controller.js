@@ -1,7 +1,7 @@
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
-import { generateQuestions,AnswerScore } from '../../services/interview.service.js';
+import { generateQuestions,AnswerScore } from '../services/interview.service.js';
 import redis from '../config/redis.config.js';
 import crypto from 'crypto';
 

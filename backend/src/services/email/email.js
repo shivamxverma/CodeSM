@@ -1,15 +1,14 @@
 import nodemailer from 'nodemailer';
-import dotenv from 'dotenv';
-dotenv.config();
+import env from '../../config/index.js';
 
 const createTransporter = () =>
   nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: Number(process.env.EMAIL_PORT) || 587,
-    secure: Number(process.env.EMAIL_PORT) === 465, // true for 465, false for other ports
+    host: env.EMAIL_HOST || 'smtp.gmail.com',
+    port: Number(env.EMAIL_PORT) || 587,
+    secure: Number(env.EMAIL_PORT) === 465, // true for 465, false for other ports
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: env.EMAIL_USER,
+      pass: env.EMAIL_PASS,
     },
   });
 
@@ -97,7 +96,7 @@ export async function sendPasswordResetEmail(toEmail, resetUrl) {
   `;
 
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
+    from: env.EMAIL_FROM,
     to: toEmail,
     subject: 'Reset your CodeSM password',
     html,

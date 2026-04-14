@@ -72,11 +72,6 @@ const problemSchema = new Schema({
         }],
         default: [] 
     },
-
-    submission: [{
-        type: Schema.Types.ObjectId,
-        ref: 'Submission'
-    }],
     author: {
         type: Schema.Types.ObjectId,
         ref: 'User',

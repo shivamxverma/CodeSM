@@ -1,5 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import env from '../config/index.js';
 import crypto from 'crypto';
 import asyncHandler from '../utils/asyncHandler.js';
 import User from '../models/user.model.js';
@@ -7,7 +6,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { sendPasswordResetEmail } from '../utils/email.js';
+import { sendPasswordResetEmail } from '../services/email/email.js';
 
 /** Shared with Google OAuth callback — keep login + OAuth cookie behavior identical. */
 export const AUTH_COOKIE_OPTIONS = {
@@ -38,9 +37,9 @@ const generateAccessTokenAndRefreshToken = async (user) => {
                 fullName: user.fullName,
                 role: user.role,
             },
-            process.env.ACCESS_TOKEN_SECRET,
+            env.ACCESS_TOKEN_SECRET,
             {
-                expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '1d',
+                expiresIn: env.ACCESS_TOKEN_EXPIRY || '1d',
             }
         );
         const refreshToken = jwt.sign(
@@ -48,9 +47,9 @@ const generateAccessTokenAndRefreshToken = async (user) => {
                 _id: user._id,
                 role: user.role,
             },
-            process.env.REFRESH_TOKEN_SECRET,
+            env.REFRESH_TOKEN_SECRET,
             {
-                expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '7d',
+                expiresIn: env.REFRESH_TOKEN_EXPIRY || '7d',
             }
         );
 
@@ -179,7 +178,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 
     try {
-        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const decodedToken = jwt.verify(incomingRefreshToken, env.REFRESH_TOKEN_SECRET);
 
         const user = await User.findById(decodedToken?._id);
         if (!user) {
@@ -241,7 +240,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // Build the frontend reset URL with the RAW token (not hashed)
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = env.CLIENT_URL || 'http://localhost:5173';
     const resetUrl = `${clientUrl}/reset-password/${rawToken}`;
 
     try {

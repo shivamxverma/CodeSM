@@ -17,7 +17,8 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.864.0",
     "bull": "^4.16.5",
-    "dotenv": "^17.2.1",
-    "mongoose": "^9.3.3"
+    "dotenv": "^17.4.2",
+    "mongoose": "^9.3.3",
+    "yup": "^1.7.1"
   }
 }

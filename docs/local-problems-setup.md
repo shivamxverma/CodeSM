@@ -131,7 +131,7 @@ node src/scripts/uploadAllTestcases.js
 
 ### Bucket name
 
-The uploader script currently hardcodes `BUCKET = "codesm-testcases-bucket"`. Your bucket must match that name **or** you should change the script to use `process.env.AWS_BUCKET_NAME` so it stays in sync with the rest of the app.
+The uploader script currently hardcodes `BUCKET = "codesm-testcases-bucket"`. Your bucket must match that name **or** you should change the script to use `env.AWS_BUCKET_NAME` so it stays in sync with the rest of the app.
 
 ---
 

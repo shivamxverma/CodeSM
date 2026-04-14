@@ -1,12 +1,20 @@
 import mongoose from "mongoose";
-import env from "../config/index.js";
-
-const DATABASE_NAME = "codesm";
+import { DATABASE_NAME } from "../constants.js";
+import { seedAdmin } from "../scripts/seed-admin.js";
+import env from '../config/index.js';
 
 const connectDB = async () => {
     try {
         console.log("Connecting to MongoDB...");
         const connectionInstance = await mongoose.connect(`${env.MONGO_URI}${DATABASE_NAME}`);
+
+        // seedAdmin()
+        // .then(() => {
+        //     console.log("Admin is Seeded");
+        // })
+        // .catch(() => {
+        //     console.log("Error while seeding the admin");
+        // })
 
         console.log(`MongoDB connected: ${connectionInstance.connection.host}`);
 
