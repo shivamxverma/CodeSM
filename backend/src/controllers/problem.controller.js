@@ -2,8 +2,8 @@ import { ApiError } from "../utils/ApiError.js";
 import Problem from "../models/problem.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { generateUploadURL } from "../../services/aws.service.js";
-import { generateHintsWithAI } from '../../services/ai.service.js';
+import { generateUploadURL } from "../services/aws.service.js";
+import { generateHintsWithAI } from '../services/ai.service.js';
 import redis from "../config/redis.config.js";
 import User from "../models/user.model.js";
 

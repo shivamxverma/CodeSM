@@ -1,9 +1,8 @@
 import Queue from 'bull';
 import dotenv from 'dotenv';
+import env from './index.js';
 
-dotenv.config({ path: './.env' });
-
-const redis = process.env.REDIS_URL;
+const redis = env.REDIS_URL;
 
 export const myQueue = new Queue(
   'job-queue',

@@ -1,13 +1,12 @@
 import mongoose from "mongoose";
 import { DATABASE_NAME } from "../constants.js";
 import { seedAdmin } from "../scripts/seed-admin.js";
-import dotenv from "dotenv";
-dotenv.config();
+import env from '../config/index.js';
 
 const connectDB = async () => {
     try {
         console.log("Connecting to MongoDB...");
-        const connectionInstance = await mongoose.connect(`${process.env.MONGO_URI}${DATABASE_NAME}`);
+        const connectionInstance = await mongoose.connect(`${env.MONGO_URI}${DATABASE_NAME}`);
 
         // seedAdmin()
         // .then(() => {

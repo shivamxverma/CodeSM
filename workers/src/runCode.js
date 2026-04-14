@@ -4,10 +4,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { promisify } from 'util';
 import { fetchTestcasesFromS3 } from '../services/aws.service.js';
-import dotenv from 'dotenv';
+import env from '../config/index.js';
 import JobResult from '../models/jobresult.model.js';
 
-dotenv.config();
 const execAsync = promisify(exec);
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,29 +15,29 @@ const projectRoot = path.resolve(__dirname, '../');
 
 // Backwards compatible env var: CPP_RUNNER_IMAGE; prefer RUNNER_IMAGE for multi-lang sandbox.
 const RUNNER_IMAGE =
-  process.env.RUNNER_IMAGE ||
-  process.env.CPP_RUNNER_IMAGE ||
+  env.RUNNER_IMAGE ||
+  env.CPP_RUNNER_IMAGE ||
   'codesm-sandbox-runner:latest';
 const RUNNER_DOCKERFILE = path.join(projectRoot, 'docker', 'sandbox-runner', 'Dockerfile');
 const RUNNER_BUILD_CONTEXT = path.join(projectRoot, 'docker', 'sandbox-runner');
 
 /** In production, pre-pull the image (CI/registry). Auto-build only when explicitly allowed or non-production. */
 function shouldAutoBuildRunner() {
-  if (process.env.RUNNER_AUTO_BUILD === 'true') return true;
-  if (process.env.RUNNER_AUTO_BUILD === 'false') return false;
-  if (process.env.CPP_RUNNER_AUTO_BUILD === 'true') return true;
-  if (process.env.CPP_RUNNER_AUTO_BUILD === 'false') return false;
-  return process.env.NODE_ENV !== 'production';
+  if (env.RUNNER_AUTO_BUILD === 'true') return true;
+  if (env.RUNNER_AUTO_BUILD === 'false') return false;
+  if (env.CPP_RUNNER_AUTO_BUILD === 'true') return true;
+  if (env.CPP_RUNNER_AUTO_BUILD === 'false') return false;
+  return env.NODE_ENV !== 'production';
 }
 
 function parsePositiveInt(name, fallback) {
-  const v = parseInt(process.env[name] || String(fallback), 10);
+  const v = parseInt(env[name] || String(fallback), 10);
   return Number.isFinite(v) && v > 0 ? v : fallback;
 }
 
-const SANDBOX_MEMORY = process.env.SANDBOX_MEMORY || '256m';
-const SANDBOX_CPUS = process.env.SANDBOX_CPUS || '0.5';
-const SANDBOX_PIDS_LIMIT = process.env.SANDBOX_PIDS_LIMIT || '64';
+const SANDBOX_MEMORY = env.SANDBOX_MEMORY || '256m';
+const SANDBOX_CPUS = env.SANDBOX_CPUS || '0.5';
+const SANDBOX_PIDS_LIMIT = env.SANDBOX_PIDS_LIMIT || '64';
 const COMPILE_TIMEOUT_SEC =
   parsePositiveInt('COMPILE_TIMEOUT_SEC', parsePositiveInt('CPP_COMPILE_TIMEOUT_SEC', 60));
 const RUN_TIMEOUT_SEC =

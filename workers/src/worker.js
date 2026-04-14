@@ -12,9 +12,6 @@ connectDB()
     myQueue.process(async (job) => {
       console.log("Work Reached Here");
       const { dryRun } = job.data;
-
-      console.log(job.data);
-
       if (dryRun) {
         const { code, language, problemId } = job.data;
         const problem = await Problem.findById(problemId).lean();

@@ -4,21 +4,21 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import dotenv from "dotenv";
+import env from "../config/index.js";
 import { Readable } from "stream";
-dotenv.config();
+
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
+  region: env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
   },
 });
 
 async function generateUploadURL(problemId) {
   const params = new PutObjectCommand({
-    Bucket: process.env.AWS_BUCKET_NAME,
+    Bucket: env.AWS_BUCKET_NAME,
     Key: `problems/${problemId}/testcases.json`,
     ContentType: "application/json",
   });
@@ -37,7 +37,7 @@ const streamToString = (stream) =>
 async function fetchTestcasesFromS3(problemId) {
   try {
     const command = new GetObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
+      Bucket: env.AWS_BUCKET_NAME,
       Key: `problems/${problemId}/testcases.json`,
     });
 
