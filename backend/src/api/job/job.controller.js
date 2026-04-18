@@ -6,13 +6,41 @@ import JobResult from '../../models/jobresult.model';
 
 const getSubmitJobResponse = asyncHandler(async (req, res) => {
     const { submissionId } = req.params;
+    console.log(`[getSubmitJobResponse] Polling results for submissionId: ${submissionId}`);
+
     if (!submissionId || typeof submissionId !== 'string' || submissionId.trim() === '') {
         throw new ApiError(400, 'Valid Submission ID is required');
     }
+
+    // Check Redis first
+    const redisKey = `submission:${submissionId}`;
+    console.log(`[getSubmitJobResponse] Checking Redis key: ${redisKey}`);
+    
+    const cachedData = await redis.get(redisKey);
+    if (cachedData) {
+        console.log(`[getSubmitJobResponse] Found data in Redis for key: ${redisKey}`);
+        const metadata = JSON.parse(cachedData);
+        return res.status(200).json(
+            new ApiResponse(200, 'Job metadata fetched from cache', {
+                result: metadata,
+            })
+        );
+    }
+
+    console.log(`[getSubmitJobResponse] Redis cache miss for key: ${redisKey}. Falling back to DB.`);
+
+    // Fallback to DB
     const jobResult = await JobResult.findOne({ submissionId });
     if (!jobResult) {
-        throw new ApiError(404, 'Job result not found');
+        console.log(`[getSubmitJobResponse] JobResult not found in DB for submissionId: ${submissionId}. Returning pending state.`);
+        return res.status(200).json(
+            new ApiResponse(200, 'Job is pending', {
+                result: { status: 'pending' },
+            })
+        );
     }
+
+    console.log(`[getSubmitJobResponse] Found data in DB for submissionId: ${submissionId}`);
     if (jobResult.status === 'failed') {
         throw new ApiError(400, 'Job failed');
     }
@@ -24,74 +52,30 @@ const getSubmitJobResponse = asyncHandler(async (req, res) => {
     );
 });
 
-const getJobResponse = asyncHandler(async (req, res) => {
-    console.log("getJobResponse");
-    console.log(req.params);
-
+const getRunJobResult = asyncHandler(async (req, res) => {
     const { jobId } = req.params;
+
     if (!jobId || typeof jobId !== 'string' || jobId.trim() === '') {
         throw new ApiError(400, 'Valid Job ID is required');
     }
-    let job;
-    try {
-        job = await myQueue.getJob(jobId);
-    } catch (error) {
-        throw new ApiError(500, `Failed to fetch job: ${error.message}`);
-    }
 
-    if (!job) {
-        throw new ApiError(404, 'Job not found');
-    }
-
-    let state;
-    try {
-        state = await job.getState();
-    } catch (error) {
-        throw new ApiError(500, `Failed to fetch job state: ${error.message}`);
-    }
-
-    const jobData = job.data || null;
-    const jobResult = job.returnvalue || null;
-
-    if (state !== 'completed') {
-        let message = 'Job still processing';
-        if (state === 'failed') {
-            message = 'Job failed';
-        } else if (state === 'waiting') {
-            message = 'Job is waiting to be processed';
-        } else if (state === 'active') {
-            message = 'Job is currently being processed';
-        }
-
+    const redisKey = `run:${jobId}`;
+    const cachedData = await redis.get(redisKey);
+    
+    if (cachedData) {
+        const metadata = JSON.parse(cachedData);
         return res.status(200).json(
-            new ApiResponse(200, message, {
-                state,
-                jobData,
+            new ApiResponse(200, 'Run job metadata fetched from cache', {
+                result: metadata,
             })
         );
     }
 
-    if (!jobResult) {
-        return res.status(200).json(
-            new ApiResponse(200, 'Job completed; fetch stored result if needed', {
-                state,
-                jobData,
-                result: null,
-                fetchStoredResult: true,
-            })
-        );
-    }
-
-    // BullMQ job state stays `completed` here; verdict (accepted/rejected/…) lives on `result.status`.
     return res.status(200).json(
-        new ApiResponse(200, 'Job fetched successfully', {
-            state,
-            jobData,
-            result: jobResult,
+        new ApiResponse(200, 'Run job is pending or not found', {
+            result: { status: 'pending' },
         })
     );
 });
 
-const getRunJobResponse = getJobResponse;
-
-export { getJobResponse, getRunJobResponse, getSubmitJobResponse };
+export { getSubmitJobResponse, getRunJobResult };

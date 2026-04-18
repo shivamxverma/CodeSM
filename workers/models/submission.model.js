@@ -16,7 +16,7 @@ const submissionSchema = new Schema({
     },
     language: {
         type: String,
-        enum: ['cpp', 'java', 'python', 'javascript', 'c', 'csharp'],
+        enum: ['cpp', 'java', 'python', 'javascript', 'c', 'go'],
         required: true
     },
     status: {
@@ -27,3 +27,4 @@ const submissionSchema = new Schema({
 
 const Submission = mongoose.model('Submission', submissionSchema);
 export default Submission;
+
