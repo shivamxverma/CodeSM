@@ -8,7 +8,7 @@ const jobResultSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'completed', 'failed', 'accepted', 'rejected'],
+        enum: ['pending', 'processing', 'executing', 'completed', 'failed', 'accepted', 'rejected', 'correct answer', 'tle', 'wrong answer', 'mle'],
         default: 'pending'
     },
     output: {

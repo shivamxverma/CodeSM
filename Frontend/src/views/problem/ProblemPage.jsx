@@ -20,9 +20,9 @@ import {
   runCode,
   getSubmissions,
   getProblemHints,
-  getJobResponse,
   createSubmission,
   getSubmitJobResult,
+  getRunJobResult,
 } from "@/api/api";
 
 export default function ProblemPage() {
@@ -54,6 +54,7 @@ export default function ProblemPage() {
   const handledRunRef = useRef(null);
   const handledSubmitPollRef = useRef(null);
   const handledSubmitStoredRef = useRef(null);
+  const handledRunStoredRef = useRef(null);
   /** One UUID per submit attempt; reused if React Query retries mutationFn for the same mutate(). */
   const submitIdempotencyKeyRef = useRef(null);
 
@@ -181,37 +182,39 @@ export default function ProblemPage() {
     }
   }, [problemId, language, languageStorageKey]);
 
-  const runJobQuery = useQuery({
-    queryKey: ["jobPoll", "run", runJobId, problemId],
-    queryFn: () => getJobResponse(runJobId, problemId).then((r) => r.data),
-    enabled: !!runJobId && !!problemId,
+
+  const runStoredQuery = useQuery({
+    queryKey: ["run-job-result", runJobId],
+    queryFn: () => getRunJobResult(runJobId).then((r) => r.data),
+    enabled: !!runJobId,
     refetchInterval: (q) => {
-      const st = q.state.data?.data?.state;
-      if (st === "completed" || st === "failed") return false;
-      return 2000;
+      const result = q.state.data?.data?.result;
+      const status = result?.status;
+      const terminalStatuses = [
+        "correct answer", "tle", "wrong answer", "mle", "compile_error", 
+        "accepted", "rejected", "builderror", "testcase_fetch_error", "no_sample_testcases"
+      ];
+      if (terminalStatuses.includes(status)) return false;
+      return 1000;
     },
+    retry: (failureCount, err) =>
+      failureCount < 10 && (err?.response?.status === 404 || err?.response?.status === 400),
+    retryDelay: (i) => Math.min(1500 * (i + 1), 8000),
   });
 
-  const submitJobQuery = useQuery({
-    queryKey: ["jobPoll", "submit", submitMeta?.jobId, problemId],
-    queryFn: () => getJobResponse(submitMeta.jobId, problemId).then((r) => r.data),
-    enabled: !!submitMeta?.jobId && !!problemId,
-    refetchInterval: (q) => {
-      const st = q.state.data?.data?.state;
-      if (st === "completed" || st === "failed") return false;
-      return 2000;
-    },
-  });
 
   const submitStoredQuery = useQuery({
     queryKey: ["submit-job-result", submitMeta?.submissionId],
     queryFn: () =>
       getSubmitJobResult(submitMeta.jobId, submitMeta.submissionId).then((r) => r.data),
-    enabled:
-      !!submitMeta?.jobId &&
-      !!submitMeta?.submissionId &&
-      submitJobQuery.data?.data?.state === "completed" &&
-      !!submitJobQuery.data?.data?.fetchStoredResult,
+    enabled: !!submitMeta?.submissionId,
+    refetchInterval: (q) => {
+      const result = q.state.data?.data?.result;
+      const status = result?.status;
+      const terminalStatuses = ["correct answer", "tle", "wrong answer", "mle", "compile_error", "accepted", "rejected", "builderror", "testcase_fetch_error"];
+      if (terminalStatuses.includes(status)) return false;
+      return 1000;
+    },
     retry: (failureCount, err) =>
       failureCount < 10 && (err?.response?.status === 404 || err?.response?.status === 400),
     retryDelay: (i) => Math.min(1500 * (i + 1), 8000),
@@ -266,7 +269,8 @@ export default function ProblemPage() {
         return;
       }
 
-      if (status && status !== "accepted" && status !== "rejected") {
+      const validStatuses = ["accepted", "rejected", "correct answer", "wrong answer", "tle", "mle"];
+      if (status && !validStatuses.includes(status)) {
         const msg = payload.error || payload.raw || String(status);
         setStatusBadge({ type: "error", text: "Error" });
         setExecutionPanel({ type: "error", message: msg });
@@ -367,98 +371,104 @@ export default function ProblemPage() {
 
   useEffect(() => {
     if (!runJobId) return;
-    const wrapped = runJobQuery.data?.data;
-    const state = wrapped?.state;
-    if (!state || state === "waiting" || state === "active") return;
-    const token = `${runJobId}-${state}`;
-    if (handledRunRef.current === token) return;
+    if (!runStoredQuery.isSuccess || !runStoredQuery.data) return;
+    
+    const doc = runStoredQuery.data?.data?.result;
+    if (!doc) return;
 
-    const finish = () => {
-      handledRunRef.current = token;
+    const terminalStatuses = [
+      "correct answer", "tle", "wrong answer", "mle", "compile_error", 
+      "accepted", "rejected", "builderror", "testcase_fetch_error", "no_sample_testcases"
+    ];
+    const isTerminal = terminalStatuses.includes(doc.status);
+
+    if (isTerminal) {
+      const token = `stored-run-${runJobId}`;
+      if (handledRunStoredRef.current === token) return;
+      handledRunStoredRef.current = token;
+
+      let executionArray = Array.isArray(doc.result) ? doc.result : [];
+      if (executionArray.length === 0 && typeof doc.output === 'string') {
+        try { executionArray = JSON.parse(doc.output); } catch (e) {}
+      }
+
+      const payload = {
+        status: doc.status,
+        execution: executionArray,
+        errors: doc.errors || [],
+        raw: doc.raw || "",
+        error: doc.error || ""
+      };
+
+      setRunResult(problemId, payload);
+      processExecutionResult(payload);
       setRunJobId(null);
       setIsRunning(false);
       queryClient.removeQueries({ queryKey: ["jobPoll", "run", runJobId, problemId] });
-    };
-
-    if (state === "failed") {
-      posthog.capture("run_failed", {
-        problem_id: problemId,
-        error: "Job failed",
+      queryClient.removeQueries({ queryKey: ["run-job-result", runJobId] });
+    } else {
+      setExecutionPanel({ 
+        type: "loading", 
+        message: `Running — ${doc.status}...` 
       });
-      setStatusBadge({ type: "error", text: "Execution Failed" });
-      setExecutionPanel({ type: "error", message: "Run job failed." });
-      finish();
-      return;
     }
-
-    if (state === "completed") {
-      const payload = wrapped?.result;
-      if (payload) {
-        setRunResult(problemId, payload);
-        processExecutionResult(payload);
-      } else {
-        setStatusBadge({ type: "error", text: "No result received" });
-        setExecutionPanel({ type: "error", message: "No result was returned from the server." });
-      }
-      finish();
-    }
-  }, [runJobId, runJobQuery.data, problemId, posthog, queryClient, setRunResult, processExecutionResult]);
+  }, [runJobId, runStoredQuery.isSuccess, runStoredQuery.data, problemId, queryClient, setRunResult, processExecutionResult]);
 
   useEffect(() => {
-    if (!submitMeta) return;
-    const wrapped = submitJobQuery.data?.data;
-    const state = wrapped?.state;
-    if (!state || state === "waiting" || state === "active") return;
-
-    if (state === "failed") {
-      const token = `${submitMeta.jobId}-failed`;
-      if (handledSubmitPollRef.current === token) return;
-      handledSubmitPollRef.current = token;
-      posthog.capture("submission_failed", {
-        problem_id: problemId,
-        error: "Job failed",
-      });
-      setStatusBadge({ type: "error", text: "Execution Failed" });
-      setExecutionPanel({ type: "error", message: "Submission job failed." });
-      setSubmitMeta(null);
-      setIsSubmitting(false);
-      queryClient.removeQueries({ queryKey: ["jobPoll", "submit", submitMeta.jobId, problemId] });
-      return;
-    }
-
-    if (state === "completed") {
-      const { result: inlineResult, fetchStoredResult } = wrapped;
-      if (fetchStoredResult) return;
-      if (inlineResult == null) return;
-      const token = `${submitMeta.jobId}-completed-inline`;
-      if (handledSubmitPollRef.current === token) return;
-      handledSubmitPollRef.current = token;
-      setSubmitResult(problemId, { source: "queue", result: inlineResult });
-      processExecutionResult(inlineResult);
-      queryClient.invalidateQueries({ queryKey: ["problem-submissions", problemId] });
-      setSubmitMeta(null);
-      setIsSubmitting(false);
-      queryClient.removeQueries({ queryKey: ["jobPoll", "submit", submitMeta.jobId, problemId] });
-    }
-  }, [submitMeta, submitJobQuery.data, problemId, posthog, queryClient, setSubmitResult, processExecutionResult]);
+    if (!runJobId || !runStoredQuery.isError) return;
+    setStatusBadge({ type: "error", text: "Error" });
+    setExecutionPanel({
+      type: "error",
+      message:
+        runStoredQuery.error?.response?.data?.message || "Could not load run result.",
+    });
+    setRunJobId(null);
+    setIsRunning(false);
+  }, [runJobId, runStoredQuery.isError, runStoredQuery.error]);
 
   useEffect(() => {
     if (!submitMeta) return;
     if (!submitStoredQuery.isSuccess || !submitStoredQuery.data) return;
+    
     const doc = submitStoredQuery.data?.data?.result;
     if (!doc) return;
-    const token = `stored-${submitMeta.submissionId}`;
-    if (handledSubmitStoredRef.current === token) return;
-    handledSubmitStoredRef.current = token;
 
-    const payload = normalizeStoredJobResult(doc);
-    setSubmitResult(problemId, { source: "db", document: doc });
-    processExecutionResult(payload);
-    queryClient.invalidateQueries({ queryKey: ["problem-submissions", problemId] });
-    setSubmitMeta(null);
-    setIsSubmitting(false);
-    queryClient.removeQueries({ queryKey: ["jobPoll", "submit", submitMeta.jobId, problemId] });
-    queryClient.removeQueries({ queryKey: ["submit-job-result", submitMeta.submissionId] });
+    const terminalStatuses = ["correct answer", "tle", "wrong answer", "mle", "compile_error", "accepted", "rejected", "builderror", "testcase_fetch_error"];
+    const isTerminal = terminalStatuses.includes(doc.status);
+
+    if (isTerminal) {
+      const token = `stored-${submitMeta.submissionId}`;
+      if (handledSubmitStoredRef.current === token) return;
+      handledSubmitStoredRef.current = token;
+
+      let executionArray = Array.isArray(doc.result) ? doc.result : [];
+      if (executionArray.length === 0 && typeof doc.output === 'string') {
+        try { executionArray = JSON.parse(doc.output); } catch (e) {}
+      }
+
+      // Map doc from Redis/DB to the format processExecutionResult expects
+      const payload = {
+        status: doc.status,
+        execution: executionArray,
+        errors: doc.errors || [],
+        raw: doc.raw || "",
+        error: doc.error || ""
+      };
+
+      setSubmitResult(problemId, { source: "db", document: doc });
+      processExecutionResult(payload);
+      queryClient.invalidateQueries({ queryKey: ["problem-submissions", problemId] });
+      setSubmitMeta(null);
+      setIsSubmitting(false);
+      queryClient.removeQueries({ queryKey: ["jobPoll", "submit", submitMeta.jobId, problemId] });
+      queryClient.removeQueries({ queryKey: ["submit-job-result", submitMeta.submissionId] });
+    } else {
+      // Update real-time status message
+      setExecutionPanel({ 
+        type: "loading", 
+        message: `Submitting — ${doc.status}...` 
+      });
+    }
   }, [submitMeta, submitStoredQuery.isSuccess, submitStoredQuery.data, problemId, queryClient, setSubmitResult, processExecutionResult]);
 
   useEffect(() => {
@@ -472,24 +482,6 @@ export default function ProblemPage() {
     setSubmitMeta(null);
     setIsSubmitting(false);
   }, [submitMeta, submitStoredQuery.isError, submitStoredQuery.error]);
-
-  useEffect(() => {
-    if (!runJobId || !runJobQuery.isError) return;
-    setStatusBadge({ type: "error", text: "Execution Failed" });
-    setExecutionPanel({ type: "error", message: "Failed to get job status." });
-    setRunJobId(null);
-    setIsRunning(false);
-    posthog.capture("run_failed", { problem_id: problemId, error: "poll_error" });
-  }, [runJobId, runJobQuery.isError, problemId, posthog]);
-
-  useEffect(() => {
-    if (!submitMeta || !submitJobQuery.isError) return;
-    setStatusBadge({ type: "error", text: "Execution Failed" });
-    setExecutionPanel({ type: "error", message: "Failed to get submission job status." });
-    setSubmitMeta(null);
-    setIsSubmitting(false);
-    posthog.capture("submission_failed", { problem_id: problemId, error: "poll_error" });
-  }, [submitMeta, submitJobQuery.isError, problemId, posthog]);
 
   // Hydrate code from localStorage (or fall back to starter) when language/problem changes.
   useEffect(() => {
@@ -566,8 +558,15 @@ export default function ProblemPage() {
     setTestcaseTab(0);
   };
 
-  const handleRun = () => runMutation.mutate();
-  const handleSubmit = () => submitMutation.mutate();
+  const handleRun = () => {
+    if (isRunning || isSubmitting) return;
+    runMutation.mutate();
+  };
+  
+  const handleSubmit = () => {
+    if (isRunning || isSubmitting) return;
+    submitMutation.mutate();
+  };
 
   async function fetchHints() {
     if (hints.length > 0 || hintsLoading) return;
@@ -707,7 +706,9 @@ export default function ProblemPage() {
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="text-xs px-2 py-1 rounded bg-[#182432] border border-[#233046] text-gray-200 focus:outline-none"
+                disabled={isRunning || isSubmitting}
+                className={`text-xs px-2 py-1 rounded bg-[#182432] border border-[#233046] text-gray-200 focus:outline-none ${isRunning || isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
               >
                 <option value="cpp">C++</option>
                 <option value="c">C</option>
@@ -726,7 +727,9 @@ export default function ProblemPage() {
             </button>
             <button
               onClick={resetCode}
-              className="text-xs px-3 py-1.5 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750]"
+              disabled={isRunning || isSubmitting}
+              className={`text-xs px-3 py-1.5 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750] ${isRunning || isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                }`}
             >
               Reset
             </button>
@@ -805,21 +808,33 @@ export default function ProblemPage() {
             <button
               onClick={handleRun}
               disabled={isRunning || isSubmitting}
-              className={`rounded-lg px-4 py-2 text-sm border shadow-lg ${isRunning || isSubmitting
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm border shadow-lg transition-all ${isRunning || isSubmitting
                 ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
                 : "bg-[#1e3046] hover:bg-[#264060] border-[#2a4a73]"
                 }`}
             >
+              {isRunning && (
+                <svg className="animate-spin h-4 w-4 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
               {isRunning ? "Running..." : "Run"}
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || isRunning}
-              className={`rounded-lg px-4 py-2 text-sm border shadow-lg ${isSubmitting || isRunning
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm border shadow-lg transition-all ${isSubmitting || isRunning
                 ? "opacity-60 cursor-not-allowed bg-[#19324b] border-[#274664]"
                 : "bg-[#0c5bd5] hover:bg-[#0a4fb9] border-[#0c5bd5]"
                 }`}
             >
+              {isSubmitting && (
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
               {isSubmitting ? "Submitting..." : "Submit"}
             </button>
           </div>

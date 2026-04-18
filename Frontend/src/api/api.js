@@ -77,18 +77,18 @@ export const runCode = async (problemId, payload) => {
   );
 }
 
-export const getJobResponse = (jobId, problemId) => {
+/** Persisted job result after a full submission (MongoDB jobResult). */
+export const getSubmitJobResult = (jobId, submissionId) => {
   const token = localStorage.getItem("accessToken");
-  return axios.get(`${BASE}/job/${jobId}/problems/${problemId}`, {
+  return axios.get(`${BASE}/job/${jobId}/get-result/${submissionId}`, {
     withCredentials: true,
     headers: { Authorization: `Bearer ${token}` },
   });
 };
 
-/** Persisted job result after a full submission (MongoDB jobResult). */
-export const getSubmitJobResult = (jobId, submissionId) => {
+export const getRunJobResult = (jobId) => {
   const token = localStorage.getItem("accessToken");
-  return axios.get(`${BASE}/job/${jobId}/get-result/${submissionId}`, {
+  return axios.get(`${BASE}/job/${jobId}/get-run-result`, {
     withCredentials: true,
     headers: { Authorization: `Bearer ${token}` },
   });

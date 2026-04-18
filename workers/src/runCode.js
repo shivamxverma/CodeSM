@@ -6,6 +6,8 @@ import { promisify } from 'util';
 import { fetchTestcasesFromS3 } from '../services/aws.service.js';
 import env from '../config/index.js';
 import JobResult from '../models/jobresult.model.js';
+import Submission from '../models/submission.model.js';
+import { setSubmissionStatus, setRunStatus } from './redis.js';
 
 const execAsync = promisify(exec);
 
@@ -252,11 +254,14 @@ async function compileInContainer(runnerDir, spec) {
 }
 
 /** Run one testcase with stdin. */
-function runInContainer(runnerDir, spec, input) {
+function runInContainer(runnerDir, spec, input, timeLimit, memoryLimit) {
   const inputStr = input ?? '';
   if (Buffer.byteLength(inputStr, 'utf8') > MAX_TESTCASE_INPUT_BYTES) {
     return Promise.reject(new Error(`Input exceeds ${MAX_TESTCASE_INPUT_BYTES} bytes`));
   }
+
+  const tLimit = timeLimit || RUN_TIMEOUT_SEC;
+  const mLimit = memoryLimit ? `${memoryLimit}m` : SANDBOX_MEMORY;
 
   const bootstrap =
     spec.kind === 'compiled'
@@ -264,16 +269,21 @@ function runInContainer(runnerDir, spec, input) {
         ? 'cp /host_code/*.class . 2>/dev/null || true'
         : 'cp /host_code/user_program . && chmod +x user_program'
       : `cp /host_code/${spec.filename} .`;
+
+  const runCmd = spec.run.replace(`timeout ${RUN_TIMEOUT_SEC}s`, `timeout ${tLimit}s`);
+
   const inner = [
     'cd /tmp &&',
     `${bootstrap} &&`,
-    spec.run,
+    runCmd,
   ].join(' ');
 
   return new Promise((resolve, reject) => {
     const args = [
       'run', '--rm', '-i',
       ...dockerResourceAndSecurityArgs(),
+      '--memory', mLimit,
+      '--memory-swap', mLimit,
       '--read-only',
       '--tmpfs', '/tmp:rw,nosuid,nodev,exec,size=64m',
       '-v', `${runnerDir}:/host_code:ro`,
@@ -299,6 +309,8 @@ function runInContainer(runnerDir, spec, input) {
     proc.on('error', reject);
     proc.on('close', (code) => {
       if (code === 0) resolve(stdout.trim());
+      else if (code === 124) reject(new Error('TLE'));
+      else if (code === 137) reject(new Error('MLE'));
       else reject(new Error((stderr || stdout || `Exited ${code}`).trim()));
     });
     proc.stdin.write(inputStr);
@@ -308,7 +320,7 @@ function runInContainer(runnerDir, spec, input) {
 
 const normalizeOut = (s) => (s ?? '').toString().replace(/\r\n/g, '\n').trim();
 
-const executeCode = async (testcases, language, runnerDir) => {
+const executeCode = async (testcases, language, runnerDir, submissionId, limits) => {
   const cases = Array.isArray(testcases) ? testcases : testcases?.testcases;
   if (!Array.isArray(cases) || cases.length === 0) {
     await fs.rm(runnerDir, { recursive: true, force: true });
@@ -328,6 +340,12 @@ const executeCode = async (testcases, language, runnerDir) => {
     return { status: 'builderror', error: err.stderr || err.message };
   }
 
+  // Update status to compiling
+  if (submissionId) {
+    await Submission.findByIdAndUpdate(submissionId, { status: 'compiling' });
+    await setSubmissionStatus(submissionId, 'compiling');
+  }
+
   const compile = await compileInContainer(runnerDir, spec);
   if (!compile.ok) {
     await fs.rm(runnerDir, { recursive: true, force: true });
@@ -335,30 +353,57 @@ const executeCode = async (testcases, language, runnerDir) => {
   }
 
   const execution = [];
+  let finalStatus = 'correct answer';
+
   for (let i = 0; i < cases.length; i++) {
     const tc = cases[i];
     const expectedNorm = normalizeOut(tc.output);
+    
+    // Update real-time status
+    if (submissionId) {
+      const status = `executing testcase ${i + 1}/${cases.length}`;
+      await Submission.findByIdAndUpdate(submissionId, {
+        status: status
+      });
+      await setSubmissionStatus(submissionId, status);
+    }
+
     try {
-      const actual = await runInContainer(runnerDir, spec, tc.input);
+      const actual = await runInContainer(runnerDir, spec, tc.input, limits?.timeLimit, limits?.memoryLimit);
       const isPassed = normalizeOut(actual) === expectedNorm;
-      execution.push({ index: i, isPassed, input: tc.input, expected: tc.output, actual });
+      const status = isPassed ? 'correct answer' : 'wrong answer';
+      
+      execution.push({ index: i, isPassed, input: tc.input, expected: tc.output, actual, status });
+      
+      if (!isPassed && finalStatus === 'correct answer') {
+        finalStatus = 'wrong answer';
+      }
     } catch (err) {
+      let status = 'wrong answer';
+      if (err.message === 'TLE') status = 'tle';
+      else if (err.message === 'MLE') status = 'mle';
+      
       execution.push({
         index: i,
         isPassed: false,
         input: tc.input,
         expected: tc.output,
         error: err.message,
+        status: status
       });
+
+      if (finalStatus === 'correct answer') {
+        finalStatus = status;
+      }
     }
   }
 
   await fs.rm(runnerDir, { recursive: true, force: true });
   console.log('Here execution ', execution);
-  return { status: execution.every((r) => r.isPassed) ? 'accepted' : 'rejected', execution };
+  return { status: finalStatus, execution };
 };
 
-const runCodeWithInput = async (code, language, problemId, submissionId) => {
+const runCodeWithInput = async (code, language, problemId, submissionId, limits) => {
   const { runnerDir } = await writeCodeToRunnerDir(code, language);
   let testcases;
   try {
@@ -366,10 +411,17 @@ const runCodeWithInput = async (code, language, problemId, submissionId) => {
   } catch (err) {
     return { status: 'testcase_fetch_error', error: err.message };
   }
-  const result = await executeCode(testcases, language, runnerDir);
+  const result = await executeCode(testcases, language, runnerDir, submissionId, limits);
+  
+  // Update final submission status
+  if (submissionId) {
+    await Submission.findByIdAndUpdate(submissionId, { status: result.status });
+    await setSubmissionStatus(submissionId, result.status, result.execution);
+  }
+
   await JobResult.create({
     submissionId: submissionId,
-    status: result.status === 'accepted' ? 'accepted' : 'rejected',
+    status: result.status,
     output: JSON.stringify(result.execution),
     executionTime: result.execution.reduce((acc, curr) => acc + (curr.executionTime ?? 0), 0),
     memoryUsage: result.execution.reduce((acc, curr) => acc + (curr.memoryUsage ?? 0), 0),
@@ -377,13 +429,32 @@ const runCodeWithInput = async (code, language, problemId, submissionId) => {
   return result;
 };
 
-const dryRunCodeWithInput = async (code, language, problem) => {
+const dryRunCodeWithInput = async (code, language, problem, jobId) => {
   const { runnerDir } = await writeCodeToRunnerDir(code, language);
   const testcases = problem.sampleTestcases;
   if (!testcases || testcases.length === 0) {
+    if (jobId) {
+      await setRunStatus(jobId, 'no_sample_testcases');
+    }
     return { status: 'no_sample_testcases', error: 'No sample testcases provided for dry run.' };
   }
-  return await executeCode(testcases, language, runnerDir);
+  const limits = {
+    timeLimit: problem.timeLimit,
+    memoryLimit: problem.memoryLimit,
+  };
+  
+  // NOTE: executeCode currently sets status for 'submissionId' if passed. 
+  // We don't want it to update DB Submission inside executeCode, but right now executeCode takes submissionId and updates the DB.
+  // Wait, executeCode accepts (testcases, language, runnerDir, submissionId, limits).
+  // If we pass null for submissionId, it won't update the DB! We'll just capture the returned result and set it manually in setRunStatus.
+  
+  const result = await executeCode(testcases, language, runnerDir, null, limits);
+  
+  if (jobId) {
+    await setRunStatus(jobId, result.status, result.execution);
+  }
+  
+  return result;
 };
 
 export { dryRunCodeWithInput };
