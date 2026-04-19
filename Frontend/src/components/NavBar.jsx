@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "@/utils/AuthContext";
+import { useAuth } from "@/hooks/AuthContext";
 
 export default function NewNav() {
   const navigate = useNavigate();

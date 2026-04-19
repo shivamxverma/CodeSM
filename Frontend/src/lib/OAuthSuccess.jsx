@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "../utils/AuthContext";
+import { useAuth } from "../hooks/AuthContext";
 
 /**
  * Landing page for Google OAuth success.

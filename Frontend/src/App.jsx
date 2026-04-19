@@ -1,8 +1,8 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import LoginCard from "./auth/login/LoginCard";
-import SignUpCard from "./auth/signup/SignUpCard";
+import LoginCard from "./views/auth/login/page";
+import SignUpCard from "./views/auth/signup/page";
 import ProblemPage from "./views/problemPage/ProblemPage";
 import Dashboard from "./views/dashboard/DashBoard";
 import Problems from "./views/problems/problems";
@@ -12,16 +12,16 @@ import ContestCreatePage from "./views/contest/ContestCreatePage";
 import ContestLobbyAndRun from "./views/contest/ContestLobbyAndRun";
 import InterviewAssistant from "./views/interview/InterviewPage";
 import DiscussionPage from "./views/discussion/DiscussionPage";
-import AdminDashboard from "./views/admin/AdminDashboard";
+import AdminDashboard from "./views/admin/page";
 import OAuthSuccess from "./lib/OAuthSuccess";
 import ForgotPassword from "./lib/ForgotPassword";
 import ResetPassword from "./lib/ResetPassword";
 
-import { AuthProvider } from "./utils/AuthContext";
-import RequireRole from "./utils/RequireRole";
-import ProtectedRoute from "./utils/ProtectedRoute";
+import { AuthProvider } from "./hooks/AuthContext";
+import RequireRole from "./hooks/RequireRole";
+import ProtectedRoute from "./hooks/ProtectedRoute";
 import Layout from "./Layout";
-import VerifyEmailPage from "./auth/verify";
+import VerifyEmailPage from "./views/auth/page";
 
 export default function App() {
   return (

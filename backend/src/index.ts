@@ -2,13 +2,12 @@ import express from 'express';
 import loaders from './loaders';
 import logger from './loaders/logger';
 import env from './config/index';
-import { getDrizzleClient, closeDatabaseConnection } from './loaders/postgres';
+import { closeDatabaseConnection } from './loaders/postgres';
 
 async function startServer() {
     const app = express();
 
     await loaders({ expressApp: app });
-    await getDrizzleClient();
 
     const port = Number(env.PORT) || 8000;
 
@@ -17,13 +16,7 @@ async function startServer() {
             logger.info(`🛡️ Server listening on port: ${port} 🛡️`);
         })
         .on('error', (err: NodeJS.ErrnoException) => {
-            if (err.code === 'EADDRINUSE') {
-                logger.error(
-                    `Port ${port} is already in use. Stop the other server (try: lsof -i :${port}) or set PORT to a free port in your env.`
-                );
-            } else {
-                logger.error(err);
-            }
+            logger.error('Error in server',err);
             process.exit(1);
         });
 

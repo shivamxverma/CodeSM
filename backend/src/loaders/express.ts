@@ -1,8 +1,6 @@
-import bodyParser from 'body-parser';
 import cors from 'cors';
 import express from 'express';
 import routes from '../api';
-import {rateLimitMiddleware} from '../middlewares/ratelimiter.middleware';
 import { apiPrefix } from '../utils/constants';
 import cookieParser from 'cookie-parser';
 import env from '../config';
@@ -27,7 +25,7 @@ export default ({ app }: { app : express.Application }) : void => {
     // app.use(rateLimitMiddleware);
     app.get('/', (req, res) => {
         return res.status(200).send(
-        "What are you doing here? 🧐 Go to <a href='https://dev.verlyai.xyz/'>Magic Link!!</a>"
+        "What are you doing here? 🧐 Go to <a href='https://code-sm.vercel.app'>Magic Link!!</a>"
         );
     });
 

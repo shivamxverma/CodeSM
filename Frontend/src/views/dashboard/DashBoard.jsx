@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 // ─── Safe auth hook (works even if AuthContext isn't wired up) ────────────────
 let useAuth;
 try {
-  useAuth = require("@/utils/AuthContext").useAuth;
+  useAuth = require("@/hooks/AuthContext").useAuth;
 } catch {
   useAuth = () => ({ user: null });
 }
@@ -12,7 +12,7 @@ try {
 // ─── Safe stats helper (falls back to hardcoded defaults) ────────────────────
 function getProblemStats() {
   try {
-    const { getDashboardProblemStats } = require("./components/helper");
+    const { getDashboardProblemStats } = require("@/components/dashboard/helper");
     return getDashboardProblemStats();
   } catch {
     const easy = 42, medium = 31, hard = 17, total = 90;

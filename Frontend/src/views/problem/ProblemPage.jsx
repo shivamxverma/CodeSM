@@ -3,7 +3,7 @@ import Editor from "@monaco-editor/react";
 import { usePostHog } from "@posthog/react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/auth/AuthContext";
+import { useAuth } from "@/hooks/AuthContext";
 import { useExecutionStore } from "@/stores/executionStore";
 import ExecutionConsole from "./components/ExecutionConsole";
 import ProblemTabContent from "./components/ProblemTabContent";

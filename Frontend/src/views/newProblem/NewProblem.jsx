@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import { createProblem } from "../../api/api";
+import { createProblem } from "@/api/api";
 import { usePostHog } from "@posthog/react";
 
 export default function CreateProblem() {

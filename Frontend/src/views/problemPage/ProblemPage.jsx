@@ -5,19 +5,18 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import ProblemDiscussions from "../discussion/ProblemDiscussions";
-import { useAuth } from "@/utils/AuthContext";
+import { useAuth } from "@/hooks/AuthContext";
 import { useExecutionStore } from "@/stores/executionStore";
 import {
   getProblem,
   runCode,
   getSubmissions,
   getProblemHints,
-  getJobResponse,
-  createSubmission,
   getSubmitJobResult,
+  createSubmission,
 } from "@/api/api";
 
-import { getDifficultyFromRating, getYouTubeEmbed, normalizeStoredJobResult } from "./components/helper";
+import { getDifficultyFromRating, getYouTubeEmbed, normalizeStoredJobResult } from "@/components/problempage/helper";
 import { DiscussionTab } from "./tabs/discussiontab";
 import { EditorialTab } from "./tabs/editorialtab";
 import { SubmissionTab } from "./tabs/submissiontab";
@@ -184,7 +183,7 @@ export default function ProblemPage() {
 
   const runJobQuery = useQuery({
     queryKey: ["jobPoll", "run", runJobId, problemId],
-    queryFn: () => getJobResponse(runJobId, problemId).then((r) => r.data),
+    queryFn: () => getSubmitJobResult(runJobId, problemId).then((r) => r.data),
     enabled: !!runJobId && !!problemId,
     refetchInterval: (q) => {
       const st = q.state.data?.data?.state;

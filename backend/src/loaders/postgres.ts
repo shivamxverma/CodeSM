@@ -1,5 +1,5 @@
-import * as schema from '../drizzle/schema';
-import * as relations from '../drizzle/relations';
+import * as schema from '../db/schema';
+import * as relations from '../db/relations';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import logger from './logger';
@@ -15,7 +15,7 @@ function createDrizzle(pool: Pool) {
 
 type DrizzleDb = ReturnType<typeof createDrizzle>;
 
-export let db: DrizzleDb | undefined;
+export let db: DrizzleDb;
 let pool: Pool | undefined;
 
 export async function getDrizzleClient(): Promise<DrizzleDb> {

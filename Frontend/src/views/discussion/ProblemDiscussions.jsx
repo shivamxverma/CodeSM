@@ -6,7 +6,7 @@ import {
     dislikeDiscussion,
     createComment,
 } from "@/api/api";
-import { useAuth } from "@/utils/AuthContext";
+import { useAuth } from "@/hooks/AuthContext";
 
 function timeAgo(dateString) {
     const date = new Date(dateString);
