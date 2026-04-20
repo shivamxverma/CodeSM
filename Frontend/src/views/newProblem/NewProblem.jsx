@@ -314,19 +314,16 @@ int main() {
       );
 
       const res = await createProblem(data);
-      posthog.capture("problem_created_success", {
-        title: formData.title,
-        difficulty: formData.difficulty,
-      });
 
       const url = res?.data?.message?.uploadURL;
       if (url) {
         const testcasesFile = new Blob([JSON.stringify(formData.testcases)], {
           type: "application/json",
         });
-        await axios.put(url, testcasesFile, {
+        const response = await axios.put(url, testcasesFile, {
           headers: { "Content-Type": "application/json" },
         });
+        console.log("shivam verma",response);
       }
 
       navigate("/problems");

@@ -55,10 +55,18 @@ export const verdictEnum = pgEnum('Verdict', [
 
 
 export const difficultyEnum = pgEnum('Difficulty', [
-    'EASY',     // ~800–1200
-    'MEDIUM',   // ~1200–2000
-    'HARD',     // ~2000–2500
-    'EXPERT',   // ~2500+
+    'EASY',     
+    'MEDIUM',   
+    'HARD',     
+    'EXPERT',   
+]);
+
+export const problemStatusEnum = pgEnum('ProblemStatus', [
+    'DRAFT',
+    'DONE',
+    'PENDING',
+    'APPROVED',
+    'REJECTED',
 ]);
 
 // ─────────────────────────────────────────────
@@ -161,31 +169,28 @@ export const session = pgTable(
 export const problem = pgTable(
     'problem',
     {
-        id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
+        id: text('id').primaryKey().$defaultFn(() => createId()),
         title: text('title').notNull(),
-        // FIX: Use difficultyEnum instead of a magic smallint.
-        // If you want numeric Codeforces-style ratings, keep smallint but document
-        // the range and consider a check constraint at the DB level.
-        difficulty: difficultyEnum('difficulty').notNull().default('EASY'),
         description: text('description').notNull(),
-        // FIX: onDelete is now 'restrict' — deleting a user should NOT silently delete all their problems.
-        // Use 'cascade' only if that's genuinely what you want (it usually isn't for authored content).
-        authorId: text('author_id').notNull().references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-        isPublished: boolean('is_published').default(false).notNull(),
-        createdAt: timestamp('created_at', { precision: 3, mode: 'string' })
-            .default(sql`(now() AT TIME ZONE 'UTC'::text)`)
-            .notNull(),
-        updatedAt: timestamp('updated_at', { precision: 3, mode: 'string' })
-            .default(sql`(now() AT TIME ZONE 'UTC'::text)`)
-            .notNull(),
+        slug : text('slug').notNull(),
+        difficulty: difficultyEnum('difficulty').notNull(),
+        authorId: text('author_id')
+            .notNull()
+            .references(() => user.id, { onDelete: 'restrict' }),
+
+        inputFormat: text('input_format').notNull(),
+        outputFormat: text('output_format').notNull(),
+        constraints: text('constraints').notNull(),
+        status: problemStatusEnum('status').notNull().default('DRAFT'),
+
+        timeLimit: integer('time_limit').notNull(),
+        memoryLimit: integer('memory_limit').notNull(),
+
+        createdAt: timestamp('created_at').default(sql`now()`).notNull(),
     },
-    (table: any) => [
-        index('problem_author_id_idx').using('btree', table.authorId.asc().nullsLast()),
-        index('problem_title_idx').using('btree', table.title.asc().nullsLast()),
-        index('problem_difficulty_idx').using('btree', table.difficulty.asc().nullsLast()),
-        index('problem_created_at_idx').using('btree', table.createdAt.asc().nullsLast()),
-        // FIX: Removed problem_updated_at_idx — updated_at indexes almost never get used
-        // and add write overhead on every update.
+    (t) => [
+        index('problem_author_idx').on(t.authorId),
+        index('problem_difficulty_idx').on(t.difficulty),
     ],
 );
 
@@ -230,29 +235,33 @@ export const problemTags = pgTable(
 // Testcases
 // ─────────────────────────────────────────────
 
-export const testcases = pgTable(
-    'testcases',
+export const testcase = pgTable(
+    'testcase',
     {
-        id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
-        problemId: text('problem_id').notNull().references(() => problem.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-        input: text('input'),
-        output: text('output'),
-        // FIX: Column name changed from 'isSample' to 'is_sample' to match snake_case convention
+        id: text('id').primaryKey().$defaultFn(() => createId()),
+
+        problemId: text('problem_id')
+            .notNull()
+            .references(() => problem.id, { onDelete: 'cascade' }),
+
+        s3Key: text('s3_key').notNull(),
+
+        // execution control
         isSample: boolean('is_sample').default(false).notNull(),
-        createdAt: timestamp('created_at', { precision: 3, mode: 'string' })
-            .default(sql`(now() AT TIME ZONE 'UTC'::text)`)
-            .notNull(),
-        updatedAt: timestamp('updated_at', { precision: 3, mode: 'string' })
-            .default(sql`(now() AT TIME ZONE 'UTC'::text)`)
-            .notNull(),
+        isHidden: boolean('is_hidden').default(true).notNull(),
+
+        order: smallint('order').default(0).notNull(),
+
+        // batching (optional but powerful)
+        batch: smallint('batch').default(0).notNull(),
+
+        createdAt: timestamp('created_at').default(sql`now()`).notNull(),
     },
-    (table: any) => [
-        index('testcases_problem_id_idx').using('btree', table.problemId.asc().nullsLast()),
-        // FIX: Added is_sample index — filtering sample test cases is a very common operation
-        index('testcases_is_sample_idx').using('btree', table.isSample.asc().nullsLast()),
+    (t) => [
+        index('testcase_problem_idx').on(t.problemId),
+        index('testcase_sample_idx').on(t.isSample),
     ],
 );
-
 // ─────────────────────────────────────────────
 // Hints
 // ─────────────────────────────────────────────
@@ -262,7 +271,6 @@ export const hints = pgTable(
     {
         id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
         problemId: text('problem_id').notNull().references(() => problem.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-        // FIX: Added ordering so hints can be revealed progressively (hint 1 before hint 2)
         order: smallint('order').notNull().default(0),
         title: text('title').notNull(),
         content: text('content').notNull(),
@@ -317,6 +325,11 @@ export const submission = pgTable(
         code: text('code').notNull(),
         language: languageEnum('language').notNull().default('CPP'),
         status: jobStatusEnum('status').notNull().default('PENDING'),
+        totalTestcases: integer('total_testcases').notNull().default(0),
+        passedTestcases: integer('passed_testcases').notNull().default(0),
+        failedTestcases: integer('failed_testcases').notNull().default(0),
+        timeTaken: integer('time_taken').notNull().default(0),
+        memoryTaken: integer('memory_taken').notNull().default(0),
         createdAt: timestamp('created_at', { precision: 3, mode: 'string' })
             .default(sql`(now() AT TIME ZONE 'UTC'::text)`)
             .notNull(),
@@ -345,7 +358,7 @@ export const executionResult = pgTable(
     {
         id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
         submissionId: text('submission_id').notNull().references(() => submission.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-        testcaseId: text('testcase_id').notNull().references(() => testcases.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+        testcaseId: text('testcase_id').notNull().references(() => testcase.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
         verdict: verdictEnum('verdict').notNull().default('PENDING'),
         executionTimeMs: integer('execution_time_ms'),
         memoryUsedKb: integer('memory_used_kb'),

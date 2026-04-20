@@ -8,13 +8,11 @@ export type RouteType = {
 export type RequestPart = 'body' | 'query' | 'params';
 
 export interface User {
-  userId: string;
+  id: string;
   username: string;
-  telegramId: string;
-  userType: string;
+  email?: string;
+  role: string;
   lastLogin: Date;
-  iat: number;
-  exp: number;
 }
 
 export interface jwtReq extends Request {

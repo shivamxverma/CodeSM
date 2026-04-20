@@ -90,7 +90,7 @@ export const googleOAuthCallback = asyncHandler(async (req: jwtReq, res: Respons
 })
 
 export const getCurrentUser = asyncHandler(async (req: jwtReq, res: Response, next: NextFunction) => {
-    const user = (req as any).user;
+    const user = req.user;
 
     if (!user) {
         return res.status(httpStatus.UNAUTHORIZED).json({
