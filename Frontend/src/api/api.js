@@ -33,11 +33,14 @@ export const getProblem = (id) => {
 }
 
 export const createProblem = (payload) => {
-  return axios.post(`${BASE}/problem/createproblem`, payload, {
+  return axios.post(`${BASE}/problem/create`, payload, {
     withCredentials: true,
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+  });
+};
+
+export const finializeProblem = (problemId) => {
+  return axios.post(`${BASE}/problem/finialize?problemId=${problemId}`, {}, {
+    withCredentials: true,
   });
 };
 

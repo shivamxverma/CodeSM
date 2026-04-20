@@ -44,7 +44,7 @@ export default function App() {
               path="/newproblem"
               element={
                 <ProtectedRoute>
-                  <RequireRole allowed={["admin", "author"]}>
+                  <RequireRole allowed={["ADMIN", "AUTHOR"]}>
                     <NewProblem />
                   </RequireRole>
                 </ProtectedRoute>
@@ -54,7 +54,7 @@ export default function App() {
             <Route
               path="/contests/create"
               element={
-                <RequireRole allowed={["admin", "author"]}>
+                <RequireRole allowed={["ADMIN", "AUTHOR"]}>
                   <ContestCreatePage />
                 </RequireRole>
               }

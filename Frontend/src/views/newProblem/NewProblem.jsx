@@ -1,8 +1,15 @@
 import React, { useMemo, useState, useEffect } from "react";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
-import { createProblem } from "@/api/api";
+import { useNavigate } from "react-router-dom";
+import { createProblem, finializeProblem } from "@/api/api";
 import { usePostHog } from "@posthog/react";
+
+import Header from "@/components/newproblem/Header";
+import Basics from "@/components/newproblem/Basics";
+import Statement from "@/components/newproblem/Statement";
+import Solution from "@/components/newproblem/Solution";
+import Editorial from "@/components/newproblem/Editorial";
+import Testcases from "@/components/newproblem/Testcases";
 
 export default function CreateProblem() {
   const navigate = useNavigate();
@@ -35,15 +42,6 @@ int main() {
   useEffect(() => {
     posthog.capture("problem_creation_started");
   }, [posthog]);
-
-  const tagsArray = useMemo(
-    () =>
-      formData.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
-    [formData.tags]
-  );
 
   const updateField = (name, value) =>
     setFormData((s) => ({ ...s, [name]: value }));
@@ -184,6 +182,10 @@ int main() {
   };
 
   const exportProblemJson = () => {
+    const tagsArray = formData.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
     const payload = {
       title: formData.title,
       difficulty: formData.difficulty,
@@ -212,43 +214,6 @@ int main() {
     a.remove();
     URL.revokeObjectURL(url);
   };
-
-  const diffLabel = useMemo(() => {
-    const d = Number(formData.difficulty);
-    if (d >= 800 && d <= 1200)
-      return {
-        label: "Easy",
-        className: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20",
-      };
-    if (d >= 1300 && d <= 1700)
-      return {
-        label: "Medium",
-        className: "bg-amber-500/15 text-amber-300 ring-amber-400/20",
-      };
-    return {
-      label: "Hard",
-      className: "bg-rose-500/15 text-rose-300 ring-rose-400/20",
-    };
-  }, [formData.difficulty]);
-
-  const Field = ({ label, hint, children }) => (
-    <div>
-      <div className="mb-1 flex items-center justify-between">
-        <label className="text-sm font-medium text-slate-200">{label}</label>
-        {hint && <span className="text-xs text-slate-400">{hint}</span>}
-      </div>
-      {children}
-    </div>
-  );
-
-  const CharCount = ({ value, max = 5000 }) => (
-    <span
-      className={`text-xs ${value.length > max ? "text-rose-300" : "text-slate-400"
-        }`}
-    >
-      {value.length}/{max}
-    </span>
-  );
 
   const isValidUrl = (s) => {
     if (!s) return true;
@@ -280,6 +245,23 @@ int main() {
     return "";
   };
 
+  const generateSlug = (title) => {
+    return title
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/[\s_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  };
+
+  const mapDifficulty = (val) => {
+    const d = Number(val);
+    if (d <= 1200) return "EASY";
+    if (d <= 1900) return "MEDIUM";
+    if (d <= 2400) return "HARD";
+    return "EXPERT";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -294,45 +276,57 @@ int main() {
       setIsSubmitting(true);
       setError("");
 
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (
-          key === "testcases" ||
-          key === "tags" ||
-          key === "sampleTestcases" // Fix: Add this line
-        ) {
-          data.append(key, JSON.stringify(value));
-        } else if (key === "solution") {
-          data.append("code", value);
-        } else {
-          data.append(key, value);
-        }
-      });
-      data.append(
-        "solutions",
-        JSON.stringify({ language: formData.language, code: formData.solution })
-      );
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        slug: generateSlug(formData.title),
+        difficulty: mapDifficulty(formData.difficulty),
+        inputFormat: formData.inputFormat,
+        outputFormat: formData.outputFormat,
+        constraints: formData.constraints,
+        timeLimit: Number(formData.timeLimit),
+        memoryLimit: Number(formData.memoryLimit),
+        editorialContent: formData.editorial,
+        editorialLink: formData.editorialLink || "",
+        solution: formData.solution,
+        tags: formData.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        testcases: formData.testcases.length,
+        sampleTestcases: formData.sampleTestcases.length,
+      };
 
-      const res = await createProblem(data);
+      const res = await createProblem(payload);
+      const { problemId, uploadUrls } = res.data.data;
 
-      const url = res?.data?.message?.uploadURL;
-      if (url) {
-        const testcasesFile = new Blob([JSON.stringify(formData.testcases)], {
-          type: "application/json",
-        });
-        const response = await axios.put(url, testcasesFile, {
-          headers: { "Content-Type": "application/json" },
-        });
-        console.log("shivam verma",response);
+      if (uploadUrls && uploadUrls.length > 0) {
+        // Upload normal testcases first, then sample testcases
+        const allTestcases = [...formData.testcases, ...formData.sampleTestcases];
+
+        await Promise.all(
+          uploadUrls.map((url, i) => {
+            const tc = allTestcases[i];
+            return axios.put(url, tc, {
+              headers: { "Content-Type": "application/json" },
+            });
+          })
+        );
       }
+
+      await finializeProblem(problemId);
+
+      posthog.capture("problem_created_success", {
+        title: formData.title,
+        problemId: problemId,
+      });
 
       navigate("/problems");
     } catch (err) {
       console.error(err);
-      const errorMsg = "Failed to create problem. Please try again.";
+      const errorMsg =
+        err.response?.data?.message ||
+        "Failed to create problem. Please try again.";
       posthog.capture("problem_created_failure", {
         title: formData.title,
-        error: err.message,
+        error: errorMsg,
       });
       setError(errorMsg);
     } finally {
@@ -343,40 +337,11 @@ int main() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-6 text-slate-100">
       <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">Create New Problem</h1>
-            <p className="mt-1 text-sm text-slate-400">
-              Fill details, or import a JSON to auto-fill everything.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">
-              Import Problem JSON
-              <input
-                type="file"
-                accept="application/json"
-                className="hidden"
-                onChange={(e) =>
-                  e.target.files?.[0] && importProblemJson(e.target.files[0])
-                }
-              />
-            </label>
-            <button
-              type="button"
-              onClick={exportProblemJson}
-              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10"
-            >
-              Export JSON
-            </button>
-            <Link
-              to="/problems"
-              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10"
-            >
-              ← Back
-            </Link>
-          </div>
-        </div>
+        <Header
+          importProblemJson={importProblemJson}
+          exportProblemJson={exportProblemJson}
+          isSubmitting={isSubmitting}
+        />
 
         {error && (
           <div className="rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-100">
@@ -385,382 +350,18 @@ int main() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <section className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Basics</h2>
-              <span
-                className={`rounded-lg px-2 py-1 text-xs ring-1 ${diffLabel.className}`}
-              >
-                {diffLabel.label} · {formData.difficulty}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Title">
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => updateField("title", e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400 focus:outline-none"
-                  placeholder="e.g., Two Sum"
-                  required
-                />
-              </Field>
-
-              <Field label="Difficulty" hint="800–3000 (CF scale)">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min={800}
-                    max={3000}
-                    step={100}
-                    value={formData.difficulty}
-                    onChange={(e) =>
-                      updateField("difficulty", Number(e.target.value))
-                    }
-                    className="w-full"
-                  />
-                  <input
-                    type="number"
-                    min={800}
-                    max={3000}
-                    step={100}
-                    value={formData.difficulty}
-                    onChange={(e) =>
-                      updateField("difficulty", Number(e.target.value))
-                    }
-                    className="w-24 rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
-                  />
-                </div>
-              </Field>
-
-              <Field label="Memory Limit (MB)">
-                <input
-                  type="number"
-                  value={formData.memoryLimit}
-                  onChange={(e) => updateField("memoryLimit", e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
-                  placeholder="256"
-                  required
-                />
-              </Field>
-
-              <Field label="Time Limit (s)">
-                <input
-                  type="number"
-                  value={formData.timeLimit}
-                  onChange={(e) => updateField("timeLimit", e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
-                  placeholder="1"
-                  required
-                />
-              </Field>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6">
-            <h2 className="mb-4 text-lg font-semibold">Statement</h2>
-            <div className="grid grid-cols-1 gap-4">
-              <Field
-                label="Description"
-                hint={<CharCount value={formData.description} max={8000} />}
-              >
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => updateField("description", e.target.value)}
-                  rows={6}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 font-mono text-sm text-slate-200 focus:border-indigo-400 focus:outline-none"
-                  placeholder="Explain the problem, input/output, and what is expected."
-                  required
-                />
-              </Field>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Input Format">
-                  <textarea
-                    value={formData.inputFormat}
-                    onChange={(e) => updateField("inputFormat", e.target.value)}
-                    rows={4}
-                    className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 font-mono text-sm text-slate-200 focus:border-indigo-400 focus:outline-none"
-                    placeholder={"n\na1 a2 ... an"}
-                    required
-                  />
-                </Field>
-                <Field label="Output Format">
-                  <textarea
-                    value={formData.outputFormat}
-                    onChange={(e) =>
-                      updateField("outputFormat", e.target.value)
-                    }
-                    rows={4}
-                    className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 font-mono text-sm text-slate-200 focus:border-indigo-400 focus:outline-none"
-                    placeholder={"single integer"}
-                    required
-                  />
-                </Field>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4">
-                <Field label="Sample Testcases">
-                  {formData.sampleTestcases.map((sample, idx) => (
-                    <div key={idx} className="mb-2 flex gap-2">
-                      <textarea
-                        value={sample.input}
-                        onChange={(e) => {
-                          const next = [...formData.sampleTestcases];
-                          next[idx].input = e.target.value;
-                          updateField("sampleTestcases", next);
-                        }}
-                        rows={2}
-                        className="w-1/2 rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 font-mono text-sm text-slate-200 focus:border-indigo-400 focus:outline-none"
-                        placeholder="Sample Input"
-                        required
-                      />
-                      <textarea
-                        value={sample.output}
-                        onChange={(e) => {
-                          const next = [...formData.sampleTestcases];
-                          next[idx].output = e.target.value;
-                          updateField("sampleTestcases", next);
-                        }}
-                        rows={2}
-                        className="w-1/2 rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 font-mono text-sm text-slate-200 focus:border-indigo-400 focus:outline-none"
-                        placeholder="Sample Output"
-                        required
-                      />
-                      {formData.sampleTestcases.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            updateField(
-                              "sampleTestcases",
-                              formData.sampleTestcases.filter(
-                                (_, i) => i !== idx
-                              )
-                            );
-                          }}
-                          className="ml-2 rounded-lg bg-rose-500/20 px-2 py-1 text-xs text-rose-100 hover:bg-rose-500/30"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateField("sampleTestcases", [
-                        ...formData.sampleTestcases,
-                        { input: "", output: "" },
-                      ])
-                    }
-                    className="mt-2 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500"
-                  >
-                    + Add Sample
-                  </button>
-                </Field>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field
-                  label="Constraints"
-                  hint={<CharCount value={formData.constraints} max={2000} />}
-                >
-                  <textarea
-                    value={formData.constraints}
-                    onChange={(e) => updateField("constraints", e.target.value)}
-                    rows={3}
-                    className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 font-mono text-sm text-slate-200 focus:border-indigo-400 focus:outline-none"
-                    placeholder={"1 ≤ n ≤ 2e5\n-1e9 ≤ ai ≤ 1e9"}
-                    required
-                  />
-                </Field>
-
-                <Field
-                  label="Tags (comma separated)"
-                  hint={`${tagsArray.length} tag${tagsArray.length !== 1 ? "s" : ""
-                    }`}
-                >
-                  <input
-                    type="text"
-                    placeholder="math, binary search, dp"
-                    value={formData.tags}
-                    onChange={(e) => updateField("tags", e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
-                    required
-                  />
-                  {tagsArray.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {tagsArray.map((t) => (
-                        <span
-                          key={t}
-                          className="rounded-lg bg-white/5 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-300 ring-1 ring-white/10"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </Field>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Author Solution</h2>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400">Language</span>
-                <select
-                  value={formData.language}
-                  onChange={(e) => updateField("language", e.target.value)}
-                  className="rounded-lg border border-white/10 bg-slate-950/40 px-2 py-1 text-sm focus:border-indigo-400 focus:outline-none"
-                >
-                  <option value="cpp">C++</option>
-                  <option value="javascript">JavaScript</option>
-                  <option value="python">Python</option>
-                </select>
-              </div>
-            </div>
-            <textarea
-              value={formData.solution}
-              onChange={(e) => updateField("solution", e.target.value)}
-              rows={16}
-              spellCheck={false}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-3 font-mono text-sm text-slate-200 focus:border-indigo-400 focus:outline-none"
-              placeholder="// Paste your reference solution here"
-            />
-            <p className="mt-2 text-xs text-slate-400">
-              Saved as {"{ language, solution }"}.
-            </p>
-          </section>
-
-          <section className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6">
-            <h2 className="mb-4 text-lg font-semibold">Editorial (optional)</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
-                label="Editorial (Markdown supported)"
-                hint={
-                  <CharCount value={formData.editorial} max={20000} />
-                }
-              >
-                <textarea
-                  value={formData.editorial}
-                  onChange={(e) => updateField("editorial", e.target.value)}
-                  rows={10}
-                  spellCheck={false}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-3 font-mono text-sm text-slate-200 focus:border-indigo-400 focus:outline-none"
-                  placeholder={
-                    "# Approach\nExplain your intuition, algorithm, and complexity.\n\n## Steps\n1. ..."
-                  }
-                />
-              </Field>
-              <Field label="Editorial Link (URL)">
-                <input
-                  type="url"
-                  value={formData.editorialLink}
-                  onChange={(e) =>
-                    updateField("editorialLink", e.target.value)
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
-                  placeholder="https://your-blog-or-notion-page.com/post"
-                />
-                {formData.editorialLink && !isValidUrl(formData.editorialLink) && (
-                  <p className="mt-1 text-xs text-rose-300">Invalid URL</p>
-                )}
-              </Field>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6">
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-semibold">Testcases</h2>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={createTestcaseFromSample}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10"
-                >
-                  + From Sample
-                </button>
-                <label className="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">
-                  Import Testcases JSON
-                  <input
-                    type="file"
-                    accept="application/json"
-                    className="hidden"
-                    onChange={(e) =>
-                      e.target.files?.[0] &&
-                      importTestcasesJson(e.target.files[0])
-                    }
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={addTestcase}
-                  className="rounded-xl bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500"
-                >
-                  + Add Testcase
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              {formData.testcases.map((tc, idx) => (
-                <div
-                  key={idx}
-                  className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.03] p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="rounded-lg bg-white/10 px-2 py-1 text-xs text-slate-300 ring-1 ring-white/10">
-                      Testcase #{idx + 1}
-                    </span>
-                    {formData.testcases.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeTestcase(idx)}
-                        className="rounded-lg bg-rose-500/20 px-2 py-1 text-xs text-rose-100 hover:bg-rose-500/30"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-300">
-                        Input
-                      </label>
-                      <textarea
-                        value={tc.input}
-                        onChange={(e) =>
-                          updateTestcase(idx, "input", e.target.value)
-                        }
-                        rows={4}
-                        className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 font-mono text-sm text-slate-200 focus:border-indigo-400 focus:outline-none"
-                        placeholder={"n\na1 a2 ... an"}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-300">
-                        Output
-                      </label>
-                      <textarea
-                        value={tc.output}
-                        onChange={(e) =>
-                          updateTestcase(idx, "output", e.target.value)
-                        }
-                        rows={4}
-                        className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 font-mono text-sm text-slate-200 focus:border-indigo-400 focus:outline-none"
-                        placeholder={"answer"}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+          <Basics formData={formData} updateField={updateField} />
+          <Statement formData={formData} updateField={updateField} />
+          <Solution formData={formData} updateField={updateField} />
+          <Editorial formData={formData} updateField={updateField} />
+          <Testcases
+            testcases={formData.testcases}
+            addTestcase={addTestcase}
+            removeTestcase={removeTestcase}
+            updateTestcase={updateTestcase}
+            createTestcaseFromSample={createTestcaseFromSample}
+            importTestcasesJson={importTestcasesJson}
+          />
 
           <div className="sticky bottom-4 z-10">
             <div className="mx-auto max-w-6xl rounded-2xl border border-white/10 bg-slate-900/80 p-3 shadow-2xl backdrop-blur">
@@ -771,10 +372,11 @@ int main() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`w-full rounded-xl px-5 py-2 text-sm font-semibold text-white sm:w-auto ${isSubmitting
-                    ? "cursor-not-allowed bg-indigo-400"
-                    : "bg-indigo-600 hover:bg-indigo-500"
-                    }`}
+                  className={`w-full rounded-xl px-5 py-2 text-sm font-semibold text-white sm:w-auto ${
+                    isSubmitting
+                      ? "cursor-not-allowed bg-indigo-400"
+                      : "bg-indigo-600 hover:bg-indigo-500"
+                  }`}
                 >
                   {isSubmitting ? "Submitting…" : "Submit Problem"}
                 </button>

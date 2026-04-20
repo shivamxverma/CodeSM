@@ -1,7 +1,7 @@
 import { ICreateProblemRequest, ICreateProblemResponse, IFinalizeProblemResponse } from "./problem-types";
 import { verifyProblemCreationPermission } from './problem-helper';
 import { db } from '../../loaders/postgres';
-import { problem, editorial, tag, problemTags,testcase } from '../../db/schema';
+import { problem, editorial, tag, problemTags,testcases } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import ApiError from "../../utils/ApiError";
 import httpStatus from "http-status";
@@ -106,7 +106,7 @@ export const handleCreateProblem = async (
 
             // D. Bulk insert all testcase records
             if (allTestData.length > 0) {
-                await tx.insert(testcase).values(
+                await tx.insert(testcases).values(
                     allTestData.map(td => ({
                         problemId: problemId,
                         order: td.order,
@@ -153,17 +153,17 @@ export const handleFinializeProblem = async (
         }
 
         // 2. Fetch testcases
-        const testcases = await db
+        const testcasesResult = await db
             .select()
-            .from(testcase)
-            .where(eq(testcase.problemId, problemId));
+            .from(testcases)
+            .where(eq(testcases.problemId, problemId));
 
-        if (testcases.length === 0) {
+        if (testcasesResult.length === 0) {
             throw new ApiError('No testcases found. Please upload testcases before finalizing.', httpStatus.BAD_REQUEST);
         }
 
-        const sampleTestcases = testcases.filter((tc) => tc.isSample);
-        const hiddenTestcases = testcases.filter((tc) => !tc.isSample);
+        const sampleTestcases = testcasesResult.filter((tc) => tc.isSample);
+        const hiddenTestcases = testcasesResult.filter((tc) => !tc.isSample);
 
         if (sampleTestcases.length === 0) {
             throw new ApiError('At least one sample testcase is required.', httpStatus.BAD_REQUEST);
@@ -174,7 +174,7 @@ export const handleFinializeProblem = async (
         }
 
         // 3. Parallel S3 Validation
-        await Promise.all(testcases.map(async (tc) => {
+        await Promise.all(testcasesResult.map(async (tc) => {
             const response = await fetchTestcasesFromS3(tc.s3Key);
             if (!response) {
                 throw new ApiError(`Testcase file not found in storage: ${tc.s3Key}`, httpStatus.BAD_REQUEST);

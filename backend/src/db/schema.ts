@@ -235,7 +235,7 @@ export const problemTags = pgTable(
 // Testcases
 // ─────────────────────────────────────────────
 
-export const testcase = pgTable(
+export const testcases = pgTable(
     'testcase',
     {
         id: text('id').primaryKey().$defaultFn(() => createId()),
@@ -358,7 +358,7 @@ export const executionResult = pgTable(
     {
         id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
         submissionId: text('submission_id').notNull().references(() => submission.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-        testcaseId: text('testcase_id').notNull().references(() => testcase.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+        testcaseId: text('testcase_id').notNull().references(() => testcases.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
         verdict: verdictEnum('verdict').notNull().default('PENDING'),
         executionTimeMs: integer('execution_time_ms'),
         memoryUsedKb: integer('memory_used_kb'),

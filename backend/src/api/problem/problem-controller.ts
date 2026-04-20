@@ -17,7 +17,8 @@ export const createProblem = asyncHandler(async (req: jwtReq, res: Response) => 
 })
 
 export const finializeProblem = asyncHandler(async (req: jwtReq, res: Response) => {
-    const response = await handleFinializeProblem(req.user.id, req.body);
+    const problemId = req.query.problemId as string;
+    const response = await handleFinializeProblem(req.user.id, problemId);
     return res.status(200).json({
         status: 'success',
         message: 'Problem finalized successfully',
