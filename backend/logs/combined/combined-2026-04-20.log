@@ -107,3 +107,16 @@
 {"level":"info","message":"🛡️  Express loaded  🛡️","timestamp":"2026-04-20 18:33:00"}
 {"level":"info","message":"🛡️  All modules loaded!  🛡️","timestamp":"2026-04-20 18:33:00"}
 {"level":"info","message":"🛡️ Server listening on port: 8000 🛡️","timestamp":"2026-04-20 18:33:00"}
+{"level":"info","message":"🛡️  Database connection established successfully  🛡️","timestamp":"2026-04-20 21:53:22"}
+{"level":"info","message":"🛡️  Database loaded  🛡️","timestamp":"2026-04-20 21:53:22"}
+{"level":"info","message":"🛡️  Google OAuth loaded  🛡️","timestamp":"2026-04-20 21:53:22"}
+{"level":"info","message":"🛡️  Express loaded  🛡️","timestamp":"2026-04-20 21:53:22"}
+{"level":"info","message":"🛡️  All modules loaded!  🛡️","timestamp":"2026-04-20 21:53:22"}
+{"level":"info","message":"🛡️ Server listening on port: 8000 🛡️","timestamp":"2026-04-20 21:53:22"}
+{"level":"info","message":"🛡️  Database connection established successfully  🛡️","timestamp":"2026-04-20 21:53:32"}
+{"level":"info","message":"🛡️  Database loaded  🛡️","timestamp":"2026-04-20 21:53:32"}
+{"level":"info","message":"🛡️  Google OAuth loaded  🛡️","timestamp":"2026-04-20 21:53:32"}
+{"level":"info","message":"🛡️  Express loaded  🛡️","timestamp":"2026-04-20 21:53:32"}
+{"level":"info","message":"🛡️  All modules loaded!  🛡️","timestamp":"2026-04-20 21:53:32"}
+{"level":"info","message":"🛡️ Server listening on port: 8000 🛡️","timestamp":"2026-04-20 21:53:32"}
+{"level":"info","message":"SIGINT received, closing server gracefully...","timestamp":"2026-04-20 22:19:59"}

@@ -82,8 +82,9 @@ export const handleCreateProblem = async (
 
             // C. Associate Tags (Bulk associate after ensuring tags exist)
             if (input.tags && input.tags.length > 0) {
+                const uniqueTagNames = [...new Set(input.tags)];
                 const tagIds: string[] = [];
-                for (const tagName of input.tags) {
+                for (const tagName of uniqueTagNames) {
                     const insertedTag = await tx.insert(tag)
                         .values({ name: tagName })
                         .onConflictDoUpdate({ 
@@ -100,7 +101,7 @@ export const handleCreateProblem = async (
                             problemId: problemId,
                             tagId: tagId,
                         }))
-                    );
+                    ).onConflictDoNothing();
                 }
             }
 
