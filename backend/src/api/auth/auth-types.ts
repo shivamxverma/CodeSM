@@ -9,6 +9,22 @@ export interface EmailPasswordLoginRequest {
     password : string
 }
 
+export interface GoogleOauthRequest {
+    isVerify: boolean;
+    code?: string;
+    credential?: string;
+}
+
+export interface GoogleAuthResponse {
+    isNewUser: boolean;
+    userId: string;
+    accessToken: string;
+    refreshToken: string;
+    email?: string | null;
+    username?: string | null;
+    role?: string | null;
+}
+
 export interface RegisterResponse {
     success: boolean;
     message: string;
@@ -24,4 +40,7 @@ export interface EmailPasswordAuthResponse {
   userId: string;
   accessToken: string;
   refreshToken: string;
+  email?: string | null;
+  username?: string | null;
+  role?: string | null;
 }

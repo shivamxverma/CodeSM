@@ -6,9 +6,9 @@
     "auditLog": "logs/combined/.0249dc91aa5f529d3b84500f8c29e94ef13aaf30-audit.json",
     "files": [
         {
-            "date": 1774937474801,
-            "name": "logs/combined/combined-2026-03-31.log",
-            "hash": "5a03e24be0ef79442c7dd9b2cf711a61f1e0d257ae55b7f649d7285f63aec142"
+            "date": 1776653116573,
+            "name": "logs/combined/combined-2026-04-20.log",
+            "hash": "6b874fa66dbd71c2f85d0b1224a6c6a777e32b6814ecf902e6eb2d4979aceed7"
         }
     ],
     "hashType": "sha256"

@@ -56,6 +56,9 @@ importers:
       express:
         specifier: ^5.1.0
         version: 5.2.1
+      google-auth-library:
+        specifier: ^10.6.2
+        version: 10.6.2
       http-status:
         specifier: ^2.1.0
         version: 2.1.0
@@ -86,6 +89,9 @@ importers:
       rate-limiter-flexible:
         specifier: ^7.2.0
         version: 7.4.0
+      unique-username-generator:
+        specifier: ^1.5.1
+        version: 1.5.1
       uuid:
         specifier: ^11.1.0
         version: 11.1.0
@@ -2402,6 +2408,10 @@ packages:
 
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
+
+  unique-username-generator@1.5.1:
+    resolution: {integrity: sha512-Q0pSKPyij4L7Tm6Bo3XsWeFG9qbyWTtwb3jTN+XgGhCFdlvQn6Fj0DCfYElw0kp/Xp7Jv1Q+CL+aA8S07RMChA==}
+    hasBin: true
 
   unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
@@ -4981,6 +4991,8 @@ snapshots:
   undefsafe@2.0.5: {}
 
   undici-types@7.16.0: {}
+
+  unique-username-generator@1.5.1: {}
 
   unpipe@1.0.0: {}
 

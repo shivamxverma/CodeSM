@@ -1,4 +1,4 @@
-import { EmailPasswordRegisterRequest, RegisterResponse, EmailPasswordLoginRequest } from './auth-types';
+import { EmailPasswordRegisterRequest, RegisterResponse, EmailPasswordLoginRequest, GoogleAuthResponse, GoogleOauthRequest } from './auth-types';
 import { db } from '../../loaders/postgres';
 import {
     authMethod as authMethodTable,
@@ -6,7 +6,7 @@ import {
 } from '../../db/schema';
 import { eq,and } from 'drizzle-orm';
 import ApiError from 'src/utils/ApiError';
-import { hashPassword, comparePassword } from './auth-helper';
+import { hashPassword, comparePassword,handleNewOauthUser, verifyGoogleCredentials } from './auth-helper';
 import httpStatus from 'http-status';
 import { v4 as uuidv4 } from 'uuid';
 import { sendVerificationEmail } from '../emails/email-service';
@@ -152,6 +152,9 @@ export const handleEmailPasswordLogin = async(data : EmailPasswordLoginRequest) 
         const results = await db
             .select({
                 id : userTable.id,
+                email : userTable.email,
+                username : userTable.username,
+                role : userTable.role,
                 isEmailVerified : userTable.isEmailVerified,
                 passwordHash : authMethodTable.passwordHash
             })
@@ -202,6 +205,9 @@ export const handleEmailPasswordLogin = async(data : EmailPasswordLoginRequest) 
             userId: result.id,
             accessToken: accessToken!,
             refreshToken: refreshToken!,
+            email: result.email,
+            username: result.username,
+            role: result.role,
         };
     } catch(error) {
         if (error instanceof ApiError) throw error;
@@ -212,3 +218,89 @@ export const handleEmailPasswordLogin = async(data : EmailPasswordLoginRequest) 
         );
     }
 }
+
+export const handleGoogleOauth = async (data: {
+  isVerify: boolean;
+  code: string;
+  credential: string;
+}): Promise<GoogleAuthResponse> => {
+  const { isVerify, code, credential } = data;
+
+  const { credentialPayload, oidcToken } = await verifyGoogleCredentials(
+    code,
+    credential,
+  );
+
+  let existingAuth;
+
+  try {
+    existingAuth = await db
+      .select()
+      .from(authMethodTable)
+      .where(eq(authMethodTable.googleSub, credentialPayload.sub))
+      .innerJoin(userTable, eq(authMethodTable.userId, userTable.id));
+  } catch (error) {
+    logger.error('Database query error in handleGoogleOauth:', error);
+    throw new ApiError(
+      'Database connection error. Please try again later.',
+      httpStatus.SERVICE_UNAVAILABLE,
+    );
+  }
+
+  let userData: typeof userTable.$inferSelect;
+  let isNewUser = false;
+
+  if (existingAuth.length > 0) {
+    // Existing user - login (skip invite code)
+    userData = existingAuth[0].user;
+    isNewUser = false;
+  } else {
+    // New user - create account
+    try {
+      userData = await handleNewOauthUser(credentialPayload, oidcToken);
+      isNewUser = true;
+    } catch (error) {
+      logger.error('Database error creating new user:', error);
+      throw new ApiError(
+        'Failed to create user account. Please try again later.',
+        httpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+  }
+
+  const tokenPayload = {
+    userId: userData.id,
+    lastLogin: new Date(),
+  };
+
+  const { accessToken, refreshToken } = generateTokenPair(tokenPayload);
+
+  if (isNewUser && userData.email) {
+    await sendOnboardingWelcomeEmail(
+      userData.email,
+      {
+        name: userData.displayName || 'User',
+        heroImageUrl: userData.avatarUrl || undefined,
+      }
+    ).catch((error) => {
+      logger.error('Failed to send onboarding email:', error);
+    });
+  }
+
+  logger.info(
+    'User logged in:',
+    userData.id,
+    accessToken,
+    refreshToken
+  );
+
+  return {
+    isNewUser,
+    userId: userData.id,
+    accessToken: accessToken!,
+    refreshToken: refreshToken!,
+    email: userData.email,
+    username: userData.username,
+    role: userData.role,
+  };
+};

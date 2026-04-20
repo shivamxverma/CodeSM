@@ -5,6 +5,8 @@ import { FcGoogle } from "react-icons/fc";
 import { login as apiLogin } from "@/api/api";
 import { useAuth } from "@/hooks/AuthContext";
 import AuthSplitLayout from "../page";
+import GoogleAuth from "@/components/auth/google-auth";
+import { LOCAL_STORAGE_KEY } from "@/utils/local-storage-key";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(8, "Password must be at least 8 characters long");
@@ -61,16 +63,20 @@ function LoginCard() {
 
       const response = await apiLogin(payload);
 
-      const token = response.data.message.accessToken || response.data.accessToken;
+      if (response.data.success) {
+        localStorage.setItem(LOCAL_STORAGE_KEY.IS_LOGGED_IN, "true");
+        // The backend now returns user info in response.data.data (minus tokens which are in cookies)
+        // If it also returns a token in the body (fallback), we pass it.
+        const userData = response.data.data;
+        const token = response.data.accessToken || response.data.message?.accessToken;
+        
+        login(token || userData);
+        setSuccess("Login successful! Redirecting...");
 
-      if (!token) throw new Error("No access token received");
-
-      login(token);
-      setSuccess("Login successful! Redirecting...");
-
-      setTimeout(() => {
-        navigate("/");
-      }, 500);
+        setTimeout(() => {
+          navigate("/");
+        }, 800);
+      }
     } catch (err) {
       console.error(err);
       const errorMsg = err.response?.data?.message || err.message || "Invalid credentials";
@@ -80,10 +86,6 @@ function LoginCard() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    setGoogleLoading(true);
-    window.location.href = `${API_BASE}/users/auth/google`;
-  };
 
   const inputClass =
     "mt-1.5 w-full px-3.5 py-3 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition";
@@ -186,17 +188,12 @@ function LoginCard() {
             </div>
           </div>
 
-          <button
-            type="button"
-            disabled={googleLoading || loading}
-            onClick={handleGoogleLogin}
-            className={`w-full py-3 flex items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition ${
-              googleLoading || loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            <FcGoogle size={22} />
-            {googleLoading ? "Redirecting…" : "Google"}
-          </button>
+          <GoogleAuth
+            className="w-full"
+            label="Google"
+            onLoadingChange={setGoogleLoading}
+            disabled={loading}
+          />
 
           <p className="text-sm text-center text-gray-500 mt-8">
             Don&apos;t have an account?{" "}

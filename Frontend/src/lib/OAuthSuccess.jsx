@@ -18,9 +18,11 @@ function OAuthSuccess() {
             login(token);        // stores in localStorage + updates context
             navigate("/", { replace: true });
         } else {
-            navigate("/login", { replace: true });
+            // No token in URL, likely in cookie
+            // refreshUser will fetch details from /me
+            navigate("/", { replace: true });
         }
-    }, []); // run once on mount
+    }, [login, navigate, searchParams]); // run once on mount
 
     return (
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>

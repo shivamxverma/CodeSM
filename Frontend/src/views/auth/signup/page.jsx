@@ -4,6 +4,7 @@ import z from "zod";
 import { signup } from "@/api/api";
 import { FcGoogle } from "react-icons/fc";
 import AuthSplitLayout from "../page";
+import { GoogleAuth } from "@/components/auth/google-auth";
 
 const formSchema = z
   .object({
@@ -116,10 +117,6 @@ function SignUpCard() {
     }
   };
 
-  const handleGoogleSignUp = () => {
-    setGoogleLoading(true);
-    window.location.href = `${API_BASE}/users/auth/google`;
-  };
 
   return (
     <AuthSplitLayout>
@@ -249,17 +246,12 @@ function SignUpCard() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleGoogleSignUp}
-            disabled={googleLoading || loading}
-            className={`w-full py-3 flex items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition ${
-              googleLoading || loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            <FcGoogle size={22} />
-            {googleLoading ? "Redirecting…" : "Google"}
-          </button>
+          <GoogleAuth
+            className="w-full"
+            label="Google"
+            onLoadingChange={setGoogleLoading}
+            disabled={loading}
+          />
 
           <p className="text-sm text-center text-gray-500 mt-8">
             Already have an account?{" "}

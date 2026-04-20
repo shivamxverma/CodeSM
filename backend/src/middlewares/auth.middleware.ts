@@ -2,9 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import ApiError from "../utils/ApiError";
 import asyncHandler from "../utils/asyncHandler";
-import User from "../models/user.model.js";
+import { db } from "../loaders/postgres";
+import { user as userTable } from "../db/schema";
+import { eq } from "drizzle-orm";
 
-type AccessTokenPayload = JwtPayload & { _id?: string };
+type AccessTokenPayload = JwtPayload & { userId?: string };
 
 export const verifyJWT = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -12,7 +14,7 @@ export const verifyJWT = asyncHandler(
 
       const token = req.headers.authorization?.startsWith("Bearer ")
         ? req.headers.authorization.split(" ")[1]
-        : (req as any).cookies?.accessToken;
+        : (req as any).cookies?.token;
 
       if (!token) {
         throw new ApiError("Unauthorized Request: No token provided", 401);
@@ -24,18 +26,22 @@ export const verifyJWT = asyncHandler(
       }
 
       const decodedToken = jwt.verify(token, secret) as AccessTokenPayload;
-      const userId = decodedToken?._id;
+      const userId = decodedToken?.userId;
       if (!userId) {
         throw new ApiError("Invalid Access Token", 401);
       }
 
-      const user = await User.findById(userId).select(
-        "-password -refreshToken"
-      );
+      const users = await db
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, userId))
+        .limit(1);
 
-      if (!user) {
+      if (users.length === 0) {
         throw new ApiError("Invalid Access Token", 401);
       }
+
+      const user = users[0];
 
       (req as any).user = user;
       next();
