@@ -1,5 +1,5 @@
 {
-  "id": "3229768d-ad32-496a-aa1f-6f9dc9f50f2e",
+  "id": "ba3dfd06-69b4-41fe-aacd-46c6ea903a29",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -372,10 +372,10 @@
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
-        "execution_result_testcase_id_testcases_id_fk": {
-          "name": "execution_result_testcase_id_testcases_id_fk",
+        "execution_result_testcase_id_testcase_id_fk": {
+          "name": "execution_result_testcase_id_testcase_id_fk",
           "tableFrom": "execution_result",
-          "tableTo": "testcases",
+          "tableTo": "testcase",
           "columnsFrom": [
             "testcase_id"
           ],
@@ -392,8 +392,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.hints": {
-      "name": "hints",
+    "public.hint": {
+      "name": "hint",
       "schema": "",
       "columns": {
         "id": {
@@ -460,9 +460,9 @@
         }
       },
       "foreignKeys": {
-        "hints_problem_id_problem_id_fk": {
-          "name": "hints_problem_id_problem_id_fk",
-          "tableFrom": "hints",
+        "hint_problem_id_problem_id_fk": {
+          "name": "hint_problem_id_problem_id_fk",
+          "tableFrom": "hint",
           "tableTo": "problem",
           "columnsFrom": [
             "problem_id"
@@ -496,17 +496,22 @@
           "primaryKey": false,
           "notNull": true
         },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "difficulty": {
           "name": "difficulty",
           "type": "Difficulty",
           "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'EASY'"
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -516,49 +521,58 @@
           "primaryKey": false,
           "notNull": true
         },
-        "is_published": {
-          "name": "is_published",
-          "type": "boolean",
+        "input_format": {
+          "name": "input_format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "output_format": {
+          "name": "output_format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "constraints": {
+          "name": "constraints",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "ProblemStatus",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": false
+          "default": "'DRAFT'"
+        },
+        "time_limit": {
+          "name": "time_limit",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "memory_limit": {
+          "name": "memory_limit",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp(3)",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "(now() AT TIME ZONE 'UTC'::text)"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "(now() AT TIME ZONE 'UTC'::text)"
+          "default": "now()"
         }
       },
       "indexes": {
-        "problem_author_id_idx": {
-          "name": "problem_author_id_idx",
+        "problem_author_idx": {
+          "name": "problem_author_idx",
           "columns": [
             {
               "expression": "author_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "problem_title_idx": {
-          "name": "problem_title_idx",
-          "columns": [
-            {
-              "expression": "title",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -583,21 +597,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "problem_created_at_idx": {
-          "name": "problem_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -612,7 +611,7 @@
             "id"
           ],
           "onDelete": "restrict",
-          "onUpdate": "cascade"
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -621,8 +620,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.problem_tags": {
-      "name": "problem_tags",
+    "public.problem_tag": {
+      "name": "problem_tag",
       "schema": "",
       "columns": {
         "problem_id": {
@@ -640,9 +639,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "problem_tags_problem_id_problem_id_fk": {
-          "name": "problem_tags_problem_id_problem_id_fk",
-          "tableFrom": "problem_tags",
+        "problem_tag_problem_id_problem_id_fk": {
+          "name": "problem_tag_problem_id_problem_id_fk",
+          "tableFrom": "problem_tag",
           "tableTo": "problem",
           "columnsFrom": [
             "problem_id"
@@ -653,9 +652,9 @@
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
-        "problem_tags_tag_id_tag_id_fk": {
-          "name": "problem_tags_tag_id_tag_id_fk",
-          "tableFrom": "problem_tags",
+        "problem_tag_tag_id_tag_id_fk": {
+          "name": "problem_tag_tag_id_tag_id_fk",
+          "tableFrom": "problem_tag",
           "tableTo": "tag",
           "columnsFrom": [
             "tag_id"
@@ -668,8 +667,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "problem_tags_problem_id_tag_id_pk": {
-          "name": "problem_tags_problem_id_tag_id_pk",
+        "problem_tag_problem_id_tag_id_pk": {
+          "name": "problem_tag_problem_id_tag_id_pk",
           "columns": [
             "problem_id",
             "tag_id"
@@ -791,6 +790,41 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'PENDING'"
+        },
+        "total_testcases": {
+          "name": "total_testcases",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "passed_testcases": {
+          "name": "passed_testcases",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "failed_testcases": {
+          "name": "failed_testcases",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "time_taken": {
+          "name": "time_taken",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "memory_taken": {
+          "name": "memory_taken",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -965,8 +999,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.testcases": {
-      "name": "testcases",
+    "public.testcase": {
+      "name": "testcase",
       "schema": "",
       "columns": {
         "id": {
@@ -981,17 +1015,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "input": {
-          "name": "input",
+        "s3_key": {
+          "name": "s3_key",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
-        },
-        "output": {
-          "name": "output",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "is_sample": {
           "name": "is_sample",
@@ -1000,24 +1028,38 @@
           "notNull": true,
           "default": false
         },
+        "is_hidden": {
+          "name": "is_hidden",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "order": {
+          "name": "order",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "batch": {
+          "name": "batch",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp(3)",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "(now() AT TIME ZONE 'UTC'::text)"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "(now() AT TIME ZONE 'UTC'::text)"
+          "default": "now()"
         }
       },
       "indexes": {
-        "testcases_problem_id_idx": {
-          "name": "testcases_problem_id_idx",
+        "testcase_problem_idx": {
+          "name": "testcase_problem_idx",
           "columns": [
             {
               "expression": "problem_id",
@@ -1031,8 +1073,8 @@
           "method": "btree",
           "with": {}
         },
-        "testcases_is_sample_idx": {
-          "name": "testcases_is_sample_idx",
+        "testcase_sample_idx": {
+          "name": "testcase_sample_idx",
           "columns": [
             {
               "expression": "is_sample",
@@ -1048,9 +1090,9 @@
         }
       },
       "foreignKeys": {
-        "testcases_problem_id_problem_id_fk": {
-          "name": "testcases_problem_id_problem_id_fk",
-          "tableFrom": "testcases",
+        "testcase_problem_id_problem_id_fk": {
+          "name": "testcase_problem_id_problem_id_fk",
+          "tableFrom": "testcase",
           "tableTo": "problem",
           "columnsFrom": [
             "problem_id"
@@ -1059,7 +1101,7 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "cascade"
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1231,6 +1273,17 @@
         "JAVASCRIPT",
         "C",
         "CSHARP"
+      ]
+    },
+    "public.ProblemStatus": {
+      "name": "ProblemStatus",
+      "schema": "public",
+      "values": [
+        "DRAFT",
+        "DONE",
+        "PENDING",
+        "APPROVED",
+        "REJECTED"
       ]
     },
     "public.role": {

@@ -187,6 +187,7 @@ export const problem = pgTable(
         memoryLimit: integer('memory_limit').notNull(),
 
         createdAt: timestamp('created_at').default(sql`now()`).notNull(),
+        updatedAt: timestamp('updated_at').default(sql`now()`).notNull(),
     },
     (t) => [
         index('problem_author_idx').on(t.authorId),
@@ -219,8 +220,8 @@ export const tag = pgTable(
 // Problem Tags (junction table)
 // ─────────────────────────────────────────────
 
-export const problemTags = pgTable(
-    'problem_tags',
+export const problemTag = pgTable(
+    'problem_tag',
     {
         problemId: text('problem_id').notNull().references(() => problem.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
         tagId: text('tag_id').notNull().references(() => tag.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -235,7 +236,7 @@ export const problemTags = pgTable(
 // Testcases
 // ─────────────────────────────────────────────
 
-export const testcases = pgTable(
+export const testcase = pgTable(
     'testcase',
     {
         id: text('id').primaryKey().$defaultFn(() => createId()),
@@ -266,8 +267,8 @@ export const testcases = pgTable(
 // Hints
 // ─────────────────────────────────────────────
 
-export const hints = pgTable(
-    'hints',
+export const hint = pgTable(
+    'hint',
     {
         id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
         problemId: text('problem_id').notNull().references(() => problem.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -296,9 +297,9 @@ export const editorial = pgTable(
     {
         id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
         problemId: text('problem_id').notNull().references(() => problem.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-        content: text('content').notNull(),
+        contentS3Key: text('content_s3_key').notNull(),
         editorialLink: text('editorial_link'),
-        solution: text('solution'),
+        solutionS3Key: text('solution_s3_key').notNull(),
         createdAt: timestamp('created_at', { precision: 3, mode: 'string' })
             .default(sql`(now() AT TIME ZONE 'UTC'::text)`)
             .notNull(),
@@ -358,7 +359,6 @@ export const executionResult = pgTable(
     {
         id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
         submissionId: text('submission_id').notNull().references(() => submission.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-        testcaseId: text('testcase_id').notNull().references(() => testcases.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
         verdict: verdictEnum('verdict').notNull().default('PENDING'),
         executionTimeMs: integer('execution_time_ms'),
         memoryUsedKb: integer('memory_used_kb'),
@@ -375,7 +375,6 @@ export const executionResult = pgTable(
         // FIX: Added composite index — verdict is almost always queried alongside submissionId
         index('execution_result_submission_verdict_idx').using('btree', table.submissionId.asc(), table.verdict.asc()),
         index('execution_result_submission_id_idx').using('btree', table.submissionId.asc().nullsLast()),
-        index('execution_result_testcase_id_idx').using('btree', table.testcaseId.asc().nullsLast()),
         // FIX: Removed execution_result_created_at_idx and execution_result_updated_at_idx —
         // not queried by time in any typical judge workflow.
     ],

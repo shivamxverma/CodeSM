@@ -1,5 +1,10 @@
 import * as yup from 'yup';
 
+export const getProblemsSchema = yup.object({
+    limit: yup.number().required("Limit is required"),
+    cursor: yup.string(),
+});
+
 export const createProblemSchema = yup.object({
     title: yup.string().required("Title is required"),
     description: yup.string().required("Description is required"),

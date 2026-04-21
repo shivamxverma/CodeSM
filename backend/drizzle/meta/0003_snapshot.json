@@ -1,6 +1,6 @@
 {
-  "id": "b907180e-aec4-420d-b1c4-69445c628163",
-  "prevId": "ba3dfd06-69b4-41fe-aacd-46c6ea903a29",
+  "id": "74d60da1-44c0-4994-b652-25354eab95ee",
+  "prevId": "730a9e86-1783-4e4f-b4bd-662fe1502f07",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -165,8 +165,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "content": {
-          "name": "content",
+        "content_s3_key": {
+          "name": "content_s3_key",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -177,11 +177,11 @@
           "primaryKey": false,
           "notNull": false
         },
-        "solution": {
-          "name": "solution",
+        "solution_s3_key": {
+          "name": "solution_s3_key",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -527,6 +527,13 @@
         },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,

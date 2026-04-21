@@ -295,7 +295,7 @@ int main() {
       };
 
       const res = await createProblem(payload);
-      const { problemId, uploadUrls } = res.data.data;
+      const { problemId, uploadUrls, uploadContentUrl, uploadSolutionUrl } = res.data.data;
 
       if (uploadUrls && uploadUrls.length > 0) {
         // Upload normal testcases first, then sample testcases
@@ -309,6 +309,14 @@ int main() {
             });
           })
         );
+
+        await axios.put(uploadContentUrl, formData.description, {
+          headers: { "Content-Type": "application/json" },
+        });
+
+        await axios.put(uploadSolutionUrl, formData.solution, {
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
       await finializeProblem(problemId);

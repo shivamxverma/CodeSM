@@ -34,9 +34,13 @@ export const validate = (
             throw new Error(`Invalid location: ${location}`);
         }
   
-        req[_location] = await schema.validate(req[_location], {
+        const validatedData = await schema.validate(req[_location], {
           abortEarly: false,
         });
+  
+        // Merge validated data back into the original object to avoid "readonly property" errors
+        // specifically for req.query which is often a getter in Express/Bun.
+        Object.assign(req[_location], validatedData);
   
         next();
       } catch (error: unknown) {

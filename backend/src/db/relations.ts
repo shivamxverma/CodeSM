@@ -1,15 +1,15 @@
 import { relations } from 'drizzle-orm';
-import { user, problem, tag,problemTags, session, testcases, hints, editorial, submission, executionResult } from './schema';
+import { user, problem, tag,problemTag, session, testcase, hint, editorial, submission, executionResult } from './schema';
 
 export const userRelations = relations(user, ({ many }: { many: any }) => ({
-    problems: many(problem),
-    submissions: many(submission),
-    sessions: many(session),
+    problem: many(problem),
+    submission: many(submission),
+    session: many(session),
 }));
 
 export const problemRelations = relations(problem, ({ many }: { many: any }) => ({
-    testcases: many(testcases),
-    hints: many(hints),
+    testcase: many(testcase),
+    hint: many(hint),
     editorial: many(editorial),
 }));
 
@@ -31,16 +31,16 @@ export const executionResultRelations = relations(executionResult, ({ one }: { o
     }),
 }));
 
-export const testcaseRelations = relations(testcases, ({ one }: { one: any }) => ({
+export const testcaseRelations = relations(testcase, ({ one }: { one: any }) => ({
     problem: one(problem, {
-        fields: [testcases.problemId],
+        fields: [testcase.problemId],
         references: [problem.id],
     }),
 }));
 
-export const hintRelations = relations(hints, ({ one } : { one : any}) => ({
+export const hintRelations = relations(hint, ({ one } : { one : any}) => ({
     problem: one(problem, {
-        fields: [hints.problemId],
+        fields: [hint.problemId],
         references: [problem.id],
     }),
 }));
@@ -52,9 +52,17 @@ export const editorialRelations = relations(editorial, ({ one } : { one : any}) 
     }),
 }));
 
-export const problemTagsRelations = relations(problemTags, ({ one } : { one : any}) => ({
+export const problemTagsRelations = relations(problemTag, ({ one } : { one : any}) => ({
     problem: one(problem, {
-        fields: [problemTags.problemId],
+        fields: [problemTag.problemId],
         references: [problem.id],
     }),
+    tag: one(tag, {
+        fields: [problemTag.tagId],
+        references: [tag.id],
+    })
+}));
+
+export const tagRelations = relations(tag, ({ many } : { many : any}) => ({
+    problems: many(problemTag),
 }));

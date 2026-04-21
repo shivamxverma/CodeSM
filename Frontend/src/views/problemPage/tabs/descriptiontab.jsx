@@ -1,4 +1,4 @@
-export function DiscussionTab({ problem }) {
+export function DescriptionTab({ problem }) {
     return (
         <div className="space-y-6">
             <p className="leading-7 whitespace-pre-line">{problem?.description}</p>

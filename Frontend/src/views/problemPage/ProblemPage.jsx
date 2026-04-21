@@ -17,7 +17,7 @@ import {
 } from "@/api/api";
 
 import { getDifficultyFromRating, getYouTubeEmbed, normalizeStoredJobResult } from "@/components/problempage/helper";
-import { DiscussionTab } from "./tabs/discussiontab";
+import { DescriptionTab } from "./tabs/descriptiontab";
 import { EditorialTab } from "./tabs/editorialtab";
 import { SubmissionTab } from "./tabs/submissiontab";
 import { SolutionTab } from "./tabs/soutiontab";
@@ -167,7 +167,7 @@ export default function ProblemPage() {
     async function fetchProblem() {
       try {
         const res = await getProblem(problemId);
-        const p = res.data.message;
+        const p = res.data.data;
         setProblem(p);
         posthog.capture("problem_viewed", {
           problem_id: problemId,
@@ -487,7 +487,7 @@ export default function ProblemPage() {
           </div>
 
           <div className="border border-[#233046] rounded-b rounded-tr bg-[#0f141b] p-5 h-[calc(100vh-170px)] overflow-y-auto">
-            {activeTab === "Description" && <DiscussionTab problem={problem} />}
+            {activeTab === "Description" && <DescriptionTab problem={problem} />}
             {activeTab === "Editorial" && <EditorialTab embedUrl={embedUrl} problem={problem} />}
             {activeTab === "Submissions" && (
               <SubmissionTab submissions={submissions} refetchSubmissions={refetchSubmissions} />

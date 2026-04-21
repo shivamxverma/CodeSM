@@ -11,6 +11,8 @@ export default function ProblemPage() {
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("All");
   const [sortBy, setSortBy] = useState("A-Z");
+  const [nextCursor, setNextCursor] = useState(null);
+  const [paginationLoading, setPaginationLoading] = useState(false);
 
   const RATING_RANGES = {
     Easy: [800, 1200],
@@ -18,25 +20,38 @@ export default function ProblemPage() {
     Hard: [1800, 3000],
   };
 
+  async function fetchProblems(cursor = "") {
+    try {
+      if (!cursor) {
+        setLoading(true);
+        posthog.capture("problem_page_load");
+      } else {
+        setPaginationLoading(true);
+      }
+      setError("");
+      const res = await getAllProblems(10, cursor);
+      
+      // Fix: Use res.data.data which contains { problems, nextCursor }
+      const { problems: newProblems, nextCursor: newCursor } = res.data.data;
+      
+      if (!cursor) {
+        setProblems(newProblems);
+      } else {
+        setProblems((prev) => [...prev, ...newProblems]);
+      }
+      setNextCursor(newCursor);
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        setError("Could not load problems. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+      setPaginationLoading(false);
+    }
+  }
+
   useEffect(() => {
     const controller = new AbortController();
-    async function fetchProblems() {
-      try {
-        posthog.capture("problem_page_load");
-        setLoading(true);
-        setError("");
-        const res = await getAllProblems();
-        const problems = res.data.message;
-        setProblems(Array.isArray(problems) ? problems : []);
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          setError("Could not load problems. Please try again.");
-          setProblems([]);
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchProblems();
     return () => controller.abort();
   }, []);
@@ -214,7 +229,7 @@ export default function ProblemPage() {
               const rating = getRating(item);
               return (
                 <div
-                  key={item._id}
+                  key={item.id}
                   className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <div className="pointer-events-none absolute -right-10 -top-10 size-24 rounded-full bg-primary/10 blur-2xl transition group-hover:bg-primary/20" />
@@ -240,7 +255,7 @@ export default function ProblemPage() {
                   )}
                   <div className="flex items-center justify-between">
                     <Link
-                      to={`/problems/${item._id}`}
+                      to={`/problems/${item.id}`}
                       className="inline-flex items-center gap-1 rounded-xl border border-border bg-muted px-3 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
                     >
                       Solve Now
@@ -272,6 +287,25 @@ export default function ProblemPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {nextCursor && !loading && (
+          <div className="mt-12 flex justify-center">
+            <button
+              onClick={() => fetchProblems(nextCursor)}
+              disabled={paginationLoading}
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-8 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-50"
+            >
+              {paginationLoading ? (
+                <>
+                  <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  Loading...
+                </>
+              ) : (
+                "Load More Problems"
+              )}
+            </button>
           </div>
         )}
       </div>

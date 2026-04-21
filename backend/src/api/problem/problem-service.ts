@@ -1,8 +1,8 @@
-import { ICreateProblemRequest, ICreateProblemResponse, IFinalizeProblemResponse } from "./problem-types";
+import { ICreateProblemRequest, ICreateProblemResponse, IFinalizeProblemResponse,IProblem, IGetProblemsResponse,IAProblem } from "./problem-types";
 import { verifyProblemCreationPermission } from './problem-helper';
 import { db } from '../../loaders/postgres';
-import { problem, editorial, tag, problemTags,testcases } from '../../db/schema';
-import { eq } from 'drizzle-orm';
+import { problem, editorial, tag, problemTag,testcase } from '../../db/schema';
+import { eq, desc, inArray, and, lt, or } from 'drizzle-orm';
 import ApiError from "../../utils/ApiError";
 import httpStatus from "http-status";
 import { generateUploadURL, fetchTestcasesFromS3 } from '../../services/aws.service';
@@ -75,9 +75,9 @@ export const handleCreateProblem = async (
             // B. Create the Editorial
             await tx.insert(editorial).values({
                 problemId: problemId,
-                content: input.editorialContent,
+                contentS3Key: `${key}/content.md`,
+                solutionS3Key: `${key}/solution.md`,
                 editorialLink: input.editorialLink,
-                solution: input.solution,
             });
 
             // C. Associate Tags (Bulk associate after ensuring tags exist)
@@ -96,7 +96,7 @@ export const handleCreateProblem = async (
                 }
 
                 if (tagIds.length > 0) {
-                    await tx.insert(problemTags).values(
+                    await tx.insert(problemTag).values(
                         tagIds.map(tagId => ({
                             problemId: problemId,
                             tagId: tagId,
@@ -107,7 +107,7 @@ export const handleCreateProblem = async (
 
             // D. Bulk insert all testcase records
             if (allTestData.length > 0) {
-                await tx.insert(testcases).values(
+                await tx.insert(testcase).values(
                     allTestData.map(td => ({
                         problemId: problemId,
                         order: td.order,
@@ -122,7 +122,9 @@ export const handleCreateProblem = async (
         return {
             message: 'Problem created successfully',
             problemId: problemId,
-            uploadUrls: uploadUrls
+            uploadUrls: uploadUrls,
+            uploadContentUrl: await generateUploadURL(key, 'content.md'),
+            uploadSolutionUrl: await generateUploadURL(key, 'solution.md'),
         };
     }
     catch (error) {
@@ -134,7 +136,7 @@ export const handleCreateProblem = async (
     }
 };
 
-export const handleFinializeProblem = async (
+export const handleFinalizeProblem = async (
     userId: string,
     problemId: string
 ): Promise<IFinalizeProblemResponse> => {
@@ -156,8 +158,8 @@ export const handleFinializeProblem = async (
         // 2. Fetch testcases
         const testcasesResult = await db
             .select()
-            .from(testcases)
-            .where(eq(testcases.problemId, problemId));
+            .from(testcase)
+            .where(eq(testcase.problemId, problemId));
 
         if (testcasesResult.length === 0) {
             throw new ApiError('No testcases found. Please upload testcases before finalizing.', httpStatus.BAD_REQUEST);
@@ -182,6 +184,31 @@ export const handleFinializeProblem = async (
             }
         }));
 
+        const editorialResult = await db
+            .select({
+                solutionS3Key: editorial.solutionS3Key,
+                contentS3Key: editorial.contentS3Key,
+            })
+            .from(editorial)
+            .where(eq(editorial.problemId, problemId))
+            .limit(1);
+
+        if (editorialResult.length === 0) {
+            throw new ApiError('Editorial not found. Please upload editorial before finalizing.', httpStatus.BAD_REQUEST);
+        }
+
+        const editorialData = editorialResult[0];
+
+        const contentResponse = await fetchTestcasesFromS3(editorialData.contentS3Key);
+        if (!contentResponse) {
+            throw new ApiError('Content file not found in storage: /content.md', httpStatus.BAD_REQUEST);
+        }
+
+        const solutionResponse = await fetchTestcasesFromS3(editorialData.solutionS3Key);
+        if (!solutionResponse) {
+            throw new ApiError('Solution file not found in storage: /solution.md', httpStatus.BAD_REQUEST);
+        }
+
         // 4. Update status to DONE
         await db.update(problem)
             .set({
@@ -201,4 +228,175 @@ export const handleFinializeProblem = async (
         throw new ApiError('Failed to finalize problem', httpStatus.INTERNAL_SERVER_ERROR);
     }
 }
-    
+
+
+export const handleGetProblems = async (
+    input: { limit: number, cursor?: string }
+): Promise<IGetProblemsResponse> => {
+    try {
+        let cursorCreatedAt: Date | null = null;
+        let cursorId: string | null = null;
+
+        if (input.cursor) {
+            try {
+                const decoded = Buffer.from(input.cursor, 'base64').toString('utf-8');
+                const [timeStr, id] = decoded.split(':');
+                cursorCreatedAt = new Date(parseInt(timeStr));
+                cursorId = id;
+            } catch (e) {
+                throw new ApiError('Invalid cursor', httpStatus.BAD_REQUEST);
+            }
+        }
+
+        const problemsResult = await db
+            .select({
+                id: problem.id,
+                title: problem.title,
+                description: problem.description,
+                slug: problem.slug,
+                difficulty: problem.difficulty,
+                createdAt: problem.createdAt,
+                updatedAt: problem.updatedAt,
+            })
+            .from(problem)
+            .where(
+                and(
+                    eq(problem.status, 'DONE'),
+                    cursorCreatedAt && cursorId
+                        ? or(
+                            lt(problem.createdAt, cursorCreatedAt),
+                            and(eq(problem.createdAt, cursorCreatedAt), lt(problem.id, cursorId))
+                          )
+                        : undefined
+                )
+            )
+            .limit(input.limit + 1)
+            .orderBy(desc(problem.createdAt), desc(problem.id));
+
+        const hasNextPage = problemsResult.length > input.limit;
+        const problems = hasNextPage ? problemsResult.slice(0, input.limit) : problemsResult;
+
+        let nextCursor: string | null = null;
+        if (hasNextPage && problems.length > 0) {
+            const lastProblem = problems[problems.length - 1];
+            const time = lastProblem.createdAt.getTime();
+            nextCursor = Buffer.from(`${time}:${lastProblem.id}`).toString('base64');
+        }
+
+        if (problems.length === 0) {
+            return { problems: [], nextCursor: null };
+        }
+
+        const problemIds = problems.map((p) => p.id);
+
+        // Fetch tags for all problems
+        const tagsResult = await db
+            .select({
+                problemId: problemTag.problemId,
+                tagName: tag.name,
+            })
+            .from(problemTag)
+            .innerJoin(tag, eq(problemTag.tagId, tag.id))
+            .where(inArray(problemTag.problemId, problemIds));
+
+
+        // Assemble everything
+        const assembledProblems = problems.map((p) => {
+            const pTags = tagsResult
+                .filter((t) => t.problemId === p.id)
+                .map((t) => t.tagName);
+            return {
+                ...p,
+                tags: pTags
+            } as IProblem;
+        });
+
+        return {
+            problems: assembledProblems,
+            nextCursor,
+        };
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        console.error('Error fetching problems:', error);
+        throw new ApiError('Failed to fetch problems', httpStatus.INTERNAL_SERVER_ERROR);
+    }
+};
+
+export const handleGetProblemById = async (
+    problemId: string
+): Promise<IAProblem> => {
+    try {
+        const problemResult = await db
+            .select()
+            .from(problem)
+            .where(
+                and(
+                    eq(problem.id, problemId),
+                    eq(problem.status, 'DONE')
+                )
+            )
+            .limit(1);
+
+        if (problemResult.length === 0) {
+            throw new ApiError('Problem not found', httpStatus.NOT_FOUND);
+        }
+
+        const p = problemResult[0];
+
+        // Fetch tags
+        const tagsResult = await db
+            .select({
+                tagName: tag.name,
+            })
+            .from(problemTag)
+            .innerJoin(tag, eq(problemTag.tagId, tag.id))
+            .where(eq(problemTag.problemId, problemId));
+
+        // Fetch sample testcases
+        const testcasesResult = await db
+            .select({
+                id: testcase.id,
+                order: testcase.order,
+                s3Key: testcase.s3Key,
+            })
+            .from(testcase)
+            .where(
+                and(
+                    eq(testcase.problemId, problemId),
+                    eq(testcase.isSample, true)
+                )
+            );
+
+        // Fetch S3 content for sample testcases
+        const sampleTestcases = await Promise.all(
+            testcasesResult.map(async (tc) => {
+                const response = await fetchTestcasesFromS3(tc.s3Key);
+                if (!response) {
+                    throw new ApiError('Testcase file not found: ' + tc.s3Key, httpStatus.INTERNAL_SERVER_ERROR);
+                }
+                return {
+                    id: tc.id,
+                    order: tc.order,
+                    input: response.input,
+                    output: response.output,
+                };
+            })
+        );
+
+        return {
+            ...p,
+            difficulty: p.difficulty as any,
+            tags: tagsResult.map(t => t.tagName),
+            sampleTestcases,
+        } as IAProblem;
+
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        console.error('Error fetching problem by id:', error);
+        throw new ApiError('Failed to fetch problem details', httpStatus.INTERNAL_SERVER_ERROR);
+    }
+};

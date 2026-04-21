@@ -1,0 +1,34 @@
+{
+  "title": "Reverse Linked List",
+  "difficulty": 1200,
+  "description": "Given the `head` of a singly linked list, reverse the list, and return the reversed list.\n\nNote: A linked list is a linear data structure where elements are not stored at contiguous memory locations. It consists of nodes where each node contains a data field and a reference (link) to the next node in the sequence.",
+  "memoryLimit": 256,
+  "timeLimit": 1,
+  "inputFormat": "The input will be a space-separated list of integers representing the nodes of the linked list.",
+  "outputFormat": "Output a space-separated list of integers representing the nodes of the reversed linked list.",
+  "sampleTestcases": [
+    {
+      "input": "1 2 3 4 5",
+      "output": "5 4 3 2 1"
+    },
+    {
+      "input": "1 2",
+      "output": "2 1"
+    },
+    {
+      "input": " ",
+      "output": " "
+    }
+  ],
+  "constraints": "The number of nodes in the list is in the range [0, 5000].\n-5000 <= Node.val <= 5000",
+  "tags": ["linked-list", "recursion", "iteration"],
+  "editorial": "## Approach\nReversing a singly linked list is a classic problem that can be solved with an iterative or a recursive approach. The most common and memory-efficient method is the iterative one.\n\n### Iterative Approach\n1.  **Initialize Pointers:** We need three pointers: `prev`, `current`, and `nextTemp`. \n    * `prev` will point to the previously processed node. It starts as `nullptr` because the new head of the reversed list will point to `nullptr`.\n    * `current` starts at `head`, pointing to the node we are currently processing.\n    * `nextTemp` will temporarily store the next node in the original list before we reverse the current node's pointer.\n\n2.  **Iterate and Reverse:** Loop through the list as long as `current` is not `nullptr`. Inside the loop:\n    * Store the next node: `nextTemp = current->next`. This is crucial to avoid losing the rest of the list.\n    * Reverse the current node's pointer: `current->next = prev`. The current node now points backward.\n    * Move the pointers forward: \n        * `prev = current`. The current node becomes the new previous node for the next iteration.\n        * `current = nextTemp`. The current pointer moves to the next node in the original list.\n\n3.  **Return the New Head:** After the loop finishes, `current` will be `nullptr`, and `prev` will be pointing to the last node of the original list, which is now the new head of the reversed list. Return `prev`.\n\n### Complexity\n* **Time Complexity:** O(n), where n is the number of nodes in the list. We traverse the list exactly once.\n* **Space Complexity:** O(1), as we only use a constant number of extra pointers, regardless of the list's size.",
+  "editorialLink": "https://www.youtube.com/watch?v=ENV_KsTuvcI",
+  "solution": "#include <iostream>\n#include <vector>\n#include <string>\n#include <sstream>\n#include <algorithm>\n\n// Definition for singly-linked list.\nstruct ListNode {\n    int val;\n    ListNode *next;\n    ListNode(int x) : val(x), next(NULL) {}\n};\n\nListNode* reverseList(ListNode* head) {\n    ListNode* prev = nullptr;\n    ListNode* current = head;\n    while (current != nullptr) {\n        ListNode* nextTemp = current->next;\n        current->next = prev;\n        prev = current;\n        current = nextTemp;\n    }\n    return prev;\n}\n\n// Helper function to create a linked list from input string\nListNode* createList(const std::string& s) {\n    if (s.empty() || s == \" \") return nullptr;\n    std::stringstream ss(s);\n    int val;\n    ListNode* head = nullptr;\n    ListNode* tail = nullptr;\n    while (ss >> val) {\n        if (!head) {\n            head = new ListNode(val);\n            tail = head;\n        } else {\n            tail->next = new ListNode(val);\n            tail = tail->next;\n        }\n    }\n    return head;\n}\n\n// Helper function to print a linked list\nvoid printList(ListNode* head) {\n    if (!head) return;\n    while (head) {\n        std::cout << head->val << (head->next ? \" \" : \"\");\n        head = head->next;\n    }\n    std::cout << std::endl;\n}\n\nint main() {\n    std::string input;\n    std::getline(std::cin, input);\n    ListNode* head = createList(input);\n    ListNode* reversedHead = reverseList(head);\n    printList(reversedHead);\n    return 0;\n}",
+  "hints": [
+    {
+      "title": "Hints Unavailable",
+      "content": "We couldn't generate hints for this problem at the moment. Please try again later or check the editorial."
+    }
+  ]
+}

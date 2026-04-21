@@ -24,8 +24,8 @@ export const logout = () => {
   });
 }
 
-export const getAllProblems = () => {
-  return axios.get(`${BASE}/problem`, { withCredentials: true });
+export const getAllProblems = (limit = 10, cursor = "") => {
+  return axios.get(`${BASE}/problem?limit=${limit}&cursor=${cursor}`, { withCredentials: true });
 }
 
 export const getProblem = (id) => {
