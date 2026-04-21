@@ -1,6 +1,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
-import ProblemDiscussions from "../ProblemDiscussions";
+import ProblemDiscussions from "@/views/discussion/ProblemDiscussions";
 
 export default function ProblemTabContent({
   activeTab,
