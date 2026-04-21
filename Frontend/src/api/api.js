@@ -38,8 +38,8 @@ export const createProblem = (payload) => {
   });
 };
 
-export const finializeProblem = (problemId) => {
-  return axios.post(`${BASE}/problem/finialize?problemId=${problemId}`, {}, {
+export const finalizeProblem = (problemId) => {
+  return axios.post(`${BASE}/problem/finalize?problemId=${problemId}`, {}, {
     withCredentials: true,
   });
 };
@@ -87,6 +87,10 @@ export const getSubmissions = (problemId) => {
 
 export const getProblemHints = (problemId) => {
   return axios.get(`${BASE}/problem/upsolve/${problemId}`, { withCredentials: true });
+}
+
+export const getEditorialSolution = (problemId) => {
+  return axios.get(`${BASE}/problem/${problemId}/editorial-solution`, { withCredentials: true });
 }
 
 export const listContests = () =>

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { createProblem, finializeProblem } from "@/api/api";
+import { createProblem, finalizeProblem } from "@/api/api";
 import { usePostHog } from "@posthog/react";
 
 import Header from "@/components/newproblem/Header";
@@ -311,15 +311,15 @@ int main() {
         );
 
         await axios.put(uploadContentUrl, formData.description, {
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain" },
         });
 
         await axios.put(uploadSolutionUrl, formData.solution, {
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain" },
         });
       }
 
-      await finializeProblem(problemId);
+      await finalizeProblem(problemId);
 
       posthog.capture("problem_created_success", {
         title: formData.title,

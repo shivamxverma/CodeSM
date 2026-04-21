@@ -4,16 +4,24 @@ export function getDifficultyFromRating(rating) {
         label: "Unknown",
         style: "bg-[#1d2736] text-gray-300 border-[#2a3750]",
       };
-    if (rating >= 800 && rating <= 1200)
+    
+    const r = String(rating).toUpperCase();
+    if (r === "EASY" || (Number(r) >= 800 && Number(r) <= 1200))
       return {
         label: "Easy",
         style: "bg-[#0e2a1d] text-green-300 border-[#1e5d3b]",
       };
-    if (rating >= 1300 && rating <= 1700)
+    if (r === "MEDIUM" || (Number(r) >= 1300 && Number(r) <= 1700))
       return {
         label: "Medium",
         style: "bg-[#3a2a0e] text-yellow-300 border-[#6a531e]",
       };
+    if (r === "HARD" || Number(r) >= 1800)
+      return {
+        label: "Hard",
+        style: "bg-[#2a1313] text-red-300 border-[#5d1e1e]",
+      };
+      
     return {
       label: "Hard",
       style: "bg-[#2a1313] text-red-300 border-[#5d1e1e]",

@@ -2,6 +2,22 @@ export function DescriptionTab({ problem }) {
     return (
         <div className="space-y-6">
             <p className="leading-7 whitespace-pre-line">{problem?.description}</p>
+            {(problem?.timeLimit || problem?.memoryLimit) && (
+                <div className="flex gap-4 text-sm">
+                    {problem.timeLimit && (
+                        <div className="flex items-center gap-2 text-gray-400">
+                            <span className="font-semibold text-blue-200">Time Limit:</span>
+                            <span>{problem.timeLimit} ms</span>
+                        </div>
+                    )}
+                    {problem.memoryLimit && (
+                        <div className="flex items-center gap-2 text-gray-400">
+                            <span className="font-semibold text-blue-200">Memory Limit:</span>
+                            <span>{problem.memoryLimit} MB</span>
+                        </div>
+                    )}
+                </div>
+            )}
             {problem?.sampleTestcases?.length > 0 ? (
                 <div className="space-y-4">
                     <h3 className="font-semibold text-blue-300">Sample Testcases</h3>

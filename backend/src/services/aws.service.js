@@ -51,4 +51,20 @@ async function fetchTestcasesFromS3(s3Key) {
   }
 }
 
-export { generateUploadURL, fetchTestcasesFromS3 };
+async function fetchFileFromS3(s3Key) {
+  try {
+    const command = new GetObjectCommand({
+      Bucket: env.AWS_BUCKET_NAME,
+      Key: s3Key,
+    });
+
+    const response = await s3Client.send(command);
+    const text = await streamToString(response.Body);
+    return text;
+  } catch (err) {
+    console.error("Error fetching file from S3:", err);
+    return null;
+  }
+}
+
+export { generateUploadURL, fetchTestcasesFromS3, fetchFileFromS3 };

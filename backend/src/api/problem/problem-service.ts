@@ -5,7 +5,7 @@ import { problem, editorial, tag, problemTag,testcase } from '../../db/schema';
 import { eq, desc, inArray, and, lt, or } from 'drizzle-orm';
 import ApiError from "../../utils/ApiError";
 import httpStatus from "http-status";
-import { generateUploadURL, fetchTestcasesFromS3 } from '../../services/aws.service';
+import { generateUploadURL, fetchTestcasesFromS3, fetchFileFromS3 } from '../../services/aws.service';
 import { createId } from '@paralleldrive/cuid2';
 
 export const handleCreateProblem = async (
@@ -398,5 +398,37 @@ export const handleGetProblemById = async (
         }
         console.error('Error fetching problem by id:', error);
         throw new ApiError('Failed to fetch problem details', httpStatus.INTERNAL_SERVER_ERROR);
+    }
+};
+
+
+export const handleGetEditorialSolution = async (
+    problemId: string
+): Promise<string> => {
+    try {
+        const editorialResult = await db
+            .select()
+            .from(editorial)
+            .where(eq(editorial.problemId, problemId))
+            .limit(1);
+
+        if (editorialResult.length === 0) {
+            throw new ApiError('Editorial not found', httpStatus.NOT_FOUND);
+        }
+
+        const editorials = editorialResult[0];
+
+        const solutionResponse = await fetchFileFromS3(editorials.solutionS3Key);
+        if (!solutionResponse) {
+            throw new ApiError('Solution file not found in storage: ' + editorials.solutionS3Key, httpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return solutionResponse;
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        console.error('Error fetching editorial solution:', error);
+        throw new ApiError('Failed to fetch editorial solution', httpStatus.INTERNAL_SERVER_ERROR);
     }
 };
