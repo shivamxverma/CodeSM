@@ -68,3 +68,8 @@ export interface IGetProblemsResponse {
     problems: IProblem[];
     nextCursor: string | null;
 }
+
+export interface IProblemEditorialResponse {
+    editorialContent : string,
+    editorialLink : string    
+}

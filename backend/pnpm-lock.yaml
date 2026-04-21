@@ -47,6 +47,9 @@ importers:
       cors:
         specifier: ^2.8.5
         version: 2.8.6
+      db-schema:
+        specifier: file:../db-schema
+        version: file:../db-schema(@types/pg@8.20.0)(pg@8.20.0)
       dotenv:
         specifier: ^16.6.1
         version: 16.6.1
@@ -1385,6 +1388,9 @@ packages:
   data-uri-to-buffer@4.0.1:
     resolution: {integrity: sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A==}
     engines: {node: '>= 12'}
+
+  db-schema@file:../db-schema:
+    resolution: {directory: ../db-schema, type: directory}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -3941,6 +3947,41 @@ snapshots:
       which: 2.0.2
 
   data-uri-to-buffer@4.0.1: {}
+
+  db-schema@file:../db-schema(@types/pg@8.20.0)(pg@8.20.0):
+    dependencies:
+      '@paralleldrive/cuid2': 3.3.0
+      drizzle-orm: 0.44.7(@types/pg@8.20.0)(pg@8.20.0)
+    transitivePeerDependencies:
+      - '@aws-sdk/client-rds-data'
+      - '@cloudflare/workers-types'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@libsql/client-wasm'
+      - '@neondatabase/serverless'
+      - '@op-engineering/op-sqlite'
+      - '@opentelemetry/api'
+      - '@planetscale/database'
+      - '@prisma/client'
+      - '@tidbcloud/serverless'
+      - '@types/better-sqlite3'
+      - '@types/pg'
+      - '@types/sql.js'
+      - '@upstash/redis'
+      - '@vercel/postgres'
+      - '@xata.io/client'
+      - better-sqlite3
+      - bun-types
+      - expo-sqlite
+      - gel
+      - knex
+      - kysely
+      - mysql2
+      - pg
+      - postgres
+      - prisma
+      - sql.js
+      - sqlite3
 
   debug@4.4.3(supports-color@5.5.0):
     dependencies:

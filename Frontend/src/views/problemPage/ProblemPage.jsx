@@ -488,7 +488,7 @@ export default function ProblemPage() {
 
           <div className="border border-[#233046] rounded-b rounded-tr bg-[#0f141b] p-5 h-[calc(100vh-170px)] overflow-y-auto">
             {activeTab === "Description" && <DescriptionTab problem={problem} />}
-            {activeTab === "Editorial" && <EditorialTab embedUrl={embedUrl} problem={problem} />}
+            {activeTab === "Editorial" && <EditorialTab problem={problem} />}
             {activeTab === "Submissions" && (
               <SubmissionTab submissions={submissions} refetchSubmissions={refetchSubmissions} />
             )}

@@ -1,67 +1,84 @@
-import {myQueue} from "./queue.js";
-import runCodeWithInput, { dryRunCodeWithInput } from "./runCode.js";
-import connectDB from "./db.config.js";
-import Submission from "../models/submission.model.js";
-import Problem from "../models/problem.model.js";
-import { setSubmissionStatus, setRunStatus } from "./redis.js";
+import { myQueue } from "./queue.js";
+import runCodeWithInput from "./runCode.js";
+import { getDrizzleClient, db } from "../loaders/postgres.js";
+import { setSubmissionStatus } from "./redis.js";
+import { schema } from "db-schema";
+import { eq } from "drizzle-orm";
 
-connectDB()
-
+getDrizzleClient()
   .then(() => {
     console.log("Worker started and waiting for jobs...");
 
     myQueue.process(async (job) => {
       console.log("Work Reached Here");
-      const { dryRun } = job.data;
-      if (dryRun) {
-        const { code, language, problemId } = job.data;
-        const jobId = job.id;
-        console.log(`[Worker] Picking up dry-run job: ${jobId}`);
-        await setRunStatus(jobId, "processing");
-        const problem = await Problem.findById(problemId).lean();
-        if (!problem) {
-          await setRunStatus(jobId, "failed", { error: "Problem not found" });
-          return null;
-        }
-        
-        await dryRunCodeWithInput(code, language, problem, jobId);
-        return null; // Return null since UI fetches from Redis directly
-      }
+      const { submissionId, mode } = job.data;
+      
+      console.log(`[Worker] Picking up job for submissionId: ${submissionId}, mode: ${mode}`);
 
-      const { submissionId } = job.data;
-      console.log(`[Worker] Picking up job for submissionId: ${submissionId}`);
+      // 1. Fetch submission details
+      const submissions = await db
+        .select()
+        .from(schema.submission)
+        .where(eq(schema.submission.id, submissionId))
+        .limit(1);
 
-      const submission = await Submission.findById(submissionId).populate("problem");
-      if (!submission) {
+      if (submissions.length === 0) {
         console.error(`[Worker] Submission ${submissionId} not found in DB`);
-        throw new Error(`Submission not found: ${submissionId}`);
+        return null;
       }
-      
-      // Update status to processing
-      console.log(`[Worker] Marking submission ${submissionId} as processing`);
-      submission.status = "processing";
-      await submission.save();
-      await setSubmissionStatus(submissionId, "processing");
 
-      console.log(`[Worker] Submission found and marked as processing`);
-      const problem = submission.problem;
-      const problemId = problem?._id ?? problem;
-      
-      const timeLimit = problem?.timeLimit || 2; // Default to 2s if not specified
-      const memoryLimit = problem?.memoryLimit || 256; // Default to 256MB if not specified
+      const sub = submissions[0];
 
-      console.log(`[Worker] Starting execution for submission ${submissionId} with limits: ${timeLimit}s, ${memoryLimit}MB`);
-      return runCodeWithInput(
-        submission.code,
-        submission.language,
-        problemId,
-        submissionId,
-        { timeLimit, memoryLimit }
-      );
-      // console.log(output);
+      // 2. Update status to RUNNING
+      console.log(`[Worker] Marking submission ${submissionId} as RUNNING`);
+      await db.update(schema.submission)
+        .set({ status: 'RUNNING' })
+        .where(eq(schema.submission.id, submissionId));
+      
+      await setSubmissionStatus(submissionId, "RUNNING");
+
+      // 3. Fetch problem limits
+      const problems = await db
+        .select()
+        .from(schema.problem)
+        .where(eq(schema.problem.id, sub.problemId))
+        .limit(1);
+
+      if (problems.length === 0) {
+        console.error(`[Worker] Problem ${sub.problemId} not found for submission ${submissionId}`);
+        await db.update(schema.submission)
+          .set({ status: 'FAILED' })
+          .where(eq(schema.submission.id, submissionId));
+        await setSubmissionStatus(submissionId, "FAILED");
+        return null;
+      }
+
+      const prob = problems[0];
+      const timeLimit = prob.timeLimit || 2;
+      const memoryLimit = prob.memoryLimit || 256;
+
+      console.log(`[Worker] Starting execution for submission ${submissionId} in ${mode} mode`);
+      
+      try {
+        return await runCodeWithInput(
+          sub.code,
+          sub.language,
+          sub.problemId,
+          submissionId,
+          mode,
+          { timeLimit, memoryLimit }
+        );
+      } catch (err) {
+        console.error(`[Worker] Execution error for ${submissionId}:`, err);
+        await db.update(schema.submission)
+          .set({ status: 'FAILED' })
+          .where(eq(schema.submission.id, submissionId));
+        await setSubmissionStatus(submissionId, "FAILED");
+        throw err;
+      }
     });
   })
   .catch(err => {
-    console.error("Error Connecting to MongoDB:", err);
+    console.error("Error connecting to database:", err);
     process.exit(1);
   });

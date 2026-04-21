@@ -21,17 +21,16 @@ const streamToString = (stream) =>
     stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
   });
 
-async function fetchTestcasesFromS3(problemId) {
+async function fetchTestcasesFromS3(s3Key) {
   try {
     const command = new GetObjectCommand({
       Bucket: env.AWS_BUCKET_NAME,
-      Key: `problems/${problemId}/testcases.json`,
+      Key: s3Key,
     });
 
     const response = await s3Client.send(command);
     const jsonString = await streamToString(response.Body);
     const data = JSON.parse(jsonString);
-    // console.log("Testcases fetched from S3:", data);
     return data;
   } catch (err) {
     console.error("Error fetching testcases:", err);
@@ -39,4 +38,20 @@ async function fetchTestcasesFromS3(problemId) {
   }
 }
 
-export { fetchTestcasesFromS3 };
+async function fetchFileFromS3(s3Key) {
+  try {
+    const command = new GetObjectCommand({
+      Bucket: env.AWS_BUCKET_NAME,
+      Key: s3Key,
+    });
+
+    const response = await s3Client.send(command);
+    const text = await streamToString(response.Body);
+    return text;
+  } catch (err) {
+    console.error("Error fetching file from S3:", err);
+    return null;
+  }
+}
+
+export { fetchTestcasesFromS3, fetchFileFromS3 };

@@ -28,6 +28,7 @@ const envSchema = yup.object().shape({
     REDIS_PASSWORD: yup.string().required(),
     REDIS_PORT: yup.string().required(),
     REDIS_USER: yup.string().required(),
+    REDIS_URL: yup.string().required(),
     REFRESH_TOKEN_EXPIRY: yup.string().required(),
     REFRESH_TOKEN_SECRET: yup.string().required(),
     MONGO_URI : yup.string().required(),

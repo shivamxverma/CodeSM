@@ -1,4 +1,4 @@
-import { ICreateProblemRequest, ICreateProblemResponse, IFinalizeProblemResponse,IProblem, IGetProblemsResponse,IAProblem } from "./problem-types";
+import { ICreateProblemRequest, ICreateProblemResponse, IFinalizeProblemResponse,IProblem, IGetProblemsResponse,IAProblem, IProblemEditorialResponse } from "./problem-types";
 import { verifyProblemCreationPermission } from './problem-helper';
 import { db } from '../../loaders/postgres';
 import { problem, editorial, tag, problemTag,testcase } from '../../db/schema';
@@ -432,3 +432,40 @@ export const handleGetEditorialSolution = async (
         throw new ApiError('Failed to fetch editorial solution', httpStatus.INTERNAL_SERVER_ERROR);
     }
 };
+
+
+export const handleGetEditorialContent = async (
+    problemId: string
+): Promise<IProblemEditorialResponse> => {
+    try {
+        const editorialResult = await db
+            .select({
+                contentS3Key: editorial.contentS3Key,
+                editorialLink: editorial.editorialLink,
+            })
+            .from(editorial)
+            .where(eq(editorial.problemId, problemId))
+            .limit(1);
+        if (editorialResult.length === 0) {
+            throw new ApiError('Editorial not found', httpStatus.NOT_FOUND);
+        }
+        const editorials = editorialResult[0];
+        const editorialContentResponse = await fetchFileFromS3(editorials.contentS3Key);
+        if (!editorialContentResponse) {
+            throw new ApiError('Editorial content not found in storage: ' + editorials.contentS3Key, httpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return {
+            editorialContent: editorialContentResponse,
+            editorialLink: editorials.editorialLink,
+        } as IProblemEditorialResponse;
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        console.error('Error fetching editorial content:', error);
+        throw new ApiError('Failed to fetch editorial content', httpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+            
+            
+            

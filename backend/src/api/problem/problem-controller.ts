@@ -3,7 +3,7 @@ import asyncHandler from "../../utils/asyncHandler";
 import { Response } from "express";
 import ApiError from "../../utils/ApiError";
 import { ICreateProblemRequest } from "./problem-types";
-import { handleCreateProblem , handleFinalizeProblem, handleGetProblems, handleGetProblemById, handleGetEditorialSolution} from './problem-service'
+import { handleCreateProblem , handleFinalizeProblem, handleGetProblems, handleGetProblemById, handleGetEditorialSolution, handleGetEditorialContent} from './problem-service'
 
 export const createProblem = asyncHandler(async (req: jwtReq, res: Response) => {
     const response = await handleCreateProblem(req.user.id, req.body);
@@ -53,5 +53,17 @@ export const getEditorialSolution = asyncHandler(async (req: jwtReq, res: Respon
         data: response
     })
 })
+
+export const getEditorialContent = asyncHandler(async (req: jwtReq, res: Response) => {
+    const problemId = req.params.problemId as string;
+    const response = await handleGetEditorialContent(problemId);
+    return res.status(200).json({
+        status: 'success',
+        message: 'Editorial solution fetched successfully',
+        data: response
+    })
+})
     
+    
+
     

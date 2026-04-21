@@ -93,6 +93,10 @@ export const getEditorialSolution = (problemId) => {
   return axios.get(`${BASE}/problem/${problemId}/editorial-solution`, { withCredentials: true });
 }
 
+export const getProblemEditorial = (problemId) => {
+  return axios.get(`${BASE}/problem/${problemId}/editorial-content`, { withCredentials: true });
+}
+
 export const listContests = () =>
   axios.get(`${BASE}/contest`, { withCredentials: true });
 
