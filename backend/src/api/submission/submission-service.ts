@@ -1,9 +1,9 @@
 import { IGetSubmissionResponse, IGetSubmissionResultsResponse } from './submission-types';
-import { submission, executionResult } from '../../db/schema';
+import { submission, executionResult, user } from '../../db/schema';
 import { db } from '../../loaders/postgres';
 import { myQueue } from '../../loaders/queue';
 import redis from '../../loaders/redis';
-import { eq } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import ApiError from '../../utils/ApiError';
 import httpStatus from 'http-status';
 
@@ -34,7 +34,7 @@ export const handleCreateSubmission = async (
         const submissionId = insertedSubmission.id;
 
         try {
-            await myQueue.add('job-queue', {
+            await myQueue.add({
                 submissionId,
                 mode: normalizedMode
             });
@@ -63,12 +63,22 @@ export const handlegetSubmissionStatus = async (
     submissionId: string
 ): Promise<IGetSubmissionResponse> => {
     try {
+
+        const redisStatus = await redis.get(`submission:${submissionId}`);
+        if (redisStatus) {
+            const parsed = JSON.parse(redisStatus);
+            return {
+                submissionId,
+                status: parsed.status,
+            };
+        }
+
         const [result] = await db
             .select()
             .from(submission)
             .where(eq(submission.id, submissionId));
 
-        if (!submission) {
+        if (!result) {
             throw new ApiError('Submission not found', httpStatus.NOT_FOUND);
         }
 
@@ -137,5 +147,50 @@ export const handleGetSubmissionResults = async (
             stdout: "",
             stderr: "",
         } as IGetSubmissionResultsResponse;
+    }
+}
+
+export const handleGetAllSubmissions = async (userId: string, problemId: string) => {
+    try {
+        const results = await db
+            .select({
+                id: submission.id,
+                language: submission.language,
+                status: submission.status,
+                verdict: executionResult.verdict,
+                timeTaken: submission.timeTaken,
+                memoryTaken: submission.memoryTaken,
+                createdAt: submission.createdAt,
+                user: {
+                    username: user.username
+                }
+            })
+            .from(submission)
+            .innerJoin(user, eq(user.id, submission.userId))
+            .leftJoin(executionResult, eq(executionResult.submissionId, submission.id))
+            .where(
+                and(
+                    eq(submission.userId, userId),
+                    eq(submission.problemId, problemId),
+                    eq(submission.mode, 'SUBMIT') // Only show SUBMIT, not RUN
+                )
+            )
+            .orderBy(desc(submission.createdAt));
+
+        // Format the results to consolidate status and verdict
+        return results.map(r => ({
+            _id: r.id, // Frontend expects this or idx as key
+            language: r.language,
+            status: r.verdict && r.verdict !== 'PENDING' ? r.verdict : r.status,
+            timeTaken: r.timeTaken,
+            memoryTaken: r.memoryTaken,
+            createdAt: r.createdAt,
+            user: {
+                username: r.user.username
+            }
+        }));
+    } catch (error) {
+        console.error("Database error in handleGetAllSubmissions:", error);
+        throw new ApiError('Failed to fetch submissions', httpStatus.INTERNAL_SERVER_ERROR);
     }
 }

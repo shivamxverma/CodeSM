@@ -14,7 +14,7 @@ const envSchema = yup.object().shape({
     GOOGLE_CLIENT_ID: yup.string().required(),
     GOOGLE_CLIENT_SECRET: yup.string().required(),
     GOOGLE_CALLBACK_URL: yup.string().required(),
-    GEMINI_API_KEYS: yup.string().optional(),
+    GEMINI_API_KEY: yup.string().optional(),
     // GOOGLE_CALLBACK_URL : yup.string().required(),
     LOG_LEVEL: yup
     .string()

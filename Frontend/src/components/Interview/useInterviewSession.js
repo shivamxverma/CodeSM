@@ -130,8 +130,8 @@ export function useInterviewSession() {
             const selectedRoleData = INTERVIEW_ROLES.find((r) => r.id === selectedRole);
             const selectedExperienceData = INTERVIEW_EXPERIENCE_LEVELS.find((e) => e.id === selectedExperience);
             const response = await getQuestionsForInterview({
-                role: selectedRoleData,
-                experience: selectedExperienceData,
+                role: selectedRoleData?.name || selectedRole,
+                experience: selectedExperienceData?.name || selectedExperience,
                 customRequirements,
                 questionCount,
                 interviewLevel,

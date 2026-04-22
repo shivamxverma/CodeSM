@@ -1,7 +1,7 @@
 import { schema } from 'db-schema';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import logger from './logger';
+import logger from './logger.js';
 
 function createDrizzle(pool) {
     return drizzle(pool, { schema });

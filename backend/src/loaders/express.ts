@@ -4,6 +4,7 @@ import routes from '../api';
 import { apiPrefix } from '../utils/constants';
 import cookieParser from 'cookie-parser';
 import env from '../config';
+import { rateLimitMiddleware } from '../shared/ratelimiter';
 
 const corsOptions = {
     origin : 
@@ -22,7 +23,7 @@ export default ({ app }: { app : express.Application }) : void => {
     app.options('', cors(corsOptions));
     app.use(cookieParser());
 
-    // app.use(rateLimitMiddleware);
+    app.use(rateLimitMiddleware);
     app.get('/', (req, res) => {
         return res.status(200).send(
         "What are you doing here? 🧐 Go to <a href='https://code-sm.vercel.app'>Magic Link!!</a>"

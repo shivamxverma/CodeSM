@@ -1,6 +1,6 @@
 import winston from 'winston';
 import RotateFile from 'winston-daily-rotate-file';
-import { loggerConfig } from '../utils/constants';
+import { loggerConfig } from '../utils/constants.js';
 
 const transports = [];
 

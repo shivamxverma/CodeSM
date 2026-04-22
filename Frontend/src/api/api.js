@@ -67,20 +67,26 @@ export const runCode = async (problemId, payload) => {
 };
 
 /** Persisted job result after a full submission (MongoDB jobResult). */
-export const getSubmitJobResult = (jobId, submissionId) => {
-  return axios.get(`${BASE}/job/${jobId}/get-result/${submissionId}`, {
+export const getSubmitJobResult = (submissionId) => {
+  return axios.get(`${BASE}/submission/${submissionId}/get-result`, {
     withCredentials: true,
   });
 };
 
-export const getRunJobResult = (jobId) => {
-  return axios.get(`${BASE}/job/${jobId}/get-run-result`, {
+export const getSubmissionResult = (submissionId) => {
+  return axios.get(`${BASE}/submission/${submissionId}/result`, {
     withCredentials: true,
   });
 };
 
-export const getSubmissions = (problemId) => {
-  return axios.get(`${BASE}/submission/${problemId}`, {
+export const getSubmissionStatus = (submissionId) => {
+  return axios.get(`${BASE}/submission/${submissionId}`, {
+    withCredentials: true,
+  });
+};
+
+export const getSubmissionsForProblem = (problemId) => {
+  return axios.get(`${BASE}/submission/problem/${problemId}`, {
     withCredentials: true,
   });
 };
@@ -123,7 +129,8 @@ export const getLeaderboard = (id) =>
 
 export const getQuestionsForInterview = (payload) => {
   return axios.post(`${BASE}/interview`, payload, {
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    withCredentials: true
   });
 }
 
@@ -138,7 +145,8 @@ export const getScoreForQuestion = (currentQuestionIndex, questions, userAnswer,
       ...(codingLanguage ? { codingLanguage } : {}),
     },
     {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      withCredentials: true
     }
   );
 }

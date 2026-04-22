@@ -1834,3 +1834,28 @@
 {"level":"info","message":"🛡️  Express loaded  🛡️","timestamp":"2026-04-21 14:03:48"}
 {"level":"info","message":"🛡️  All modules loaded!  🛡️","timestamp":"2026-04-21 14:03:48"}
 {"level":"info","message":"🛡️ Server listening on port: 8000 🛡️","timestamp":"2026-04-21 14:03:48"}
+{"level":"info","message":"Database connection established successfully","timestamp":"2026-04-21 14:29:45"}
+{"level":"info","message":"🛡️  Database loaded  🛡️","timestamp":"2026-04-21 14:29:45"}
+{"level":"info","message":"🛡️  Google OAuth loaded  🛡️","timestamp":"2026-04-21 14:29:45"}
+{"level":"info","message":"🛡️  Express loaded  🛡️","timestamp":"2026-04-21 14:29:45"}
+{"level":"info","message":"🛡️  All modules loaded!  🛡️","timestamp":"2026-04-21 14:29:45"}
+{"level":"info","message":"🛡️ Server listening on port: 8000 🛡️","timestamp":"2026-04-21 14:29:45"}
+{"level":"info","message":"Database connection established successfully","timestamp":"2026-04-21 14:30:22"}
+{"level":"info","message":"🛡️  Database loaded  🛡️","timestamp":"2026-04-21 14:30:22"}
+{"level":"info","message":"🛡️  Google OAuth loaded  🛡️","timestamp":"2026-04-21 14:30:22"}
+{"level":"info","message":"🛡️  Express loaded  🛡️","timestamp":"2026-04-21 14:30:22"}
+{"level":"info","message":"🛡️  All modules loaded!  🛡️","timestamp":"2026-04-21 14:30:22"}
+{"level":"info","message":"🛡️ Server listening on port: 8000 🛡️","timestamp":"2026-04-21 14:30:22"}
+{"level":"info","message":"Database connection established successfully","timestamp":"2026-04-21 14:30:55"}
+{"level":"info","message":"🛡️  Database loaded  🛡️","timestamp":"2026-04-21 14:30:55"}
+{"level":"info","message":"🛡️  Google OAuth loaded  🛡️","timestamp":"2026-04-21 14:30:55"}
+{"level":"info","message":"🛡️  Express loaded  🛡️","timestamp":"2026-04-21 14:30:55"}
+{"level":"info","message":"🛡️  All modules loaded!  🛡️","timestamp":"2026-04-21 14:30:55"}
+{"level":"info","message":"🛡️ Server listening on port: 8000 🛡️","timestamp":"2026-04-21 14:30:55"}
+{"level":"info","message":"SIGINT received, closing server gracefully...","timestamp":"2026-04-21 15:21:49"}
+{"level":"info","message":"Database connection established successfully","timestamp":"2026-04-21 15:22:00"}
+{"level":"info","message":"🛡️  Database loaded  🛡️","timestamp":"2026-04-21 15:22:00"}
+{"level":"info","message":"🛡️  Google OAuth loaded  🛡️","timestamp":"2026-04-21 15:22:00"}
+{"level":"info","message":"🛡️  Express loaded  🛡️","timestamp":"2026-04-21 15:22:00"}
+{"level":"info","message":"🛡️  All modules loaded!  🛡️","timestamp":"2026-04-21 15:22:00"}
+{"level":"info","message":"🛡️ Server listening on port: 8000 🛡️","timestamp":"2026-04-21 15:22:00"}

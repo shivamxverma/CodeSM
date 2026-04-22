@@ -23,15 +23,16 @@ import {
 import {
   getProblem,
   runCode,
-  getSubmissionsForProblem,
+  getSubmissions,
   getProblemHints,
   createSubmission,
-  getSubmissionStatus,
-  getSubmissionResult,
+  getSubmitJobResult,
+  getRunJobResult,
 } from "@/api/api";
 
 export default function ProblemPage() {
-  const [activeSubmissionId, setActiveSubmissionId] = useState(null);
+  const [runJobId, setRunJobId] = useState(null);
+  const [submitMeta, setSubmitMeta] = useState(null);
   const [problem, setProblem] = useState(null);
   const [activeTab, setActiveTab] = useState("Description");
   const [language, setLanguage] = useState("cpp");
@@ -52,7 +53,12 @@ export default function ProblemPage() {
   const auth = useAuth();
   const posthog = usePostHog();
   const queryClient = useQueryClient();
-    
+  const setRunResult = useExecutionStore((s) => s.setRunResult);
+  const setSubmitResult = useExecutionStore((s) => s.setSubmitResult);
+  const handledRunStoredRef = useRef(null);
+  const handledSubmitStoredRef = useRef(null);
+  const submitIdempotencyKeyRef = useRef(null);
+
   // Resizable panel state
   const [editorHeightPct, setEditorHeightPct] = useState(60); 
   const [leftWidthPct, setLeftWidthPct] = useState(40);       
@@ -157,20 +163,33 @@ export default function ProblemPage() {
     } catch {}
   }, [problemId, language, languageStorageKey]);
 
-  const pollQuery = useQuery({
-    queryKey: ["submissionPoll", activeSubmissionId],
-    queryFn: () => getSubmissionStatus(activeSubmissionId).then((r) => r.data.data),
-    enabled: !!activeSubmissionId,
+  const runStoredQuery = useQuery({
+    queryKey: ["run-job-result", runJobId],
+    queryFn: () => getRunJobResult(runJobId).then((r) => r.data),
+    enabled: !!runJobId,
     refetchInterval: (q) => {
-      const st = q.state.data?.status;
-      if (st === "COMPLETED" || st === "FAILED" || st === "ERROR") return false;
-      return 2000;
+      const doc = q.state.data?.data?.result;
+      const v = (doc?.verdict || doc?.status || "").toLowerCase();
+      const term = ["correct answer", "tle", "time limit", "wrong answer", "mle", "compile", "accepted", "rejected", "build", "error", "no_sample"];
+      return term.some(t => v.includes(t)) ? false : 1000;
+    },
+  });
+
+  const submitStoredQuery = useQuery({
+    queryKey: ["submit-job-result", submitMeta?.submissionId],
+    queryFn: () => getSubmitJobResult(submitMeta.jobId, submitMeta.submissionId).then((r) => r.data),
+    enabled: !!submitMeta?.submissionId,
+    refetchInterval: (q) => {
+      const doc = q.state.data?.data?.result;
+      const v = (doc?.verdict || doc?.status || "").toLowerCase();
+      const term = ["correct answer", "tle", "time limit", "wrong answer", "mle", "compile", "accepted", "rejected", "build", "error"];
+      return term.some(t => v.includes(t)) ? false : 1000;
     },
   });
 
   const { data: submissions = [], refetch: refetchSubmissions } = useQuery({
     queryKey: ["problem-submissions", problemId],
-    queryFn: () => getSubmissionsForProblem(problemId).then((r) => r.data.message || []),
+    queryFn: () => getSubmissions(problemId).then((r) => r.data.message || []),
     enabled: activeTab === "Submissions" && !!problemId,
   });
 
@@ -199,22 +218,40 @@ export default function ProblemPage() {
       setExecutionPanel({ type: "error", message: "No result was returned from the server." });
       return;
     }
-    const { verdict, stdout, stderr, totalTestcases, passedTestcases, timeTaken, memoryTaken } = payload;
-    if (verdict === "COMPILE_ERROR") {
-      showCompileErrors([{ message: stderr || "Compilation failed" }]);
+    const { doc } = payload;
+    if (doc?.verdict || (doc?.totalTestcases !== undefined)) {
+      setTestcaseTab(0);
+      setExecutionPanel({ type: "submit_results", details: doc });
+      
+      const v = (doc.verdict || doc.status || "").toLowerCase();
+      if (v === "accepted" || v === "correct answer") setStatusBadge({ type: "success", text: "Accepted" });
+      else if (v.includes("time limit") || v.includes("tle")) setStatusBadge({ type: "warn", text: "Time Limit Exceeded" });
+      else if (v.includes("memory limit") || v.includes("mle")) setStatusBadge({ type: "error", text: "Memory Limit Exceeded" });
+      else if (v.includes("compile") || v.includes("build")) setStatusBadge({ type: "error", text: "Compilation Error" });
+      else if (v.includes("wrong answer")) setStatusBadge({ type: "error", text: "Wrong Answer" });
+      else setStatusBadge({ type: "error", text: doc.verdict || doc.status || "Error" });
       return;
     }
 
+    const { status, execution = [], errors = [], stderr, stdout } = payload;
+    if (status === "compile_error") {
+      showCompileErrors(errors || [{ message: stderr || "Compilation failed" }]);
+      return;
+    }
+    const valid = ["accepted", "rejected", "correct answer", "wrong answer", "tle", "mle"];
+    if (status && !valid.includes(status.toLowerCase())) {
+      setExecutionPanel({ type: "error", message: payload.error || payload.raw || String(status) });
+      setStatusBadge({ type: "error", text: "Error" });
+      return;
+    }
     setTestcaseTab(0);
-    setExecutionPanel({ type: "submit_results", details: payload });
-    
-    const v = (verdict || "").toLowerCase();
-    if (v === "accepted" || v === "correct answer") setStatusBadge({ type: "success", text: "Accepted" });
-    else if (v.includes("time limit") || v.includes("tle")) setStatusBadge({ type: "warn", text: "Time Limit Exceeded" });
-    else if (v.includes("memory limit") || v.includes("mle")) setStatusBadge({ type: "error", text: "Memory Limit Exceeded" });
-    else if (v.includes("wrong answer") || v === "wa") setStatusBadge({ type: "error", text: "Wrong Answer" });
-    else if (v === "runtime_error" || v === "re") setStatusBadge({ type: "error", text: "Runtime Error" });
-    else setStatusBadge({ type: "error", text: verdict || "Failed" });
+    setExecutionPanel({ type: "tests", items: execution, stdout: String(stdout || ""), stderr: String(stderr || "") });
+    const allPassed = execution.length > 0 && execution.every((t) => !!t?.isPassed);
+    const hasTLE = execution.some((t) => t?.isTLE || /exited|timeout/i.test(String(t?.output ?? t?.actual ?? t?.error ?? "")));
+    if (hasTLE) setStatusBadge({ type: "warn", text: "Time Limit Exceeded" });
+    else if (allPassed) setStatusBadge({ type: "success", text: "Accepted" });
+    else if (execution.length === 0) setStatusBadge(null);
+    else setStatusBadge({ type: "error", text: "Wrong Answer" });
   }, [showCompileErrors]);
 
   const runMutation = useMutation({
@@ -222,7 +259,7 @@ export default function ProblemPage() {
     onMutate: () => {
       setIsRunning(true);
       setStatusBadge(null);
-      setExecutionPanel({ type: "loading", message: "Running..." });
+      setExecutionPanel({ type: "loading", message: "Running on sample testcases…" });
       clearMarkers();
     },
     onError: (err) => {
@@ -230,21 +267,21 @@ export default function ProblemPage() {
       setExecutionPanel({ type: "error", message: msg });
       setStatusBadge({ type: "error", text: "Error" });
       setIsRunning(false);
-      posthog.capture("run_failed", { problem_id: problemId, error: String(msg) });
     },
     onSuccess: (res) => {
-      const id = res.data.data?.submissionId;
-      if (id) setActiveSubmissionId(id);
+      const id = res.data.message?.id;
+      if (id) setRunJobId(id);
       else setIsRunning(false);
     },
   });
 
   const submitMutation = useMutation({
-    mutationFn: () => createSubmission(problemId, { code, language }),
+    mutationFn: () => createSubmission(problemId, { code, language }, submitIdempotencyKeyRef.current),
     onMutate: () => {
+      submitIdempotencyKeyRef.current = crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
       setIsSubmitting(true);
       setStatusBadge(null);
-      setExecutionPanel({ type: "loading", message: "Submitting..." });
+      setExecutionPanel({ type: "loading", message: "Submitting — judging hidden testcases…" });
       clearMarkers();
     },
     onError: (err) => {
@@ -252,56 +289,52 @@ export default function ProblemPage() {
       setExecutionPanel({ type: "error", message: msg });
       setStatusBadge({ type: "error", text: "Error" });
       setIsSubmitting(false);
-      posthog.capture("submission_failed", { problem_id: problemId, error: String(msg) });
     },
     onSuccess: (res) => {
-      const id = res.data.data?.submissionId;
-      if (id) setActiveSubmissionId(id);
+      const { id, submissionId } = res.data.message || {};
+      if (id && submissionId) setSubmitMeta({ jobId: id, submissionId });
       else setIsSubmitting(false);
     },
   });
 
   useEffect(() => {
-    if (!activeSubmissionId || !pollQuery.data) return;
-    const { status } = pollQuery.data;
-
-    if (status === "FAILED" || status === "ERROR") {
-      setStatusBadge({ type: "error", text: "Execution Failed" });
-      setExecutionPanel({ type: "error", message: "Job failed." });
-      setActiveSubmissionId(null);
+    if (!runJobId || !runStoredQuery.isSuccess || !runStoredQuery.data) return;
+    const doc = runStoredQuery.data?.data?.result;
+    if (!doc) return;
+    const v = (doc.verdict || doc.status || "").toLowerCase();
+    const term = ["correct answer", "tle", "time limit", "wrong answer", "mle", "compile", "accepted", "rejected", "build", "error", "no_sample"];
+    if (term.some(t => v.includes(t))) {
+      if (handledRunStoredRef.current === `run-${runJobId}`) return;
+      handledRunStoredRef.current = `run-${runJobId}`;
+      let exc = Array.isArray(doc.result) ? doc.result : [];
+      if (!exc.length && doc.output) try { exc = JSON.parse(doc.output); } catch {}
+      const res = { doc, status: doc.status, execution: exc, errors: doc.errors || [], raw: doc.raw || "", error: doc.error || "" };
+      setRunResult(problemId, res);
+      processExecutionResult(res);
+      setRunJobId(null);
       setIsRunning(false);
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (status === "COMPLETED") {
-      getSubmissionResult(activeSubmissionId)
-        .then(r => {
-           const payload = r.data.data;
-           processExecutionResult(payload);
-           queryClient.invalidateQueries({ queryKey: ["problem-submissions", problemId] });
-        })
-        .catch(err => {
-           setStatusBadge({ type: "error", text: "Result Fetch Failed" });
-           setExecutionPanel({ type: "error", message: "Failed to get final result." });
-        })
-        .finally(() => {
-           setActiveSubmissionId(null);
-           setIsRunning(false);
-           setIsSubmitting(false);
-        });
-    }
-  }, [activeSubmissionId, pollQuery.data, problemId, queryClient, processExecutionResult]);
+    } else setExecutionPanel({ type: "loading", message: `Running — ${doc.verdict || doc.status}...` });
+  }, [runJobId, runStoredQuery.data, problemId, setRunResult, processExecutionResult]);
 
   useEffect(() => {
-    if (!activeSubmissionId || !pollQuery.isError) return;
-    setStatusBadge({ type: "error", text: "Execution Failed" });
-    setExecutionPanel({ type: "error", message: "Failed to get submission job status." });
-    setActiveSubmissionId(null);
-    setIsRunning(false);
-    setIsSubmitting(false);
-    posthog.capture("submission_failed", { problem_id: problemId, error: "poll_error" });
-  }, [activeSubmissionId, pollQuery.isError, problemId, posthog]);
+    if (!submitMeta || !submitStoredQuery.isSuccess || !submitStoredQuery.data) return;
+    const doc = submitStoredQuery.data?.data?.result;
+    if (!doc) return;
+    const v = (doc.verdict || doc.status || "").toLowerCase();
+    const term = ["correct answer", "tle", "time limit", "wrong answer", "mle", "compile", "accepted", "rejected", "build", "error"];
+    if (term.some(t => v.includes(t))) {
+      if (handledSubmitStoredRef.current === `sub-${submitMeta.submissionId}`) return;
+      handledSubmitStoredRef.current = `sub-${submitMeta.submissionId}`;
+      let exc = Array.isArray(doc.result) ? doc.result : [];
+      if (!exc.length && doc.output) try { exc = JSON.parse(doc.output); } catch {}
+      const res = { doc, status: doc.status, execution: exc, errors: doc.errors || [], raw: doc.raw || "", error: doc.error || "" };
+      setSubmitResult(problemId, { source: "db", document: doc });
+      processExecutionResult(res);
+      queryClient.invalidateQueries({ queryKey: ["problem-submissions", problemId] });
+      setSubmitMeta(null);
+      setIsSubmitting(false);
+    } else setExecutionPanel({ type: "loading", message: `Submitting — ${doc.verdict || doc.status}...` });
+  }, [submitMeta, submitStoredQuery.data, problemId, setSubmitResult, processExecutionResult, queryClient]);
 
   useEffect(() => {
     if (!problemId) return;

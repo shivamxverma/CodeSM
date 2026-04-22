@@ -58,6 +58,86 @@ export default function ExecutionConsole({
           </ul>
         )}
 
+        {executionPanel?.type === "submit_results" && (() => {
+          const { details } = executionPanel;
+          const v = (details.verdict || details.status || "").toLowerCase();
+          const isAccepted = v === "accepted" || v === "correct answer";
+          const isError = !isAccepted && !v.includes("pending") && !v.includes("running");
+          const colorClass = isAccepted 
+            ? "text-emerald-400 bg-emerald-950/20 border-emerald-800/40" 
+            : isError 
+              ? "text-red-400 bg-red-950/20 border-red-800/40" 
+              : "text-amber-400 bg-amber-950/20 border-amber-800/40";
+          
+          const titleColor = isAccepted ? "text-emerald-400" : isError ? "text-red-400" : "text-amber-400";
+
+          return (
+            <div className="space-y-5 py-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className={`p-4 rounded-xl border ${colorClass} flex flex-col gap-4 shadow-xl shadow-black/20 backdrop-blur-sm`}>
+                <div className="flex items-center gap-2">
+                  <h3 className={`text-[19px] font-bold ${titleColor} capitalize tracking-tight`}>
+                    {details.verdict || details.status || "Unknown"}
+                  </h3>
+                  {isAccepted && <span className="text-xl ml-1">🚀</span>}
+                </div>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="flex flex-col gap-1 flex-1 bg-black/40 p-3 rounded-lg border border-white/5 transition-colors hover:bg-black/50">
+                    <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Testcases</span>
+                    <span className="text-gray-200 font-mono text-sm font-semibold">
+                      <span className={details.passedTestcases === details.totalTestcases && details.totalTestcases > 0 ? "text-emerald-400" : "text-gray-200"}>
+                        {details.passedTestcases ?? 0}
+                      </span>
+                      <span className="text-gray-600 mx-1.5 font-bold">/</span>
+                      {details.totalTestcases ?? 'N/A'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-1 flex-1 bg-black/40 p-3 rounded-lg border border-white/5 transition-colors hover:bg-black/50">
+                    <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Time</span>
+                    <span className="text-gray-200 font-mono text-sm font-semibold">{details.timeTaken != null ? `${details.timeTaken} ms` : '—'}</span>
+                  </div>
+
+                  <div className="flex flex-col gap-1 flex-1 bg-black/40 p-3 rounded-lg border border-white/5 transition-colors hover:bg-black/50">
+                    <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Memory</span>
+                    <span className="text-gray-200 font-mono text-sm font-semibold">{details.memoryTaken != null ? `${(details.memoryTaken / 1024).toFixed(1)} KB` : '—'}</span>
+                  </div>
+
+                  <div className="flex flex-col gap-1 flex-1 bg-black/40 p-3 rounded-lg border border-white/5 transition-colors hover:bg-black/50">
+                    <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Language</span>
+                    <span className="text-gray-200 font-mono text-sm font-semibold">{details.language || '—'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {(details.stdout?.trim() || details.stderr?.trim()) && (
+                <div className="space-y-4 px-1">
+                  {details.stdout?.trim() && (
+                    <div>
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2 ml-0.5">
+                        <span className="bg-gray-800/50 px-2 py-1 rounded border border-gray-700/50">Standard Output</span>
+                      </div>
+                      <pre className="text-gray-300 bg-[#0c1219] border border-[#233046] rounded-xl p-4 text-xs font-mono whitespace-pre-wrap overflow-x-auto shadow-inner leading-relaxed">
+                        {details.stdout.trim()}
+                      </pre>
+                    </div>
+                  )}
+                  {details.stderr?.trim() && (
+                    <div>
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-red-400 mb-2 ml-0.5">
+                        <span className="bg-red-950/40 text-red-400 px-2 py-1 rounded border border-red-900/50">Standard Error</span>
+                      </div>
+                      <pre className="text-red-200/90 bg-[#1a0e0e] border border-red-900/40 rounded-xl p-4 text-xs font-mono whitespace-pre-wrap overflow-x-auto shadow-inner leading-relaxed">
+                        {details.stderr.trim()}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {executionPanel?.type === "tests" && (
           <div className="space-y-3">
             {executionPanel.items.length > 0 ? (

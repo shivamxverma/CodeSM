@@ -91,7 +91,7 @@ export function InterviewMediaPermissionsStep({ onGranted, onCancel, isLoading, 
         if (!streamRef.current || error) return;
         transferredRef.current = true;
         const stream = streamRef.current;
-        streamRef.current = null;
+        // streamRef.current = null;
         if (rafRef.current) {
             cancelAnimationFrame(rafRef.current);
             rafRef.current = null;

@@ -324,7 +324,9 @@ const executeCode = async (testcases, language, runnerDir, submissionId, limits)
 };
 
 const runCodeWithInput = async (code, language, problemId, submissionId, mode, limits) => {
+  console.log(`[Worker] Inside runCodeWithInput for ${submissionId}`);
   const { runnerDir } = await writeCodeToRunnerDir(code, language);
+  console.log(`[Worker] Code written to ${runnerDir}`);
   
   // 1. Fetch testcase keys from database
   const testcaseQuery = mode === 'RUN' 
@@ -337,6 +339,8 @@ const runCodeWithInput = async (code, language, problemId, submissionId, mode, l
     .where(testcaseQuery)
     .orderBy(schema.testcase.order);
 
+  console.log(`[Worker] Fetched ${testcases.length} testcases`);
+
   if (testcases.length === 0) {
     await fs.rm(runnerDir, { recursive: true, force: true });
     await db.update(schema.submission).set({ status: 'FAILED' }).where(eq(schema.submission.id, submissionId));
@@ -344,7 +348,9 @@ const runCodeWithInput = async (code, language, problemId, submissionId, mode, l
   }
 
   // 2. Execute
+  console.log(`[Worker] Calling executeCode...`);
   const result = await executeCode(testcases, language, runnerDir, submissionId, limits);
+  console.log(`[Worker] executeCode finished with status: ${result.status}`);
 
   // 3. Update Submission
   await db.update(schema.submission)
@@ -369,6 +375,7 @@ const runCodeWithInput = async (code, language, problemId, submissionId, mode, l
     });
 
   await setSubmissionStatus(submissionId, result.status);
+  console.log(`[Worker] runCodeWithInput complete for ${submissionId}`);
   return result;
 };
 
