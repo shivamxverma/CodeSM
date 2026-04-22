@@ -34,7 +34,9 @@ jobs:
             bash -s <<'ENDSSH'
           set -euo pipefail
           cd CodeSM
-          git pull origin main --rebase
+          git fetch origin
+          git reset --hard origin/main
+          git clean -fd
 
           cd backend
           npm install --production
