@@ -166,6 +166,9 @@ export default function ProblemPage() {
       if (st === "COMPLETED" || st === "FAILED" || st === "ERROR") return false;
       return 2000;
     },
+    retry: (failureCount, err) =>
+      failureCount < 10 && (err?.response?.status === 404 || err?.response?.status === 400),
+    retryDelay: (i) => Math.min(1500 * (i + 1), 8000),
   });
 
   const { data: submissions = [], refetch: refetchSubmissions } = useQuery({
@@ -230,18 +233,20 @@ export default function ProblemPage() {
       setExecutionPanel({ type: "error", message: msg });
       setStatusBadge({ type: "error", text: "Error" });
       setIsRunning(false);
-      posthog.capture("run_failed", { problem_id: problemId, error: String(msg) });
-    },
-    onSuccess: (res) => {
-      const id = res.data.data?.submissionId;
       if (id) setActiveSubmissionId(id);
       else setIsRunning(false);
     },
   });
 
   const submitMutation = useMutation({
-    mutationFn: () => createSubmission(problemId, { code, language }),
+    mutationFn: () =>
+      createSubmission(problemId, { code, language }, submitIdempotencyKeyRef.current),
+    retry: 0,
     onMutate: () => {
+      submitIdempotencyKeyRef.current =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
       setIsSubmitting(true);
       setStatusBadge(null);
       setExecutionPanel({ type: "loading", message: "Submitting..." });
@@ -258,6 +263,9 @@ export default function ProblemPage() {
       const id = res.data.data?.submissionId;
       if (id) setActiveSubmissionId(id);
       else setIsSubmitting(false);
+    },
+    onSettled: () => {
+      submitIdempotencyKeyRef.current = null;
     },
   });
 
@@ -303,6 +311,7 @@ export default function ProblemPage() {
     posthog.capture("submission_failed", { problem_id: problemId, error: "poll_error" });
   }, [activeSubmissionId, pollQuery.isError, problemId, posthog]);
 
+  // Persist code changes (debounced).
   useEffect(() => {
     if (!problemId) return;
     const starterKey = language === "golang" ? "go" : language;
@@ -361,6 +370,24 @@ export default function ProblemPage() {
   }, [statusBadge]);
 
   const embedUrl = getYouTubeEmbed(problem?.editorialLink);
+  const renderActiveTabContent = () => {
+    return (
+      <ProblemTabContent
+        activeTab={activeTab}
+        problem={problem}
+        problemId={problemId}
+        embedUrl={embedUrl}
+        submissions={submissions}
+        refetchSubmissions={refetchSubmissions}
+        hints={hints}
+        hintsLoading={hintsLoading}
+        hintsError={hintsError}
+        revealedHintIndex={revealedHintIndex}
+        setRevealedHintIndex={setRevealedHintIndex}
+        fetchHints={fetchHints}
+      />
+    );
+  };
 
   return (
     <div ref={rootRef} className="flex w-full flex-col xl:flex-row overflow-y-auto xl:overflow-hidden bg-[#0b0f13] text-gray-200 font-sans" style={{ height: "calc(100dvh - 56px)" }}>
