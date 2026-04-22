@@ -7,33 +7,23 @@ import { Request,Response } from 'express';
 import status from 'http-status';
 
 export const generateInterviewQuestions = asyncHandler(async (req:Request, res:Response) => {
-  const { role , experience } = req.body;
-
-  const questions = await generateQuestions(role, experience);
+  const response = await generateQuestions(req.body);
 
   res.status(status.OK)
     .json(new ApiResponse(
         status.OK, 
         "Interview questions generated successfully", 
-        questions
+        response
     ));
 })
 
 export const getAnswerScore = asyncHandler(async (req:Request, res:Response) => {
-  const { question, answer } = req.body;
+  const response = await AnswerScore(req.body);
 
-  const cachedScore = await redis.get(`answerScore:${question}:${answer}`);
-  if (cachedScore) {
-    return res.status(status.OK).json(new ApiResponse(status.OK, JSON.parse(cachedScore), "Answer score fetched successfully from cache"));
-  }
-
-  const { score, analysis } = await AnswerScore(question, answer);
-
-  const cacheExpiry = 60 * 60;
-  redis.setex(`answerScore:${question}:${answer}`, cacheExpiry, JSON.stringify({
-    score,
-    analysis
-  }));
-
-  res.status(200).json(new ApiResponse(200, "Answer scored successfully", { score, analysis }));
-});
+  res.status(status.OK)
+    .json(new ApiResponse(
+        status.OK, 
+        "Answer scored successfully", 
+        response
+    ));
+})
