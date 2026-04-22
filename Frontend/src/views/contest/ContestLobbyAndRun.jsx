@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getContest, registerContest, getLeaderboard } from "../../api/api.js";
-import useContestClock from "../../hooks/useContestClock.jsx";
+import { getContest, registerContest, getLeaderboard } from "@/api/api";
+import useContestClock from "@/hooks/useContestClock";
 import { Link, useParams } from "react-router-dom";
 import { set } from "zod";
-import { useAuth } from "../../auth/AuthContext.jsx";
+import { useAuth } from "@/hooks/AuthContext";
 
 function msFmt(ms) {
   if (ms == null) return "--:--:--";

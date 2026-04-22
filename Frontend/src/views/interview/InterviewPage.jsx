@@ -1,11 +1,11 @@
 import React from 'react';
-import { useInterviewSession } from './components/useInterviewSession.js';
-import { roundUsesCodeEditor } from './components/interviewConstants.js';
-import { InterviewSelectionStep } from './components/InterviewSelectionStep.jsx';
-import { InterviewReadyStep } from './components/InterviewReadyStep.jsx';
-import { InterviewLiveSession } from './components/InterviewLiveSession.jsx';
-import { InterviewResultsSummary } from './components/InterviewResultsSummary.jsx';
-import { InterviewMediaPermissionsStep } from './components/InterviewMediaPermissionsStep.jsx';
+import { useInterviewSession } from '@/components/Interview/useInterviewSession';
+import { roundUsesCodeEditor } from '@/components/Interview/interviewConstants';
+import { InterviewSelectionStep } from '@/components/Interview/InterviewSelectionStep';
+import { InterviewReadyStep } from '@/components/Interview/InterviewReadyStep';
+import { InterviewLiveSession } from '@/components/Interview/InterviewLiveSession';
+import { InterviewResultsSummary } from '@/components/Interview/InterviewResultsSummary';
+import { InterviewMediaPermissionsStep } from '@/components/Interview/InterviewMediaPermissionsStep';
 
 const InterviewAssistant = () => {
     const session = useInterviewSession();

@@ -17,9 +17,14 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.864.0",
     "bull": "^4.16.5",
+    "db-schema": "file:../db-schema",
     "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
     "ioredis": "^5.7.0",
     "mongoose": "^9.3.3",
+    "pg": "^8.20.0",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0",
     "yup": "^1.7.1"
   }
 }

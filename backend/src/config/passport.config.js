@@ -13,7 +13,6 @@ passport.use(new GoogleStrategy({
     try {
         const googleEmail = profile.emails?.[0]?.value?.toLowerCase();
          
-        console.log("shivam here",env.GOOGLE_CALLBACK_URL);
         // 1. Already linked via googleId
         let user = await User.findOne({ googleId: profile.id });
 

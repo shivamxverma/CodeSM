@@ -16,10 +16,10 @@ const s3Client = new S3Client({
   },
 });
 
-async function generateUploadURL(problemId) {
+async function generateUploadURL(key, filename) {
   const params = new PutObjectCommand({
     Bucket: env.AWS_BUCKET_NAME,
-    Key: `problems/${problemId}/testcases.json`,
+    Key: `${key}/${filename}`,
     ContentType: "application/json",
   });
   const url = await getSignedUrl(s3Client, params, { expiresIn: 3600 });
@@ -34,11 +34,11 @@ const streamToString = (stream) =>
     stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
   });
 
-async function fetchTestcasesFromS3(problemId) {
+async function fetchTestcasesFromS3(s3Key) {
   try {
     const command = new GetObjectCommand({
       Bucket: env.AWS_BUCKET_NAME,
-      Key: `problems/${problemId}/testcases.json`,
+      Key: s3Key,
     });
 
     const response = await s3Client.send(command);
@@ -51,4 +51,20 @@ async function fetchTestcasesFromS3(problemId) {
   }
 }
 
-export { generateUploadURL, fetchTestcasesFromS3 };
+async function fetchFileFromS3(s3Key) {
+  try {
+    const command = new GetObjectCommand({
+      Bucket: env.AWS_BUCKET_NAME,
+      Key: s3Key,
+    });
+
+    const response = await s3Client.send(command);
+    const text = await streamToString(response.Body);
+    return text;
+  } catch (err) {
+    console.error("Error fetching file from S3:", err);
+    return null;
+  }
+}
+
+export { generateUploadURL, fetchTestcasesFromS3, fetchFileFromS3 };

@@ -13,15 +13,15 @@ const jobResultSchema = new Schema({
     },
     output: {
         type: String,
-        required: true
+        required: false
     },
     executionTime: {
         type: Number,
-        required: true
+        required: false
     },
     memoryUsage: {
         type: Number,
-        required: true
+        required: false
     }
 }, { timestamps: true });
 

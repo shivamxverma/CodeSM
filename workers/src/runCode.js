@@ -5,9 +5,10 @@ import { fileURLToPath } from 'url';
 import { promisify } from 'util';
 import { fetchTestcasesFromS3 } from '../services/aws.service.js';
 import env from '../config/index.js';
-import JobResult from '../models/jobresult.model.js';
-import Submission from '../models/submission.model.js';
-import { setSubmissionStatus, setRunStatus } from './redis.js';
+import { db } from '../loaders/postgres.js';
+import { schema } from 'db-schema';
+import { eq, and } from 'drizzle-orm';
+import { setSubmissionStatus } from './redis.js';
 
 const execAsync = promisify(exec);
 
@@ -15,20 +16,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../');
 
-// Backwards compatible env var: CPP_RUNNER_IMAGE; prefer RUNNER_IMAGE for multi-lang sandbox.
-const RUNNER_IMAGE =
-  env.RUNNER_IMAGE ||
-  env.CPP_RUNNER_IMAGE ||
-  'codesm-sandbox-runner:latest';
+const RUNNER_IMAGE = env.RUNNER_IMAGE || env.CPP_RUNNER_IMAGE || 'codesm-sandbox-runner:latest';
 const RUNNER_DOCKERFILE = path.join(projectRoot, 'docker', 'sandbox-runner', 'Dockerfile');
 const RUNNER_BUILD_CONTEXT = path.join(projectRoot, 'docker', 'sandbox-runner');
 
-/** In production, pre-pull the image (CI/registry). Auto-build only when explicitly allowed or non-production. */
 function shouldAutoBuildRunner() {
   if (env.RUNNER_AUTO_BUILD === 'true') return true;
   if (env.RUNNER_AUTO_BUILD === 'false') return false;
-  if (env.CPP_RUNNER_AUTO_BUILD === 'true') return true;
-  if (env.CPP_RUNNER_AUTO_BUILD === 'false') return false;
   return env.NODE_ENV !== 'production';
 }
 
@@ -40,10 +34,8 @@ function parsePositiveInt(name, fallback) {
 const SANDBOX_MEMORY = env.SANDBOX_MEMORY || '256m';
 const SANDBOX_CPUS = env.SANDBOX_CPUS || '0.5';
 const SANDBOX_PIDS_LIMIT = env.SANDBOX_PIDS_LIMIT || '64';
-const COMPILE_TIMEOUT_SEC =
-  parsePositiveInt('COMPILE_TIMEOUT_SEC', parsePositiveInt('CPP_COMPILE_TIMEOUT_SEC', 60));
-const RUN_TIMEOUT_SEC =
-  parsePositiveInt('RUN_TIMEOUT_SEC', parsePositiveInt('CPP_RUN_TIMEOUT_SEC', 2));
+const COMPILE_TIMEOUT_SEC = parsePositiveInt('COMPILE_TIMEOUT_SEC', 60);
+const RUN_TIMEOUT_SEC = parsePositiveInt('RUN_TIMEOUT_SEC', 2);
 const MAX_TESTCASE_INPUT_BYTES = parsePositiveInt('MAX_TESTCASE_INPUT_BYTES', 256 * 1024);
 const MAX_PROGRAM_OUTPUT_BYTES = parsePositiveInt('MAX_PROGRAM_OUTPUT_BYTES', 256 * 1024);
 
@@ -57,7 +49,6 @@ function dockerUserArgs() {
   return [];
 }
 
-/** Shared cgroup / isolation flags for compile and run sandboxes. */
 function dockerResourceAndSecurityArgs() {
   return [
     '--memory', SANDBOX_MEMORY,
@@ -83,14 +74,12 @@ function normalizeLanguage(language) {
 
 function languageSpec(language) {
   const lang = normalizeLanguage(language);
-  /** @type {Record<string, {id:string, filename:string, kind:'compiled'|'interpreted', compile?:string, run:string, artifacts?: { type: 'binary', path: string } | { type: 'class', className: string } }>} */
   const specs = {
     cpp: {
       id: 'cpp',
       filename: 'main.cpp',
       kind: 'compiled',
-      compile:
-        `timeout ${COMPILE_TIMEOUT_SEC}s g++ main.cpp -O2 -std=c++17 -fdiagnostics-color=never -o user_program 2> /tmp/compile.err`,
+      compile: `timeout ${COMPILE_TIMEOUT_SEC}s g++ main.cpp -O2 -std=c++17 -fdiagnostics-color=never -o user_program 2> /tmp/compile.err`,
       run: `timeout ${RUN_TIMEOUT_SEC}s ./user_program`,
       artifacts: { type: 'binary', path: 'user_program' },
     },
@@ -98,8 +87,7 @@ function languageSpec(language) {
       id: 'c',
       filename: 'main.c',
       kind: 'compiled',
-      compile:
-        `timeout ${COMPILE_TIMEOUT_SEC}s gcc main.c -O2 -std=c11 -fdiagnostics-color=never -o user_program 2> /tmp/compile.err`,
+      compile: `timeout ${COMPILE_TIMEOUT_SEC}s gcc main.c -O2 -std=c11 -fdiagnostics-color=never -o user_program 2> /tmp/compile.err`,
       run: `timeout ${RUN_TIMEOUT_SEC}s ./user_program`,
       artifacts: { type: 'binary', path: 'user_program' },
     },
@@ -107,8 +95,7 @@ function languageSpec(language) {
       id: 'java',
       filename: 'Main.java',
       kind: 'compiled',
-      compile:
-        `timeout ${COMPILE_TIMEOUT_SEC}s javac -J-Dfile.encoding=UTF-8 -encoding UTF-8 Main.java 2> /tmp/compile.err`,
+      compile: `timeout ${COMPILE_TIMEOUT_SEC}s javac -J-Dfile.encoding=UTF-8 -encoding UTF-8 Main.java 2> /tmp/compile.err`,
       run: `timeout ${RUN_TIMEOUT_SEC}s java -Dfile.encoding=UTF-8 -cp /tmp Main`,
       artifacts: { type: 'class', className: 'Main' },
     },
@@ -116,8 +103,7 @@ function languageSpec(language) {
       id: 'go',
       filename: 'main.go',
       kind: 'compiled',
-      compile:
-        `timeout ${COMPILE_TIMEOUT_SEC}s bash -lc 'GOMODCACHE=/tmp/gomodcache GOPATH=/tmp/gopath GOCACHE=/tmp/gocache go build -o user_program main.go' 2> /tmp/compile.err`,
+      compile: `timeout ${COMPILE_TIMEOUT_SEC}s bash -lc 'GOMODCACHE=/tmp/gomodcache GOPATH=/tmp/gopath GOCACHE=/tmp/gocache go build -o user_program main.go' 2> /tmp/compile.err`,
       run: `timeout ${RUN_TIMEOUT_SEC}s ./user_program`,
       artifacts: { type: 'binary', path: 'user_program' },
     },
@@ -138,7 +124,7 @@ function languageSpec(language) {
 }
 
 const writeCodeToRunnerDir = async (code, language) => {
-  const runnerDir = path.join(projectRoot, 'code');
+  const runnerDir = path.join(projectRoot, 'code', `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const spec = languageSpec(language);
   if (!spec) throw new Error(`Unsupported language: ${language}`);
   const codePath = path.join(runnerDir, spec.filename);
@@ -154,35 +140,20 @@ async function ensureRunnerImage() {
     return;
   } catch {
     if (!shouldAutoBuildRunner()) {
-      throw new Error(
-        `Sandbox image ${RUNNER_IMAGE} is missing. Pre-build or pull it, or set RUNNER_AUTO_BUILD=true (not recommended in production).`
-      );
+      throw new Error(`Sandbox image ${RUNNER_IMAGE} is missing.`);
     }
-    const buildCmd = [
-      'docker',
-      'build',
-      '-f',
-      RUNNER_DOCKERFILE,
-      '-t',
-      RUNNER_IMAGE,
-      RUNNER_BUILD_CONTEXT,
-    ];
+    const buildCmd = ['docker', 'build', '-f', RUNNER_DOCKERFILE, '-t', RUNNER_IMAGE, RUNNER_BUILD_CONTEXT];
     await execAsync(buildCmd.map((a) => JSON.stringify(a)).join(' '), { cwd: projectRoot });
   }
 }
 
 async function compileInContainer(runnerDir, spec) {
   const binPath = path.join(runnerDir, 'user_program');
-  const javaClassPath =
-    spec?.artifacts?.type === 'class'
-      ? path.join(runnerDir, `${spec.artifacts.className}.class`)
-      : null;
+  const javaClassPath = spec?.artifacts?.type === 'class' ? path.join(runnerDir, `${spec.artifacts.className}.class`) : null;
 
   await fs.rm(binPath, { force: true });
   if (javaClassPath) await fs.rm(javaClassPath, { force: true });
-  const innerCompile = spec.compile
-    ? spec.compile
-    : `bash -lc 'echo "no compile" >/dev/null'`;
+  const innerCompile = spec.compile ? spec.compile : `bash -lc 'echo "no compile" >/dev/null'`;
   const inner = [
     'cd /tmp &&',
     `cp /host_code/${spec.filename} . &&`,
@@ -231,54 +202,28 @@ async function compileInContainer(runnerDir, spec) {
         resolve({ ok: true });
       } catch {
         const text = (stdout + '\n' + stderr).trim();
-        const diag = [];
-        const re = /^(?<file>[^:\n]+):(?<line>\d+):(?<col>\d+):\s(?<sev>error|warning|note):\s(?<msg>[^\n]+)/gim;
-        let m;
-        while ((m = re.exec(text)) !== null) {
-          diag.push({
-            file: m.groups.file,
-            line: parseInt(m.groups.line, 10),
-            column: parseInt(m.groups.col, 10),
-            severity: m.groups.sev,
-            message: m.groups.msg.trim(),
-          });
-        }
-        resolve({
-          ok: false,
-          errors: diag.length ? diag : [{ file: spec.filename, line: 1, column: 1, severity: 'error', message: text }],
-          raw: text,
-        });
+        resolve({ ok: false, errors: [{ file: spec.filename, line: 1, column: 1, severity: 'error', message: text }], raw: text });
       }
     });
   });
 }
 
-/** Run one testcase with stdin. */
 function runInContainer(runnerDir, spec, input, timeLimit, memoryLimit) {
   const inputStr = input ?? '';
-  if (Buffer.byteLength(inputStr, 'utf8') > MAX_TESTCASE_INPUT_BYTES) {
-    return Promise.reject(new Error(`Input exceeds ${MAX_TESTCASE_INPUT_BYTES} bytes`));
-  }
-
   const tLimit = timeLimit || RUN_TIMEOUT_SEC;
   const mLimit = memoryLimit ? `${memoryLimit}m` : SANDBOX_MEMORY;
 
-  const bootstrap =
-    spec.kind === 'compiled'
-      ? spec?.artifacts?.type === 'class'
-        ? 'cp /host_code/*.class . 2>/dev/null || true'
-        : 'cp /host_code/user_program . && chmod +x user_program'
-      : `cp /host_code/${spec.filename} .`;
+  const bootstrap = spec.kind === 'compiled'
+    ? spec?.artifacts?.type === 'class'
+      ? 'cp /host_code/*.class . 2>/dev/null || true'
+      : 'cp /host_code/user_program . && chmod +x user_program'
+    : `cp /host_code/${spec.filename} .`;
 
   const runCmd = spec.run.replace(`timeout ${RUN_TIMEOUT_SEC}s`, `timeout ${tLimit}s`);
-
-  const inner = [
-    'cd /tmp &&',
-    `${bootstrap} &&`,
-    runCmd,
-  ].join(' ');
+  const inner = ['cd /tmp &&', `${bootstrap} &&`, runCmd].join(' ');
 
   return new Promise((resolve, reject) => {
+    const startTime = Date.now();
     const args = [
       'run', '--rm', '-i',
       ...dockerResourceAndSecurityArgs(),
@@ -294,24 +239,20 @@ function runInContainer(runnerDir, spec, input, timeLimit, memoryLimit) {
     let stdout = '';
     let stderr = '';
     let outBytes = 0;
-    const onChunk = (buf, which) => {
-      const s = buf.toString();
+    proc.stdout.on('data', (d) => {
+      const s = d.toString();
       outBytes += Buffer.byteLength(s, 'utf8');
-      if (outBytes > MAX_PROGRAM_OUTPUT_BYTES) {
-        proc.kill('SIGKILL');
-        return;
-      }
-      if (which === 'stderr') stderr += s;
-      else stdout += s;
-    };
-    proc.stdout.on('data', (d) => onChunk(d, 'stdout'));
-    proc.stderr.on('data', (d) => onChunk(d, 'stderr'));
+      if (outBytes > MAX_PROGRAM_OUTPUT_BYTES) { proc.kill('SIGKILL'); return; }
+      stdout += s;
+    });
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
     proc.on('error', reject);
     proc.on('close', (code) => {
-      if (code === 0) resolve(stdout.trim());
-      else if (code === 124) reject(new Error('TLE'));
-      else if (code === 137) reject(new Error('MLE'));
-      else reject(new Error((stderr || stdout || `Exited ${code}`).trim()));
+      const duration = Date.now() - startTime;
+      if (code === 0) resolve({ stdout: stdout.trim(), time: duration, memory: memoryLimit || 0 });
+      else if (code === 124) reject({ message: 'TLE', time: duration });
+      else if (code === 137) reject({ message: 'MLE', time: duration });
+      else reject({ message: (stderr || stdout || `Exited ${code}`).trim(), time: duration });
     });
     proc.stdin.write(inputStr);
     proc.stdin.end();
@@ -321,141 +262,121 @@ function runInContainer(runnerDir, spec, input, timeLimit, memoryLimit) {
 const normalizeOut = (s) => (s ?? '').toString().replace(/\r\n/g, '\n').trim();
 
 const executeCode = async (testcases, language, runnerDir, submissionId, limits) => {
-  const cases = Array.isArray(testcases) ? testcases : testcases?.testcases;
-  if (!Array.isArray(cases) || cases.length === 0) {
-    await fs.rm(runnerDir, { recursive: true, force: true });
-    return { status: 'testcase_fetch_error', error: 'Missing or invalid testcases' };
-  }
-
   const spec = languageSpec(language);
   if (!spec) {
     await fs.rm(runnerDir, { recursive: true, force: true });
-    return { status: 'builderror', error: `Unsupported language: ${language}` };
+    return { status: 'COMPILE_ERROR', error: `Unsupported language: ${language}` };
   }
 
-  try {
-    await ensureRunnerImage();
-  } catch (err) {
+  try { await ensureRunnerImage(); } catch (err) {
     await fs.rm(runnerDir, { recursive: true, force: true });
-    return { status: 'builderror', error: err.stderr || err.message };
-  }
-
-  // Update status to compiling
-  if (submissionId) {
-    await Submission.findByIdAndUpdate(submissionId, { status: 'compiling' });
-    await setSubmissionStatus(submissionId, 'compiling');
+    return { status: 'FAILED', error: err.message };
   }
 
   const compile = await compileInContainer(runnerDir, spec);
   if (!compile.ok) {
     await fs.rm(runnerDir, { recursive: true, force: true });
-    return { status: 'compile_error', errors: compile.errors, raw: compile.raw };
+    return { status: 'COMPILE_ERROR', raw: compile.raw };
   }
 
-  const execution = [];
-  let finalStatus = 'correct answer';
+  let passedCount = 0;
+  let totalTime = 0;
+  let maxMemory = 0;
+  let finalVerdict = 'ACCEPTED';
 
-  for (let i = 0; i < cases.length; i++) {
-    const tc = cases[i];
-    const expectedNorm = normalizeOut(tc.output);
-    
-    // Update real-time status
-    if (submissionId) {
-      const status = `executing testcase ${i + 1}/${cases.length}`;
-      await Submission.findByIdAndUpdate(submissionId, {
-        status: status
-      });
-      await setSubmissionStatus(submissionId, status);
+  for (let i = 0; i < testcases.length; i++) {
+    const tc = testcases[i];
+    const s3Data = await fetchTestcasesFromS3(tc.s3Key);
+    if (!s3Data) {
+      finalVerdict = 'FAILED';
+      break;
     }
 
     try {
-      const actual = await runInContainer(runnerDir, spec, tc.input, limits?.timeLimit, limits?.memoryLimit);
-      const isPassed = normalizeOut(actual) === expectedNorm;
-      const status = isPassed ? 'correct answer' : 'wrong answer';
-      
-      execution.push({ index: i, isPassed, input: tc.input, expected: tc.output, actual, status });
-      
-      if (!isPassed && finalStatus === 'correct answer') {
-        finalStatus = 'wrong answer';
+      const runResult = await runInContainer(runnerDir, spec, s3Data.input, limits.timeLimit, limits.memoryLimit);
+      totalTime += runResult.time;
+      maxMemory = Math.max(maxMemory, runResult.memory);
+
+      if (normalizeOut(runResult.stdout) === normalizeOut(s3Data.output)) {
+        passedCount++;
+      } else {
+        if (finalVerdict === 'ACCEPTED') finalVerdict = 'WRONG_ANSWER';
       }
     } catch (err) {
-      let status = 'wrong answer';
-      if (err.message === 'TLE') status = 'tle';
-      else if (err.message === 'MLE') status = 'mle';
-      
-      execution.push({
-        index: i,
-        isPassed: false,
-        input: tc.input,
-        expected: tc.output,
-        error: err.message,
-        status: status
-      });
-
-      if (finalStatus === 'correct answer') {
-        finalStatus = status;
+      totalTime += (err.time || 0);
+      if (finalVerdict === 'ACCEPTED') {
+        if (err.message === 'TLE') finalVerdict = 'TIME_LIMIT_EXCEEDED';
+        else if (err.message === 'MLE') finalVerdict = 'MEMORY_LIMIT_EXCEEDED';
+        else finalVerdict = 'RUNTIME_ERROR';
       }
     }
   }
 
   await fs.rm(runnerDir, { recursive: true, force: true });
-  console.log('Here execution ', execution);
-  return { status: finalStatus, execution };
-};
-
-const runCodeWithInput = async (code, language, problemId, submissionId, limits) => {
-  const { runnerDir } = await writeCodeToRunnerDir(code, language);
-  let testcases;
-  try {
-    testcases = await fetchTestcasesFromS3(problemId);
-  } catch (err) {
-    return { status: 'testcase_fetch_error', error: err.message };
-  }
-  const result = await executeCode(testcases, language, runnerDir, submissionId, limits);
-  
-  // Update final submission status
-  if (submissionId) {
-    await Submission.findByIdAndUpdate(submissionId, { status: result.status });
-    await setSubmissionStatus(submissionId, result.status, result.execution);
-  }
-
-  await JobResult.create({
-    submissionId: submissionId,
-    status: result.status,
-    output: JSON.stringify(result.execution),
-    executionTime: result.execution.reduce((acc, curr) => acc + (curr.executionTime ?? 0), 0),
-    memoryUsage: result.execution.reduce((acc, curr) => acc + (curr.memoryUsage ?? 0), 0),
-  });
-  return result;
-};
-
-const dryRunCodeWithInput = async (code, language, problem, jobId) => {
-  const { runnerDir } = await writeCodeToRunnerDir(code, language);
-  const testcases = problem.sampleTestcases;
-  if (!testcases || testcases.length === 0) {
-    if (jobId) {
-      await setRunStatus(jobId, 'no_sample_testcases');
-    }
-    return { status: 'no_sample_testcases', error: 'No sample testcases provided for dry run.' };
-  }
-  const limits = {
-    timeLimit: problem.timeLimit,
-    memoryLimit: problem.memoryLimit,
+  return { 
+    status: finalVerdict === 'ACCEPTED' ? 'COMPLETED' : 'COMPLETED', // Status is COMPLETED if execution finished
+    verdict: finalVerdict,
+    passedCount,
+    totalCount: testcases.length,
+    totalTime,
+    maxMemory
   };
+};
+
+const runCodeWithInput = async (code, language, problemId, submissionId, mode, limits) => {
+  console.log(`[Worker] Inside runCodeWithInput for ${submissionId}`);
+  const { runnerDir } = await writeCodeToRunnerDir(code, language);
+  console.log(`[Worker] Code written to ${runnerDir}`);
   
-  // NOTE: executeCode currently sets status for 'submissionId' if passed. 
-  // We don't want it to update DB Submission inside executeCode, but right now executeCode takes submissionId and updates the DB.
-  // Wait, executeCode accepts (testcases, language, runnerDir, submissionId, limits).
-  // If we pass null for submissionId, it won't update the DB! We'll just capture the returned result and set it manually in setRunStatus.
-  
-  const result = await executeCode(testcases, language, runnerDir, null, limits);
-  
-  if (jobId) {
-    await setRunStatus(jobId, result.status, result.execution);
+  // 1. Fetch testcase keys from database
+  const testcaseQuery = mode === 'RUN' 
+    ? and(eq(schema.testcase.problemId, problemId), eq(schema.testcase.isSample, true))
+    : eq(schema.testcase.problemId, problemId);
+
+  const testcases = await db
+    .select()
+    .from(schema.testcase)
+    .where(testcaseQuery)
+    .orderBy(schema.testcase.order);
+
+  console.log(`[Worker] Fetched ${testcases.length} testcases`);
+
+  if (testcases.length === 0) {
+    await fs.rm(runnerDir, { recursive: true, force: true });
+    await db.update(schema.submission).set({ status: 'FAILED' }).where(eq(schema.submission.id, submissionId));
+    return { status: 'FAILED', error: 'No testcases found' };
   }
-  
+
+  // 2. Execute
+  console.log(`[Worker] Calling executeCode...`);
+  const result = await executeCode(testcases, language, runnerDir, submissionId, limits);
+  console.log(`[Worker] executeCode finished with status: ${result.status}`);
+
+  // 3. Update Submission
+  await db.update(schema.submission)
+    .set({
+      status: result.status,
+      totalTestcases: result.totalCount,
+      passedTestcases: result.passedCount,
+      failedTestcases: result.totalCount - result.passedCount,
+      timeTaken: result.totalTime,
+      memoryTaken: result.maxMemory,
+      updatedAt: new Date().toISOString()
+    })
+    .where(eq(schema.submission.id, submissionId));
+
+  // 4. Update Execution Result
+  await db.insert(schema.executionResult)
+    .values({
+      submissionId,
+      verdict: result.verdict,
+      stdout: result.verdict === 'COMPILE_ERROR' ? result.raw : null,
+      stderr: null,
+    });
+
+  await setSubmissionStatus(submissionId, result.status);
+  console.log(`[Worker] runCodeWithInput complete for ${submissionId}`);
   return result;
 };
 
-export { dryRunCodeWithInput };
 export default runCodeWithInput;

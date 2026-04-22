@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { listContests } from "../../api/api.js";
-import { Link } from "react-router-dom";
 import { usePostHog } from "@posthog/react";
+import { listContests } from "@/api/api";
+import { Link } from "react-router-dom";
 
 export default function ContestListPage() {
-  const [contests, setContests] = useState([]);
   const posthog = usePostHog();
+  const [contests, setContests] = useState([]);
 
   useEffect(() => {
     (async () => {
       const { data } = await listContests();
       setContests(data.data || []);
-      posthog.capture("contest_list_viewed", { count: data.data?.length });
     })();
   }, [posthog]);
 
