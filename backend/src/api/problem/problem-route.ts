@@ -8,10 +8,10 @@ const router = Router();
 
 router.post("/create" , validate('body', createProblemSchema), verifyJWT, createProblem);
 router.post("/finalize", verifyJWT, finalizeProblem);
-router.get('/', validate('query', getProblemsSchema), verifyJWT, getProblems);
-router.get('/:problemId', verifyJWT, getProblemById);
-router.get('/:problemId/editorial-solution', verifyJWT, getEditorialSolution);
-router.get('/:problemId/editorial-content', verifyJWT, getEditorialContent);
+router.get('/', validate('query', getProblemsSchema), getProblems);
+router.get('/:problemId', getProblemById);
+router.get('/:problemId/editorial-solution', getEditorialSolution);
+router.get('/:problemId/editorial-content', getEditorialContent);
 // router.get('/:problemId/hints', verifyJWT, getHints);
 
 export default router;
