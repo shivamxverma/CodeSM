@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { user, problem, tag,problemTag, session, testcase, hint, editorial, submission, executionResult } from './schema';
+import { user, problem, tag,problemTag, session, testcase, hint, editorial, submission, executionResult } from './schema.js';
 
 export const userRelations = relations(user, ({ many }) => ({
     problem: many(problem),

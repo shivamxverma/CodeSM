@@ -1,4 +1,4 @@
-import { redisClient } from '../utils/redis.js';
+import redis from '../loaders/redis';
 import asyncHandler from '../utils/asyncHandler.js';
 import type { NextFunction, Request, Response } from 'express';
 
@@ -24,7 +24,7 @@ export const rateLimitMiddleware = asyncHandler(async (req: AuthenticatedRequest
     const key = `${KEY_PREFIX}:${userId}`;       
     const now = Date.now() / 1000;             
 
-    const bucket = await redisClient.hgetall(key);
+    const bucket = await redis.hgetall(key);
     let tokens = parseFloat(bucket.tokens) || CAPACITY;
     let last   = parseFloat(bucket.last)   || now;
 
@@ -42,7 +42,7 @@ export const rateLimitMiddleware = asyncHandler(async (req: AuthenticatedRequest
 
     tokens -= 1;
 
-    const pipeline = redisClient.multi();
+    const pipeline = redis.multi();
     pipeline.hset(key, 'tokens', tokens, 'last', last);
     pipeline.expire(key, WINDOW);
     await pipeline.exec();

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { validate } from '../../shared/middleware';
 import { emailPasswordRegister , verifyEmail, emailPasswordLogin,initiateGoogleAuth, googleOAuthCallback, getCurrentUser } from './auth-controller'
-import { verifyJWT } from "../../middlewares/auth.middleware";
+import { verifyJWT } from "../../shared/middleware";
 import { emailPasswordLoginSchema, emailPasswordRegisterSchema } from "./auth-schema";
 const router = Router();
 
