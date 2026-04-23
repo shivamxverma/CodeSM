@@ -263,20 +263,22 @@ const normalizeOut = (s) => (s ?? '').toString().replace(/\r\n/g, '\n').trim();
 
 const executeCode = async (testcases, language, runnerDir, submissionId, limits) => {
   const spec = languageSpec(language);
+  const defaultCounts = { passedCount: 0, totalCount: testcases.length, totalTime: 0, maxMemory: 0 };
+  
   if (!spec) {
     await fs.rm(runnerDir, { recursive: true, force: true });
-    return { status: 'COMPILE_ERROR', error: `Unsupported language: ${language}` };
+    return { status: 'COMPILE_ERROR', verdict: 'COMPILE_ERROR', error: `Unsupported language: ${language}`, ...defaultCounts };
   }
 
   try { await ensureRunnerImage(); } catch (err) {
     await fs.rm(runnerDir, { recursive: true, force: true });
-    return { status: 'FAILED', error: err.message };
+    return { status: 'FAILED', verdict: 'RUNTIME_ERROR', error: err.message, ...defaultCounts };
   }
 
   const compile = await compileInContainer(runnerDir, spec);
   if (!compile.ok) {
     await fs.rm(runnerDir, { recursive: true, force: true });
-    return { status: 'COMPILE_ERROR', raw: compile.raw };
+    return { status: 'COMPILE_ERROR', verdict: 'COMPILE_ERROR', raw: compile.raw, ...defaultCounts };
   }
 
   let passedCount = 0;
