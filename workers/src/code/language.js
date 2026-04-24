@@ -4,7 +4,7 @@ import {
   SANDBOX_PIDS_LIMIT,
   COMPILE_TIMEOUT_SEC,
   RUN_TIMEOUT_SEC,
-} from "../utils/constants.js";
+} from "../../utils/constants.js";
 
 function dockerUserArgs() {
   if (process.platform === "win32") return [];

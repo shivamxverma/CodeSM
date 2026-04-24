@@ -14,7 +14,7 @@ import {
   runTestcaseInContainer,
   stopContainer,
 } from "./docker.js";
-import { fetchTestcasesFromS3 } from "../services/aws.service.js";
+import { fetchTestcasesFromS3 } from "../../services/aws.service.js";
 
 /**
  * Compile once, spin up ONE persistent container,

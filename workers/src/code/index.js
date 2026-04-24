@@ -1,5 +1,5 @@
 import { writeCodeToRunnerDir } from "./file-handler.js";
-import { setSubmissionStatus } from "./redis.js";
+import { setSubmissionStatus } from "../../loaders/redis.js";
 import {
   updateExecutionResult,
   fetchTestCases,

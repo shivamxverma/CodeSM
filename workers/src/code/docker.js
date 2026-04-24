@@ -4,7 +4,7 @@ import { spawn } from "child_process";
 import {
   RUN_TIMEOUT_SEC,
   MAX_PROGRAM_OUTPUT_BYTES,
-} from "../utils/constants.js";
+} from "../../utils/constants.js";
 import { dockerResourceAndSecurityArgs } from "./language.js";
 import { projectRoot, execAsync, RUNNER_IMAGE } from "./file-handler.js";
 

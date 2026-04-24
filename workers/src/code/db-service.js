@@ -1,4 +1,4 @@
-import { db } from "../db/index.js";
+import { db } from "../../loaders/postgres.js";
 import { eq, and } from "drizzle-orm";
 import { schema } from "db-schema";
 import fs from "fs/promises";
