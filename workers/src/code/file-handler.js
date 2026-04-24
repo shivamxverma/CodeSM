@@ -10,7 +10,7 @@ const execAsync = promisify(exec);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, "../");
+const projectRoot = path.resolve(__dirname, "../../");
 
 const RUNNER_IMAGE =
   env.RUNNER_IMAGE || env.CPP_RUNNER_IMAGE || "codesm-sandbox-runner:latest";
@@ -26,7 +26,7 @@ const RUNNER_BUILD_CONTEXT = path.join(projectRoot, "docker", "sandbox-runner");
 
 function shouldAutoBuildRunner() {
   return env.RUNNER_AUTO_BUILD === "true" || env.RUNNER_AUTO_BUILD === "false"
-    ? env.RUNNER_AUTO_BUILD
+    ? env.RUNNER_AUTO_BUILD === "true"
     : env.NODE_ENV !== "production";
 }
 
