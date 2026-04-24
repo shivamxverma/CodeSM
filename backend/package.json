@@ -41,6 +41,7 @@
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.2",
     "bull": "^4.16.5",
+    "bullmq": "^5.76.1",
     "cloudinary": "^2.6.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

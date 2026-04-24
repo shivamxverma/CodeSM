@@ -16,7 +16,7 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.864.0",
-    "bull": "^4.16.5",
+    "bullmq": "^5.76.1",
     "db-schema": "file:../db-schema",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",

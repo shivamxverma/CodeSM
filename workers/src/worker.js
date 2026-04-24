@@ -1,84 +1,110 @@
-import { myQueue } from "./queue.js";
-import runCodeWithInput from "./runCode.js";
+import { Worker, Queue } from "bullmq";
+import runCodeWithInput from "./code/index.js";
 import { getDrizzleClient, db } from "../loaders/postgres.js";
-import { setSubmissionStatus } from "./redis.js";
+import { setSubmissionStatus } from "../loaders/redis.js";
 import { schema } from "db-schema";
 import { eq } from "drizzle-orm";
+import env from "../config/index.js";
 
-getDrizzleClient()
-  .then(() => {
-    console.log("Worker started and waiting for jobs...");
+const connection = {
+  url: env.REDIS_URL,
+};
 
-    myQueue.process(async (job) => {
-      console.log("Work Reached Here");
-      const { submissionId, mode } = job.data;
+const createJobProcessor = (mode) => async (job) => {
+  const {
+    submissionId,
+    code,
+    language,
+    problemId,
+    timeLimit,
+    memoryLimit,
+  } = job.data;
+
+  console.log(
+    `[${mode} Worker] Picking up job for submissionId: ${submissionId}, language: ${language}`
+  );
+
+  await db
+    .update(schema.submission)
+    .set({ status: "RUNNING" })
+    .where(eq(schema.submission.id, submissionId));
+
+  await setSubmissionStatus(submissionId, "RUNNING");
+
+  console.log(
+    `[${mode} Worker] Starting execution for submission ${submissionId} in ${mode} mode`
+  );
+
+  try {
+    return await runCodeWithInput(
+      code,
+      language,
+      problemId,
+      submissionId,
+      { timeLimit, memoryLimit },
+      mode
+    );
+  } catch (err) {
+    console.error(`[${mode} Worker] Execution error for ${submissionId}:`, err);
+    // We intentionally DO NOT mark the submission as "FAILED" here.
+    // If there are retries left, BullMQ will retry it.
+    // If it exhausts all retries, the 'failed' event listener will mark it as "FAILED".
+    throw err;
+  }
+};
+
+const startWorkers = async () => {
+  try {
+    await getDrizzleClient();
+    console.log("Database connected. Starting workers...");
+
+    const deadLetterQueue = new Queue("dead-letter-queue", { connection });
+
+    const handleJobFailure = async (job, err, mode) => {
+      console.error(`[${mode} Worker] Job ${job?.id} failed on attempt ${job?.attemptsMade} with error:`, err.message);
       
-      console.log(`[Worker] Picking up job for submissionId: ${submissionId}, mode: ${mode}`);
-
-      // 1. Fetch submission details
-      const submissions = await db
-        .select()
-        .from(schema.submission)
-        .where(eq(schema.submission.id, submissionId))
-        .limit(1);
-
-      if (submissions.length === 0) {
-        console.error(`[Worker] Submission ${submissionId} not found in DB`);
-        return null;
+      const maxAttempts = job?.opts?.attempts || 1;
+      if (job?.attemptsMade >= maxAttempts) {
+        console.log(`[${mode} Worker] Job ${job?.id} exhausted all attempts. Moving to Dead Letter Queue.`);
+        
+        const submissionId = job?.data?.submissionId;
+        if (submissionId) {
+          try {
+            await db
+              .update(schema.submission)
+              .set({ status: "FAILED" })
+              .where(eq(schema.submission.id, submissionId));
+            await setSubmissionStatus(submissionId, "FAILED");
+          } catch (dbErr) {
+            console.error(`[DLQ Error] Failed to mark submission ${submissionId} as FAILED:`, dbErr);
+          }
+        }
+        
+        try {
+          await deadLetterQueue.add(`failed-${mode.toLowerCase()}-job`, {
+            originalQueue: `${mode.toLowerCase()}-queue`,
+            originalJobId: job.id,
+            failedReason: err.message,
+            data: job.data,
+            failedAt: new Date().toISOString()
+          });
+        } catch (dlqErr) {
+          console.error(`[DLQ Error] Failed to move job ${job?.id} to DLQ:`, dlqErr);
+        }
       }
+    };
 
-      const sub = submissions[0];
+    const submitWorker = new Worker("submit-queue", createJobProcessor("SUBMIT"), { connection });
+    submitWorker.on("failed", (job, err) => handleJobFailure(job, err, "SUBMIT"));
 
-      // 2. Update status to RUNNING
-      console.log(`[Worker] Marking submission ${submissionId} as RUNNING`);
-      await db.update(schema.submission)
-        .set({ status: 'RUNNING' })
-        .where(eq(schema.submission.id, submissionId));
-      
-      await setSubmissionStatus(submissionId, "RUNNING");
+    const runWorker = new Worker("run-queue", createJobProcessor("RUN"), { connection });
+    runWorker.on("failed", (job, err) => handleJobFailure(job, err, "RUN"));
 
-      // 3. Fetch problem limits
-      const problems = await db
-        .select()
-        .from(schema.problem)
-        .where(eq(schema.problem.id, sub.problemId))
-        .limit(1);
-
-      if (problems.length === 0) {
-        console.error(`[Worker] Problem ${sub.problemId} not found for submission ${submissionId}`);
-        await db.update(schema.submission)
-          .set({ status: 'FAILED' })
-          .where(eq(schema.submission.id, submissionId));
-        await setSubmissionStatus(submissionId, "FAILED");
-        return null;
-      }
-
-      const prob = problems[0];
-      const timeLimit = prob.timeLimit || 2;
-      const memoryLimit = prob.memoryLimit || 256;
-
-      console.log(`[Worker] Starting execution for submission ${submissionId} in ${mode} mode`);
-      
-      try {
-        return await runCodeWithInput(
-          sub.code,
-          sub.language,
-          sub.problemId,
-          submissionId,
-          mode,
-          { timeLimit, memoryLimit }
-        );
-      } catch (err) {
-        console.error(`[Worker] Execution error for ${submissionId}:`, err);
-        await db.update(schema.submission)
-          .set({ status: 'FAILED' })
-          .where(eq(schema.submission.id, submissionId));
-        await setSubmissionStatus(submissionId, "FAILED");
-        throw err;
-      }
-    });
-  })
-  .catch(err => {
-    console.error("Error connecting to database:", err);
+    console.log("Workers started and listening for jobs on 'submit-queue' and 'run-queue'...");
+  } catch (err) {
+    console.error("Error starting workers:", err);
     process.exit(1);
-  });
+  }
+};
+
+startWorkers();

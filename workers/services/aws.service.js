@@ -3,6 +3,7 @@ import {
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import env from "../config/index.js";
+import { redisClient } from "../loaders/redis.js";
 
 const s3Client = new S3Client({
   region: env.AWS_REGION,
@@ -23,6 +24,12 @@ const streamToString = (stream) =>
 
 async function fetchTestcasesFromS3(s3Key) {
   try {
+    const cacheKey = `s3_testcase:${s3Key}`;
+    const cachedData = await redisClient.get(cacheKey);
+    if (cachedData) {
+      return JSON.parse(cachedData);
+    }
+
     const command = new GetObjectCommand({
       Bucket: env.AWS_BUCKET_NAME,
       Key: s3Key,
@@ -30,6 +37,10 @@ async function fetchTestcasesFromS3(s3Key) {
 
     const response = await s3Client.send(command);
     const jsonString = await streamToString(response.Body);
+    
+    // Cache the result for 24 hours
+    await redisClient.set(cacheKey, jsonString, "EX", 86400);
+
     const data = JSON.parse(jsonString);
     return data;
   } catch (err) {

@@ -1,11 +1,11 @@
 import { IGetSubmissionResponse, IGetSubmissionResultsResponse } from './submission-types';
-import { submission, executionResult, user } from '../../db/schema';
+import { submission, executionResult, user, problem } from '../../db/schema';
 import { db } from '../../loaders/postgres';
-import { myQueue } from '../../loaders/queue';
 import redis from '../../loaders/redis';
 import { eq, and, desc } from 'drizzle-orm';
 import ApiError from '../../utils/ApiError';
 import httpStatus from 'http-status';
+import { createRunQueue, createSubmitQueue } from './submission-helper';
 
 export const handleCreateSubmission = async (
     userId: string,
@@ -33,11 +33,28 @@ export const handleCreateSubmission = async (
 
         const submissionId = insertedSubmission.id;
 
+        const prob = await db
+            .select({
+                timeLimit : problem.timeLimit,
+                memoryLimit : problem.memoryLimit
+            })
+            .from(problem)
+            .where(eq(problem.id, problemId));
+
+        if(prob.length === 0){
+            return {
+                submissionId : submissionId,
+                status : "FAILED"
+            }
+        }
+
         try {
-            await myQueue.add({
-                submissionId,
-                mode: normalizedMode
-            });
+            if (normalizedMode === "RUN") {
+                await createRunQueue(submissionId, code, language, problemId, prob[0].timeLimit, prob[0].memoryLimit);
+            } else {
+                await createSubmitQueue(submissionId, code, language, problemId, prob[0].timeLimit, prob[0].memoryLimit);
+            }
+
             return {
                 submissionId: submissionId,
                 status: 'PENDING',
