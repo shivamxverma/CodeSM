@@ -92,7 +92,7 @@ export const getSubmissionsForProblem = (problemId) => {
 };
 
 export const getProblemHints = (problemId) => {
-  return axios.get(`${BASE}/problem/upsolve/${problemId}`, { withCredentials: true });
+  return axios.get(`${BASE}/problem/${problemId}/hints`, { withCredentials: true });
 }
 
 export const getEditorialSolution = (problemId) => {

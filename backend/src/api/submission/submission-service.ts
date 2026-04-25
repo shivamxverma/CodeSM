@@ -44,7 +44,8 @@ export const handleCreateSubmission = async (
         if(prob.length === 0){
             return {
                 submissionId : submissionId,
-                status : "FAILED"
+                status : "FAILED",
+                startedAt : new Date(),
             }
         }
 
@@ -58,12 +59,14 @@ export const handleCreateSubmission = async (
             return {
                 submissionId: submissionId,
                 status: 'PENDING',
+                startedAt : new Date(),
             };
         } catch (queueError) {
             console.error("Queue error:", queueError);
             return {
                 submissionId: submissionId,
                 status: 'FAILED',
+                startedAt : new Date(),
             };
         }
     } catch (dbError) {
@@ -71,6 +74,7 @@ export const handleCreateSubmission = async (
         return {
             submissionId: "",
             status: 'ERROR',
+            startedAt : new Date(),
         };
     }
 }
@@ -87,11 +91,16 @@ export const handlegetSubmissionStatus = async (
             return {
                 submissionId,
                 status: parsed.status,
+                startedAt : new Date(parsed.createdAt),
             };
         }
 
         const [result] = await db
-            .select()
+            .select({
+                id: submission.id,
+                status: submission.status,
+                createdAt: submission.createdAt,
+            })
             .from(submission)
             .where(eq(submission.id, submissionId));
 
@@ -102,12 +111,14 @@ export const handlegetSubmissionStatus = async (
         return {
             submissionId: result.id,
             status: result.status,
+            startedAt : new Date(result.createdAt),
         };
     } catch (error) {
         console.error("Database error:", error);
         return {
             submissionId: "",
             status: 'ERROR',
+            startedAt : null,
         };
     }
 }

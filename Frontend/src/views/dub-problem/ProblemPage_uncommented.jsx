@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { usePostHog } from "@posthog/react";
+
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/AuthContext";
@@ -51,7 +51,7 @@ export default function ProblemPage() {
   const monacoRef = useRef(null);
   const { id: problemId } = useParams();
   const auth = useAuth();
-  const posthog = usePostHog();
+
   const queryClient = useQueryClient();
   const setRunResult = useExecutionStore((s) => s.setRunResult);
   const setSubmitResult = useExecutionStore((s) => s.setSubmitResult);
@@ -135,17 +135,13 @@ export default function ProblemPage() {
         const res = await getProblem(problemId);
         const p = res.data.message;
         setProblem(p);
-        posthog.capture("problem_viewed", {
-          problem_id: problemId,
-          problem_title: p?.title,
-          difficulty: p?.difficulty,
-        });
+
       } catch (error) {
         setProblem(null);
       }
     }
     fetchProblem();
-  }, [problemId, posthog]);
+  }, [problemId]);
 
   useEffect(() => {
     if (!problemId) return;

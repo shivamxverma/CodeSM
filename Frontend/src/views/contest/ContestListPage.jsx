@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { usePostHog } from "@posthog/react";
+
 import { listContests } from "@/api/api";
 import { Link } from "react-router-dom";
 
 export default function ContestListPage() {
-  const posthog = usePostHog();
+
   const [contests, setContests] = useState([]);
 
   useEffect(() => {
@@ -12,7 +12,7 @@ export default function ContestListPage() {
       const { data } = await listContests();
       setContests(data.data || []);
     })();
-  }, [posthog]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">

@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { usePostHog } from "@posthog/react";
+
 import { getAllProblems } from "@/api/api";
 
 export default function ProblemPage() {
-  const posthog = usePostHog();
+
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,7 +24,7 @@ export default function ProblemPage() {
     try {
       if (!cursor) {
         setLoading(true);
-        posthog.capture("problem_page_load");
+
       } else {
         setPaginationLoading(true);
       }

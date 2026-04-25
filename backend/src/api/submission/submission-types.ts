@@ -1,6 +1,7 @@
 export interface IGetSubmissionResponse {
     submissionId : string,
-    status : string
+    status : string,
+    startedAt : Date | null,
 }
 
 export interface IGetSubmissionResultsResponse {

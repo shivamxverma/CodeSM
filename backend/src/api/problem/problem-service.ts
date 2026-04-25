@@ -1,12 +1,13 @@
-import { ICreateProblemRequest, ICreateProblemResponse, IFinalizeProblemResponse,IProblem, IGetProblemsResponse,IAProblem, IProblemEditorialResponse } from "./problem-types";
+import { ICreateProblemRequest, ICreateProblemResponse, IFinalizeProblemResponse, IProblem, IGetProblemsResponse, IAProblem, IProblemEditorialResponse, IHint } from "./problem-types";
 import { verifyProblemCreationPermission } from './problem-helper';
 import { db } from '../../loaders/postgres';
-import { problem, editorial, tag, problemTag,testcase } from '../../db/schema';
+import { problem, editorial, tag, problemTag, testcase, hint } from '../../db/schema';
 import { eq, desc, inArray, and, lt, or } from 'drizzle-orm';
 import ApiError from "../../utils/ApiError";
 import httpStatus from "http-status";
 import { generateUploadURL, fetchTestcasesFromS3, fetchFileFromS3 } from '../../services/aws.service';
 import { createId } from '@paralleldrive/cuid2';
+import { generateHintsWithAI } from "./problem-helper";
 
 export const handleCreateProblem = async (
     userId: string,
@@ -32,10 +33,10 @@ export const handleCreateProblem = async (
         // Prepare all promises for normal and sample testcases
         const testcasePromises = Array.from({ length: input.testcases }).map((_, i) => {
             const fileName = `testcase_${i}.json`;
-            return generateUploadURL(key, fileName).then(url => ({ 
-                url, 
-                fileName, 
-                order: i, 
+            return generateUploadURL(key, fileName).then(url => ({
+                url,
+                fileName,
+                order: i,
                 isSample: false,
                 isHidden: i >= Math.min(3, input.testcases)
             }));
@@ -43,10 +44,10 @@ export const handleCreateProblem = async (
 
         const samplePromises = Array.from({ length: input.sampleTestcases }).map((_, i) => {
             const fileName = `sampleTestcase_${i}.json`;
-            return generateUploadURL(key, fileName).then(url => ({ 
-                url, 
-                fileName, 
-                order: i, 
+            return generateUploadURL(key, fileName).then(url => ({
+                url,
+                fileName,
+                order: i,
                 isSample: true,
                 isHidden: false
             }));
@@ -87,9 +88,9 @@ export const handleCreateProblem = async (
                 for (const tagName of uniqueTagNames) {
                     const insertedTag = await tx.insert(tag)
                         .values({ name: tagName })
-                        .onConflictDoUpdate({ 
-                            target: tag.name, 
-                            set: { name: tagName } 
+                        .onConflictDoUpdate({
+                            target: tag.name,
+                            set: { name: tagName }
                         })
                         .returning({ id: tag.id });
                     tagIds.push(insertedTag[0].id);
@@ -266,7 +267,7 @@ export const handleGetProblems = async (
                         ? or(
                             lt(problem.createdAt, cursorCreatedAt),
                             and(eq(problem.createdAt, cursorCreatedAt), lt(problem.id, cursorId))
-                          )
+                        )
                         : undefined
                 )
             )
@@ -466,6 +467,65 @@ export const handleGetEditorialContent = async (
         throw new ApiError('Failed to fetch editorial content', httpStatus.INTERNAL_SERVER_ERROR);
     }
 }
-            
-            
-            
+
+export const handleGetHints = async (
+    problemId: string
+): Promise<IHint[]> => {
+
+    try {
+        const result = await db
+            .select({
+                // tags: tag.name,
+                difficulty: problem.difficulty,
+                description: problem.description,
+                inputFormat: problem.inputFormat,
+                outputFormat: problem.outputFormat,
+                constraints: problem.constraints
+            })
+            .from(problem)
+            .innerJoin(problemTag, eq(problem.id, problemTag.problemId))
+            .innerJoin(tag, eq(problemTag.tagId, tag.id))
+            .innerJoin(testcase, eq(problem.id, testcase.problemId))
+            .where(eq(problem.id, problemId));
+
+        if (!result) {
+            throw new ApiError("Problem not found", httpStatus.NOT_FOUND);
+        }
+
+        const hintResults = await db
+            .select({
+                title: hint.title,
+                content: hint.content,
+                order: hint.order,
+            })
+            .from(hint)
+            .where(eq(hint.problemId, problemId));
+        
+        if(hintResults.length > 0){
+            const hints = hintResults.map(h => {
+                return {
+                    title: h.title,
+                    content: h.content,
+                    order: h.order,
+                };
+            });
+            return hints;
+        }
+
+        const hints = await generateHintsWithAI(result[0]);
+        const hintsToInsert = hints.map(h => ({
+            ...h,
+            problemId: problemId
+        }));
+        await db.insert(hint).values(hintsToInsert);
+        return hints;
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        console.error('Error fetching hints:', error);
+        throw new ApiError('Failed to fetch hints', httpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+
+

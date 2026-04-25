@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { createProblem, finalizeProblem } from "@/api/api";
-import { usePostHog } from "@posthog/react";
+
 
 import Header from "@/components/newproblem/Header";
 import Basics from "@/components/newproblem/Basics";
@@ -13,7 +13,7 @@ import Testcases from "@/components/newproblem/Testcases";
 
 export default function CreateProblem() {
   const navigate = useNavigate();
-  const posthog = usePostHog();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -39,9 +39,7 @@ int main() {
     editorialLink: "",
   });
 
-  useEffect(() => {
-    posthog.capture("problem_creation_started");
-  }, [posthog]);
+
 
   const updateField = (name, value) =>
     setFormData((s) => ({ ...s, [name]: value }));
@@ -321,10 +319,7 @@ int main() {
 
       await finalizeProblem(problemId);
 
-      posthog.capture("problem_created_success", {
-        title: formData.title,
-        problemId: problemId,
-      });
+
 
       navigate("/problems");
     } catch (err) {
@@ -332,10 +327,7 @@ int main() {
       const errorMsg =
         err.response?.data?.message ||
         "Failed to create problem. Please try again.";
-      posthog.capture("problem_created_failure", {
-        title: formData.title,
-        error: errorMsg,
-      });
+
       setError(errorMsg);
     } finally {
       setIsSubmitting(false);

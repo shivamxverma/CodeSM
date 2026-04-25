@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { usePostHog } from "@posthog/react";
+
 import {
   createComment,
   createDiscussion,
@@ -27,7 +27,7 @@ function timeAgo(dateString) {
 }
 
 export default function DiscussionPage() {
-  const posthog = usePostHog();
+
   const auth = useAuth();
   const user = auth?.user;
 
@@ -42,8 +42,7 @@ export default function DiscussionPage() {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    posthog?.capture?.("discussion_page_viewed");
-  }, [posthog]);
+  }, []);
 
   const fetchDiscussions = async () => {
     setLoading(true);
@@ -76,17 +75,17 @@ export default function DiscussionPage() {
 
   const handleCreateDiscussion = async (e) => {
     e.preventDefault();
-    posthog?.capture?.("discussion_creation_attempt", { title });
+
     try {
       await createDiscussion({ title, content });
-      posthog?.capture?.("discussion_created", { title });
+
       setTitle("");
       setContent("");
       setView("list");
       await fetchDiscussions();
     } catch (err) {
       console.error("Error creating discussion:", err);
-      posthog?.capture?.("discussion_creation_failed", { title });
+
     }
   };
 

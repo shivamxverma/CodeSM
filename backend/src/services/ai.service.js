@@ -16,7 +16,7 @@ async function generateHintsWithAI(problem) {
 
     **RULES:**
     1.  **DO NOT** provide the final code solution or large snippets of code in any language. Your goal is to guide, not to solve.
-    2.  Break down the solution into 3 to 5 logical steps or hints.
+    2.  Break down the solution into 4 logical steps or hints.
     3.  The hints must be progressive. Start with a high-level conceptual hint and gradually get more specific.
     4.  The final hint can suggest the main algorithm, data structure, or key observation needed to solve the problem efficiently (e.g., "Consider using a hash map to track frequencies" or "Think about a two-pointer approach").
     5.  Tailor the tone and complexity of the hints based on the problem's **difficulty** and **tags**.
@@ -28,12 +28,24 @@ async function generateHintsWithAI(problem) {
     {
       "hints": [
         {
-          "title": "Hint 1: Understanding the Goal",
-          "content": "First, make sure you understand what the input represents and what the expected output should be. Look at the examples carefully."
+          "title": "Understanding the Problem",
+          "content": "First, make sure you understand what the input represents and what the expected output should be. Look at the examples carefully.",
+          "order": "1",
         },
         {
-          "title": "Hint 2: Choosing a Data Structure",
-          "content": "What data structure would be efficient for storing and retrieving data quickly?"
+          "title": "Thinking about the Logic",
+          "content": "Think about the logic of the problem and how you can solve it efficiently.",
+          "order": "2",
+        },
+        {
+          "title": "Choosing the Right Approach",
+          "content": "What data structure would be efficient for storing and retrieving data quickly?",
+          "order": "3",
+        },
+        {
+          "title": "Let's Try Coding",
+          "content": "Try to code the solution using the hints above. If you get stuck, come back and we'll help you further!",
+          "order": "4",
         }
       ]
     }

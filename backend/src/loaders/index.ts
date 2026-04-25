@@ -9,11 +9,11 @@ export default async ({
 } : {
     expressApp : Express.Application;
 }) : Promise<void> => {
-    express({ app : expressApp })
     await getDrizzleClient();
     logger.info('🛡️  Database loaded  🛡️')
+    express({ app : expressApp })
+    logger.info('🛡️  Express loaded  🛡️');
     await loadGoogleOAuthClient();
     logger.info('🛡️  Google OAuth loaded  🛡️')
-    logger.info('🛡️  Express loaded  🛡️');
     logger.info('🛡️  All modules loaded!  🛡️');
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { usePostHog } from "@posthog/react";
+
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/AuthContext";
@@ -50,7 +50,7 @@ export default function ProblemPage() {
   const monacoRef = useRef(null);
   const { id: problemId } = useParams();
   const auth = useAuth();
-  const posthog = usePostHog();
+
   const queryClient = useQueryClient();
     
   // Resizable panel state
@@ -129,17 +129,13 @@ export default function ProblemPage() {
         const res = await getProblem(problemId);
         const p = res.data.message;
         setProblem(p);
-        posthog.capture("problem_viewed", {
-          problem_id: problemId,
-          problem_title: p?.title,
-          difficulty: p?.difficulty,
-        });
+
       } catch (error) {
         setProblem(null);
       }
     }
     fetchProblem();
-  }, [problemId, posthog]);
+  }, [problemId]);
 
   useEffect(() => {
     if (!problemId) return;
@@ -257,7 +253,7 @@ export default function ProblemPage() {
       setExecutionPanel({ type: "error", message: msg });
       setStatusBadge({ type: "error", text: "Error" });
       setIsSubmitting(false);
-      posthog.capture("submission_failed", { problem_id: problemId, error: String(msg) });
+
     },
     onSuccess: (res) => {
       const id = res.data.data?.submissionId;
@@ -308,8 +304,8 @@ export default function ProblemPage() {
     setActiveSubmissionId(null);
     setIsRunning(false);
     setIsSubmitting(false);
-    posthog.capture("submission_failed", { problem_id: problemId, error: "poll_error" });
-  }, [activeSubmissionId, pollQuery.isError, problemId, posthog]);
+
+  }, [activeSubmissionId, pollQuery.isError, problemId]);
 
   // Persist code changes (debounced).
   useEffect(() => {

@@ -73,3 +73,9 @@ export interface IProblemEditorialResponse {
     editorialContent : string,
     editorialLink : string    
 }
+
+export interface IHint {
+    order : number,
+    title : string,
+    content : string
+}

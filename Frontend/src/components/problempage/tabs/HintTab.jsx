@@ -1,4 +1,4 @@
-import { usePostHog } from "@posthog/react";
+
 
 export function HintTab({
   hints,
@@ -8,7 +8,7 @@ export function HintTab({
   setRevealedHintIndex,
   problemId,
 }) {
-  const posthog = usePostHog();
+
 
   return (
     <div className="space-y-4">
@@ -33,10 +33,7 @@ export function HintTab({
           type="button"
           onClick={() => {
             setRevealedHintIndex((prev) => prev + 1);
-            posthog.capture("hint_revealed", {
-              problem_id: problemId,
-              hint_index: revealedHintIndex + 1,
-            });
+
           }}
           className="w-full px-3 py-2 rounded bg-[#1a2432] hover:bg-[#1f2c3e] border border-[#2a3750] text-sm font-medium transition-colors"
         >

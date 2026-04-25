@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { usePostHog } from '@posthog/react';
+
 import { getQuestionsForInterview, getScoreForQuestion } from '../../../api/api.js';
 import {
     INTERVIEW_ROLES,
@@ -13,7 +13,7 @@ import {
 } from './interviewConstants.js';
 
 export function useInterviewSession() {
-    const posthog = usePostHog();
+
     const [selectedRole, setSelectedRole] = useState('');
     const [selectedExperience, setSelectedExperience] = useState('');
     const [questionCount, setQuestionCount] = useState(10);
@@ -163,15 +163,7 @@ export function useInterviewSession() {
             setCurrentPage('interview');
             setIsLoading(false);
 
-            posthog.capture('interview_started', {
-                role: selectedRoleData?.name,
-                experience: selectedExperienceData?.name,
-                interview_id: newInterviewId,
-                question_count: qs.length,
-                interview_level: interviewLevel,
-                round: interviewRound,
-                ...(roundUsesCodeEditor(interviewRound) ? { coding_language: codingLanguage } : {}),
-            });
+
 
             // For code-editor rounds (Technical/DSA and LLD), we don't want the interviewer
             // voice to dictate the question. The question text is shown in the UI.
@@ -243,11 +235,7 @@ export function useInterviewSession() {
                     setQuestionResults((prev) =>
                         prev.map((r) => (r.id === entryId ? { ...r, score: s, analysis: a, loading: false } : r))
                     );
-                    posthog.capture('interview_question_answered', {
-                        question_index: idx,
-                        score: s,
-                        interview_id: interviewIdRef.current,
-                    });
+
                 })
                 .catch((error) => {
                     console.error('Error submitting answer:', error);
@@ -269,10 +257,7 @@ export function useInterviewSession() {
                     playAudio(questions[nextIndex].audioUrl);
                 }
             } else {
-                posthog.capture('interview_finished', {
-                    interview_id: interviewIdRef.current,
-                    total_questions: questions.length,
-                });
+
                 setCurrentPage('results');
             }
         } finally {
@@ -284,7 +269,7 @@ export function useInterviewSession() {
         questions,
         stopAllInterviewSideEffects,
         playAudio,
-        posthog,
+
         interviewRound,
         codingLanguage,
     ]);

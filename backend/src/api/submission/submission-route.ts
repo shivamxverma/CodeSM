@@ -5,10 +5,10 @@ import { createSubmission, getSubmissionStatus, getSubmissionResults, getAllSubm
 
 const router = Router();
 
-router.post("/:problemId/:mode", validate('body', createSubmissionSchema), verifyJWT, createSubmission)
+router.get("/problem/:problemId", verifyJWT, getAllSubmissions);
 router.get("/:submissionId", verifyJWT, getSubmissionStatus);
 router.get("/:submissionId/result", verifyJWT, getSubmissionResults);
 
-router.get("/problem/:problemId", verifyJWT, getAllSubmissions);
+router.post("/:problemId/:mode", validate('body', createSubmissionSchema), verifyJWT, createSubmission);
 
 export default router;

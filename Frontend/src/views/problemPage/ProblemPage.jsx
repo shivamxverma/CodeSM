@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { usePostHog } from "@posthog/react";
+
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/AuthContext";
@@ -12,6 +12,10 @@ import EditorPanel from "@/components/runproblem/EditorPanel";
 import ExecutionConsole from "@/components/runproblem/ExecutionConsole";
 import Resizer from "@/components/runproblem/Resizer";
 import ActionButtons from "@/components/runproblem/ActionButtons";
+
+const MAX_DURATION = 20000; // 20 sec
+const PollingInterval = 1500;
+const MIN_POLLING_DELAY = 50;
 
 import {
   getDifficultyFromRating,
@@ -31,6 +35,7 @@ import {
 } from "@/api/api";
 
 export default function ProblemPage() {
+  const attemptRef = useRef(0);
   const [activeSubmissionId, setActiveSubmissionId] = useState(null);
   const [problem, setProblem] = useState(null);
   const [activeTab, setActiveTab] = useState("Description");
@@ -50,12 +55,12 @@ export default function ProblemPage() {
   const monacoRef = useRef(null);
   const { id: problemId } = useParams();
   const auth = useAuth();
-  const posthog = usePostHog();
+
   const queryClient = useQueryClient();
-    
+
   // Resizable panel state
-  const [editorHeightPct, setEditorHeightPct] = useState(60); 
-  const [leftWidthPct, setLeftWidthPct] = useState(40);       
+  const [editorHeightPct, setEditorHeightPct] = useState(60);
+  const [leftWidthPct, setLeftWidthPct] = useState(40);
   const [isEditorFullscreen, setIsEditorFullscreen] = useState(false);
   const isDraggingVertical = useRef(false);
   const isDraggingHorizontal = useRef(false);
@@ -129,24 +134,20 @@ export default function ProblemPage() {
         const res = await getProblem(problemId);
         const p = res.data.data;
         setProblem(p);
-        posthog.capture("problem_viewed", {
-          problem_id: problemId,
-          problem_title: p?.title,
-          difficulty: p?.difficulty,
-        });
+
       } catch (error) {
         setProblem(null);
       }
     }
     fetchProblem();
-  }, [problemId, posthog]);
+  }, [problemId]);
 
   useEffect(() => {
     if (!problemId) return;
     try {
       const savedLang = localStorage.getItem(languageStorageKey);
       if (savedLang) setLanguage(savedLang);
-    } catch {}
+    } catch { }
     didRestoreLanguageRef.current = true;
   }, [problemId, languageStorageKey]);
 
@@ -154,8 +155,12 @@ export default function ProblemPage() {
     if (!problemId || !didRestoreLanguageRef.current) return;
     try {
       localStorage.setItem(languageStorageKey, String(language));
-    } catch {}
+    } catch { }
   }, [problemId, language, languageStorageKey]);
+
+  useEffect(() => {
+    attemptRef.current = 0;
+  }, [activeSubmissionId]);
 
   const pollQuery = useQuery({
     queryKey: ["submissionPoll", activeSubmissionId],
@@ -164,7 +169,7 @@ export default function ProblemPage() {
     refetchInterval: (q) => {
       const st = q.state.data?.status;
       if (st === "COMPLETED" || st === "FAILED" || st === "ERROR") return false;
-      return 2000;
+      return PollingInterval;
     },
   });
 
@@ -207,7 +212,7 @@ export default function ProblemPage() {
 
     setTestcaseTab(0);
     setExecutionPanel({ type: "submit_results", details: payload });
-    
+
     const v = (verdict || "").toLowerCase();
     if (v === "accepted" || v === "correct answer") setStatusBadge({ type: "success", text: "Accepted" });
     else if (v.includes("time limit") || v.includes("tle")) setStatusBadge({ type: "warn", text: "Time Limit Exceeded" });
@@ -230,7 +235,7 @@ export default function ProblemPage() {
       setExecutionPanel({ type: "error", message: msg });
       setStatusBadge({ type: "error", text: "Error" });
       setIsRunning(false);
-      posthog.capture("run_failed", { problem_id: problemId, error: String(msg) });
+
     },
     onSuccess: (res) => {
       const id = res.data.data?.submissionId;
@@ -252,7 +257,7 @@ export default function ProblemPage() {
       setExecutionPanel({ type: "error", message: msg });
       setStatusBadge({ type: "error", text: "Error" });
       setIsSubmitting(false);
-      posthog.capture("submission_failed", { problem_id: problemId, error: String(msg) });
+
     },
     onSuccess: (res) => {
       const id = res.data.data?.submissionId;
@@ -277,18 +282,18 @@ export default function ProblemPage() {
     if (status === "COMPLETED") {
       getSubmissionResult(activeSubmissionId)
         .then(r => {
-           const payload = r.data.data;
-           processExecutionResult(payload);
-           queryClient.invalidateQueries({ queryKey: ["problem-submissions", problemId] });
+          const payload = r.data.data;
+          processExecutionResult(payload);
+          queryClient.invalidateQueries({ queryKey: ["problem-submissions", problemId] });
         })
         .catch(err => {
-           setStatusBadge({ type: "error", text: "Result Fetch Failed" });
-           setExecutionPanel({ type: "error", message: "Failed to get final result." });
+          setStatusBadge({ type: "error", text: "Result Fetch Failed" });
+          setExecutionPanel({ type: "error", message: "Failed to get final result." });
         })
         .finally(() => {
-           setActiveSubmissionId(null);
-           setIsRunning(false);
-           setIsSubmitting(false);
+          setActiveSubmissionId(null);
+          setIsRunning(false);
+          setIsSubmitting(false);
         });
     }
   }, [activeSubmissionId, pollQuery.data, problemId, queryClient, processExecutionResult]);
@@ -300,8 +305,8 @@ export default function ProblemPage() {
     setActiveSubmissionId(null);
     setIsRunning(false);
     setIsSubmitting(false);
-    posthog.capture("submission_failed", { problem_id: problemId, error: "poll_error" });
-  }, [activeSubmissionId, pollQuery.isError, problemId, posthog]);
+
+  }, [activeSubmissionId, pollQuery.isError, problemId]);
 
   useEffect(() => {
     if (!problemId) return;
@@ -318,7 +323,7 @@ export default function ProblemPage() {
     if (!problemId || !didHydrateEditorStateRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      try { localStorage.setItem(editorStorageKey, String(code || "")); } catch {}
+      try { localStorage.setItem(editorStorageKey, String(code || "")); } catch { }
     }, 300);
     return () => clearTimeout(saveTimerRef.current);
   }, [problemId, code, editorStorageKey]);
@@ -344,7 +349,7 @@ export default function ProblemPage() {
     setHintsLoading(true);
     try {
       const res = await getProblemHints(problemId);
-      setHints(res.data.message.hints || []);
+      setHints(res.data.data || []);
       setRevealedHintIndex(0);
     } catch { setHintsError("Failed to load hints."); }
     finally { setHintsLoading(false); }
