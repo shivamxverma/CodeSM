@@ -169,6 +169,7 @@ export default function ProblemPage() {
     refetchInterval: (q) => {
       const st = q.state.data?.status;
       if (st === "COMPLETED" || st === "FAILED" || st === "ERROR") return false;
+      if(q.state.data?.startedAt && (Date.now() - Date.parse(q.state.data?.startedAt)) > MAX_DURATION) return false;
       return PollingInterval;
     },
   });
