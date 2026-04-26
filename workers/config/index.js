@@ -8,6 +8,7 @@ const envSchema = yup.object({
     AWS_REGION: yup.string().required(),
     AWS_SECRET_ACCESS_KEY: yup.string().required(),
 
+    DATABASE_URL: yup.string().required(),
     REDIS_URL: yup.string().required(),
     MONGO_URI: yup.string().required(),
     CPP_RUNNER_IMAGE: yup.string().required(),

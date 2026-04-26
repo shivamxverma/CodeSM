@@ -2,7 +2,7 @@ import { Worker, Queue } from "bullmq";
 import runCodeWithInput from "./code/index.js";
 import { getDrizzleClient, db } from "../loaders/postgres.js";
 import { setSubmissionStatus } from "../loaders/redis.js";
-import { schema } from "db-schema";
+import { schema } from "../db/index.ts";
 import { eq } from "drizzle-orm";
 import env from "../config/index.js";
 

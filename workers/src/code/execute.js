@@ -58,7 +58,7 @@ export const executeCode = async (testcases, language, runnerDir, limits) => {
   if (!spec) {
     await fs.rm(runnerDir, { recursive: true, force: true });
     return {
-      status: "COMPILE_ERROR",
+      status: "FAILED",
       verdict: "COMPILE_ERROR",
       error: `Unsupported language: ${language}`,
       ...defaultCounts,
@@ -83,7 +83,7 @@ export const executeCode = async (testcases, language, runnerDir, limits) => {
   if (!compile.ok) {
     await fs.rm(runnerDir, { recursive: true, force: true });
     return {
-      status: "COMPILE_ERROR",
+      status: "FAILED",
       verdict: "COMPILE_ERROR",
       errors: compile.errors,
       raw: compile.raw,

@@ -84,18 +84,7 @@ export const handlegetSubmissionStatus = async (
     submissionId: string
 ): Promise<IGetSubmissionResponse> => {
     try {
-
-        const redisStatus = await redis.get(`submission:${submissionId}`);
-        if (redisStatus) {
-            const parsed = JSON.parse(redisStatus);
-            return {
-                submissionId,
-                status: parsed.status,
-                startedAt : new Date(parsed.createdAt),
-            };
-        }
-
-        const [result] = await db
+        const [dbResult] = await db
             .select({
                 id: submission.id,
                 status: submission.status,
@@ -104,14 +93,40 @@ export const handlegetSubmissionStatus = async (
             .from(submission)
             .where(eq(submission.id, submissionId));
 
-        if (!result) {
+        if (!dbResult) {
             throw new ApiError('Submission not found', httpStatus.NOT_FOUND);
         }
 
+        const redisStatus = await redis.get(`submission:${submissionId}`);
+        if (redisStatus) {
+            const parsed = JSON.parse(redisStatus);
+
+            const redisState = String(parsed?.status || '').toUpperCase();
+            const dbState = String(dbResult.status || '').toUpperCase();
+            const dbIsTerminal = dbState === 'COMPLETED' || dbState === 'FAILED';
+            const redisIsNonTerminal = redisState === 'PENDING' || redisState === 'RUNNING';
+
+            // If Redis is stale (still running/pending) but DB is already terminal,
+            // trust DB to avoid frontend getting stuck in "Running".
+            if (dbIsTerminal && redisIsNonTerminal) {
+                return {
+                    submissionId: dbResult.id,
+                    status: dbResult.status,
+                    startedAt: new Date(dbResult.createdAt),
+                };
+            }
+
+            return {
+                submissionId,
+                status: parsed.status,
+                startedAt: new Date(parsed.updatedAt || parsed.createdAt || dbResult.createdAt),
+            };
+        }
+
         return {
-            submissionId: result.id,
-            status: result.status,
-            startedAt : new Date(result.createdAt),
+            submissionId: dbResult.id,
+            status: dbResult.status,
+            startedAt : new Date(dbResult.createdAt),
         };
     } catch (error) {
         console.error("Database error:", error);

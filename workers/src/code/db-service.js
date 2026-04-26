@@ -1,14 +1,29 @@
 import { db } from "../../loaders/postgres.js";
 import { eq, and } from "drizzle-orm";
-import { schema } from "db-schema";
+import { schema } from "../../db/index.ts";
 import fs from "fs/promises";
 import { redisClient } from "../../loaders/redis.js";
 
+function normalizeJobStatus(status, verdict) {
+  const normalized = String(status || "").toUpperCase();
+  if (normalized === "PENDING" || normalized === "RUNNING" || normalized === "FAILED" || normalized === "COMPLETED") {
+    return normalized;
+  }
+
+  // Map verdict-style statuses (e.g. COMPILE_ERROR) to a valid JobStatus enum.
+  if (String(verdict || "").toUpperCase() === "PENDING") {
+    return "PENDING";
+  }
+  return "FAILED";
+}
+
 export async function updateExecutionResult(submissionId, result) {
+  const jobStatus = normalizeJobStatus(result.status, result.verdict);
+
   await db
     .update(schema.submission)
     .set({
-      status: result.status,
+      status: jobStatus,
       totalTestcases: result.totalCount,
       passedTestcases: result.passedCount,
       failedTestcases: result.totalCount - result.passedCount,
@@ -32,7 +47,12 @@ export async function fetchTestCases(problemId, mode) {
   const cacheKey = `db_testcases:${problemId}:${mode}`;
   const cachedData = await redisClient.get(cacheKey);
   if (cachedData) {
-    return JSON.parse(cachedData);
+    const parsed = JSON.parse(cachedData);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+    // Do not trust/stick to cached empty results. Re-query DB in case data was migrated later.
+    await redisClient.del(cacheKey);
   }
 
   const testcaseQuery =
@@ -49,8 +69,10 @@ export async function fetchTestCases(problemId, mode) {
     .where(testcaseQuery)
     .orderBy(schema.testcase.order);
 
-  // Cache the result for 1 hour
-  await redisClient.set(cacheKey, JSON.stringify(testcases), "EX", 3600);
+  // Cache only positive results for 1 hour; avoid stale empty-cache issue.
+  if (testcases.length > 0) {
+    await redisClient.set(cacheKey, JSON.stringify(testcases), "EX", 3600);
+  }
 
   return testcases;
 }
