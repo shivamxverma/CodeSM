@@ -13,7 +13,9 @@ import {
 } from 'drizzle-orm/pg-core';
 import type { ExtraConfigColumn } from 'drizzle-orm/pg-core/columns/common';
 import { sql } from 'drizzle-orm';
-import { createId } from '@paralleldrive/cuid2';
+import { randomUUID } from 'node:crypto';
+
+const createId = () => randomUUID();
 
 // ─────────────────────────────────────────────
 // Enums

@@ -19,6 +19,7 @@ npm install
 
 | Variable | Purpose |
 |----------|---------|
+| `DATABASE_URL` | PostgreSQL connection string used to update `submission`/`execution_result` |
 | `REDIS_URL` | Redis connection string (default `redis://localhost:6379`) |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET_NAME` | Used by `services/aws.service.js` when pulling problem assets from S3 |
 

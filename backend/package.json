@@ -11,7 +11,10 @@
     "lint": "eslint --ext .js,.ts src",
     "lint:fix": "eslint --fix --ext .js,.ts src",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
-    "db:sync": "pnpm add file:../db-schema && drizzle-kit generate && drizzle-kit migrate"
+    "db:sync": "pnpm add file:../db-schema && drizzle-kit generate && drizzle-kit migrate",
+    "migrate:mongo:users": "node src/scripts/migrate-mongo-users-to-postgres.js",
+    "migrate:mongo:problems": "node src/scripts/migrate-mongo-problems-to-postgres.js",
+    "migrate:mongo:submissions": "node src/scripts/migrate-mongo-submissions-to-postgres.js"
   },
   "keywords": [],
   "author": "",

@@ -1,7 +1,8 @@
-import { schema } from 'db-schema';
+import { schema } from '../db/index.ts';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import logger from './logger.js';
+import env from '../config/index.js';
 
 function createDrizzle(pool) {
     return drizzle(pool, { schema });
@@ -13,8 +14,12 @@ let pool;
 export async function getDrizzleClient(){
     if (db) return db;
 
+    if (!env.DATABASE_URL) {
+        throw new Error('DATABASE_URL is required for worker PostgreSQL connection');
+    }
+
     pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
+        connectionString: env.DATABASE_URL,
         max: 20,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 10000,
