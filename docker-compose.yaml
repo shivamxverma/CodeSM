@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: codesm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: codesm_dev
+      POSTGRES_USER: codesm
+      POSTGRES_PASSWORD: codesm_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codesm -d codesm_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: codesm-redis
+    restart: unless-stopped
+    command:
+      [
+        "redis-server",
+        "--requirepass",
+        "strong_password_123",
+        "--appendonly",
+        "yes"
+      ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "strong_password_123", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
