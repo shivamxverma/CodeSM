@@ -1,7 +1,5 @@
 # Dependencies
 node_modules/
-**/node_modules/
-.pnpm-store/
 
 # Environment and secrets
 .env
@@ -11,24 +9,15 @@ node_modules/
 
 # Logs and runtime files
 logs/
-**/logs/
 *.log
 *.pid
-*.seed
-*.pid.lock
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
 
-# Build/test output
+# Build and coverage artifacts
 dist/
-build/
 coverage/
 *.tsbuildinfo
 
-# OS / editor local files
+# OS/editor files
 .DS_Store
-.codex
 .vscode/
 .idea/

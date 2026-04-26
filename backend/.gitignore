@@ -142,3 +142,13 @@ dist
 .svelte-kit
 
 # End of https://www.toptal.com/developers/gitignore/api/node
+
+# CodeSM backend local-only files
+.env
+.env.*
+!.env.example
+logs/
+scratch/
+dist/
+node_modules/
+*.log
