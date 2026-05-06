@@ -285,11 +285,13 @@ function PillarCard({ step, title, desc, color, delay }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function DashBoard() {
-  let user = null;
-  try {
-    const auth = useAuth();
-    user = auth?.user ?? null;
-  } catch { /* no auth context */ }
+  let user = useAuth();
+  // Below line was causing problem , signup when user logged in
+  // let user = null;
+  // try {
+  //   const auth = useAuth();
+  //   user = auth?.user ?? null;
+  // } catch { /* no auth context */ }
 
   const { counts: diffCounts, total, percentages } = getProblemStats();
   const { easy: easyPct, medium: medPct, hard: hardPct } = percentages;
@@ -408,10 +410,10 @@ export default function DashBoard() {
       {/* ── STATS BAR ─────────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-4 pb-12">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatTile value={total}           label="Problems" color="text-indigo-500 dark:text-indigo-400" accent="rgba(99,102,241,0.08)" />
-          <StatTile value={diffCounts.easy}  label="Easy"     color="text-emerald-500 dark:text-emerald-400" accent="rgba(16,185,129,0.08)" />
-          <StatTile value={diffCounts.medium} label="Medium"  color="text-amber-500 dark:text-amber-400"   accent="rgba(245,158,11,0.08)" />
-          <StatTile value={diffCounts.hard}  label="Hard"     color="text-rose-500 dark:text-rose-400"     accent="rgba(239,68,68,0.08)" />
+          <StatTile value={total} label="Problems" color="text-indigo-500 dark:text-indigo-400" accent="rgba(99,102,241,0.08)" />
+          <StatTile value={diffCounts.easy} label="Easy" color="text-emerald-500 dark:text-emerald-400" accent="rgba(16,185,129,0.08)" />
+          <StatTile value={diffCounts.medium} label="Medium" color="text-amber-500 dark:text-amber-400" accent="rgba(245,158,11,0.08)" />
+          <StatTile value={diffCounts.hard} label="Hard" color="text-rose-500 dark:text-rose-400" accent="rgba(239,68,68,0.08)" />
         </div>
       </section>
 
@@ -442,16 +444,16 @@ export default function DashBoard() {
                 <span className="h-px flex-1 bg-border" />
               </div>
               <div className="space-y-3 mb-5">
-                <DiffBadge label="Easy"   count={diffCounts.easy}   dotColor="bg-emerald-500" pct={easyPct} />
-                <DiffBadge label="Medium" count={diffCounts.medium} dotColor="bg-amber-500"   pct={medPct} />
-                <DiffBadge label="Hard"   count={diffCounts.hard}   dotColor="bg-rose-500"    pct={hardPct} />
+                <DiffBadge label="Easy" count={diffCounts.easy} dotColor="bg-emerald-500" pct={easyPct} />
+                <DiffBadge label="Medium" count={diffCounts.medium} dotColor="bg-amber-500" pct={medPct} />
+                <DiffBadge label="Hard" count={diffCounts.hard} dotColor="bg-rose-500" pct={hardPct} />
               </div>
               {/* Stacked progress bar */}
               <div className="h-2 w-full overflow-hidden rounded-full bg-border/60">
                 <div className="flex h-full">
-                  <div style={{ width: easyPct + "%"  }} className="bg-emerald-500 transition-all duration-700" />
-                  <div style={{ width: medPct + "%"   }} className="bg-amber-500  transition-all duration-700 delay-150" />
-                  <div style={{ width: hardPct + "%"  }} className="bg-rose-500   transition-all duration-700 delay-300" />
+                  <div style={{ width: easyPct + "%" }} className="bg-emerald-500 transition-all duration-700" />
+                  <div style={{ width: medPct + "%" }} className="bg-amber-500  transition-all duration-700 delay-150" />
+                  <div style={{ width: hardPct + "%" }} className="bg-rose-500   transition-all duration-700 delay-300" />
                 </div>
               </div>
               <p className="mt-2 text-right text-xs text-muted-foreground">{total} total problems</p>
