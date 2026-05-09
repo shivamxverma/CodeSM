@@ -19,6 +19,12 @@ export default defineConfig({
     outDir: 'dist'
   },
   server: {
-    historyApiFallback: true
+    historyApiFallback: true,
+    host: '0.0.0.0',
+    // Allow Docker container hostnames (e.g. 'frontend' in docker-compose.e2e.yml).
+    // Vite 6 introduced host-based security; without this, the Playwright
+    // container gets "Blocked request. This host is not allowed."
+    // Set to true to allow all hosts (safe in a closed Docker E2E environment).
+    allowedHosts: true,
   }
 })

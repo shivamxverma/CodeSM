@@ -1,0 +1,45 @@
+{
+  "name": "codesm",
+  "version": "1.0.0",
+  "description": "CodeSM is a robust, multi-role platform where creators publish coding problems and users solve them. Built for scale, it features secure code execution, real-time submission tracking, problem authoring, profiles, and more.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "http-status": "^2.1.0",
+    "nodemailer": "^8.0.1",
+    "object-assign": "^4.1.1",
+    "undici-types": "^7.18.2",
+    "vary": "^1.1.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.2",
+    "vite": "^8.0.11"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:chrome": "playwright test --project='Google Chrome'",
+    "test:headed": "playwright test --headed --project='Google Chrome'",
+    "test:debug": "playwright test --debug --project='Google Chrome'",
+    "test:report": "playwright show-report",
+    "test:ui": "playwright test --ui",
+    "test:docker": "docker-compose --file docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from playwright",
+    "test:docker:clean": "docker-compose --file docker-compose.e2e.yml down --volumes --remove-orphans",
+    "test:docker:rebuild": "docker-compose --file docker-compose.e2e.yml build --no-cache && docker-compose --file docker-compose.e2e.yml up --abort-on-container-exit --exit-code-from playwright"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kmadhav824/CodeSM.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Kmadhav824/CodeSM/issues"
+  },
+  "homepage": "https://github.com/Kmadhav824/CodeSM#readme"
+}

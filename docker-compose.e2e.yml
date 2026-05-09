@@ -1,0 +1,67 @@
+# ─── E2E Test Infrastructure ─────────────────────────────────────────────────
+#
+# Two services:
+#   frontend    – Vite dev server (the app under test)
+#   playwright  – Official Playwright image; runs tests against `frontend`
+#
+# Usage:
+#   docker compose -f docker-compose.e2e.yml up --build             # run tests
+#   docker compose -f docker-compose.e2e.yml up --build --exit-code-from playwright
+#   docker compose -f docker-compose.e2e.yml down --volumes --remove-orphans
+#
+# Reports & artifacts are written to ./playwright-report/ and ./test-results/
+# on the host via bind-mount volumes.
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  e2e-net:
+    driver: bridge
+
+services:
+
+  # ── Frontend (Vite dev server) ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile.e2e
+    expose:
+      - "5173"
+    networks:
+      - e2e-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5173 || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+  # ── Playwright test runner ─────────────────────────────────────────────────
+  playwright:
+    # Official Playwright image – Ubuntu 22.04 (Jammy) with ALL browsers
+    # pre-installed (Chromium, Firefox, WebKit). Avoids every local OS compat issue.
+    image: mcr.microsoft.com/playwright:v1.49.0-jammy
+    working_dir: /e2e
+    volumes:
+      # Project root (tests + config)
+      - .:/e2e
+      # Anonymous volume so container's node_modules don't conflict with host's
+      - /e2e/node_modules
+      # Write reports back to host for artifact upload / local review
+      - ./playwright-report:/e2e/playwright-report
+      - ./test-results:/e2e/test-results
+    depends_on:
+      frontend:
+        condition: service_healthy
+    networks:
+      - e2e-net
+    environment:
+      # Tells playwright.config.ts to use bundled Chromium + point at container
+      - PLAYWRIGHT_BASE_URL=http://frontend:5173
+      - CI=true
+      # Note: PLAYWRIGHT_BROWSERS_PATH is NOT set here.
+      # We install browsers fresh with `playwright install` below so the revision
+      # matches @playwright/test@1.59.1 exactly (image tag ≠ npm package version).
+    # 1. Install npm deps  2. Install the exact Chromium this npm version needs
+    # 3. Run the tests
+    command: >
+      bash -c "npm ci && npx playwright install --with-deps chromium && npx playwright test"

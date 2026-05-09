@@ -1,0 +1,31 @@
+# ─── Frontend E2E Docker Image ────────────────────────────────────────────────
+# Lightweight Node.js container that runs the Vite dev server.
+# Used exclusively by docker-compose.e2e.yml – NOT for production builds.
+# ─────────────────────────────────────────────────────────────────────────────
+
+FROM node:22-alpine
+
+# curl is needed for the docker-compose healthcheck
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Copy manifests first for better layer caching
+COPY package.json package-lock.json* ./
+
+# Use npm install (package-lock may be npm or pnpm generated)
+RUN npm install
+
+# Copy source (node_modules is excluded via .dockerignore)
+COPY . .
+
+# Vite dev port
+EXPOSE 5173
+
+# Environment defaults (all API calls are mocked in E2E tests so the URL
+# value doesn't matter, but VITE_ vars must be present at build time)
+ENV VITE_API_URL=http://localhost:8000/api/v1 \
+    NODE_ENV=development
+
+# Bind to all interfaces so the playwright container can reach it
+CMD ["npx", "vite", "--host", "0.0.0.0", "--port", "5173"]
