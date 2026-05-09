@@ -1,0 +1,10 @@
+node_modules
+playwright-report
+test-results
+.git
+*.md
+.DS_Store
+Frontend/node_modules
+Frontend/dist
+backend/node_modules
+workers/node_modules
