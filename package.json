@@ -16,7 +16,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
-    "@types/node": "^25.6.2"
+    "@types/node": "^25.6.2",
+    "vite": "^8.0.11"
   },
   "scripts": {
     "test": "playwright test",
@@ -24,7 +25,10 @@
     "test:headed": "playwright test --headed --project='Google Chrome'",
     "test:debug": "playwright test --debug --project='Google Chrome'",
     "test:report": "playwright show-report",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "test:docker": "docker-compose --file docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from playwright",
+    "test:docker:clean": "docker-compose --file docker-compose.e2e.yml down --volumes --remove-orphans",
+    "test:docker:rebuild": "docker-compose --file docker-compose.e2e.yml build --no-cache && docker-compose --file docker-compose.e2e.yml up --abort-on-container-exit --exit-code-from playwright"
   },
   "repository": {
     "type": "git",
