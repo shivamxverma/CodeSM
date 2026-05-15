@@ -61,9 +61,9 @@ export default function NewNav() {
     { to: "/problems", label: "Problems" },
     ...(userRole === "AUTHOR" || userRole === "ADMIN"
       ? [
-          { to: "/newproblem", label: "Create Problem" },
-          { to: "/contests/create", label: "Create Contest" },
-        ]
+        { to: "/createProblem", label: "Create Problem" },
+        { to: "/contests/create", label: "Create Contest" },
+      ]
       : []),
     { to: "/contests", label: "Contests" },
     { to: "/interview", label: "Interview" },
@@ -72,10 +72,10 @@ export default function NewNav() {
   return (
     <div className="sticky top-0 z-50">
       <div className="h-0.5 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
-      
+
       <nav className="border-b border-white/10 bg-slate-900/80 backdrop-blur-md shadow-lg transition-all duration-300">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          
+
           {/* Logo */}
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2 group">
@@ -97,10 +97,9 @@ export default function NewNav() {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `px-4 py-2 text-sm font-medium transition-all duration-200 rounded-lg ${
-                      isActive 
-                        ? "bg-white/10 text-white shadow-inner" 
-                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                    `px-4 py-2 text-sm font-medium transition-all duration-200 rounded-lg ${isActive
+                      ? "bg-white/10 text-white shadow-inner"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
                     }`
                   }
                 >
@@ -148,7 +147,7 @@ export default function NewNav() {
                           {userRole || 'Learner'}
                         </span>
                       </div>
-                      
+
                       <div className="mt-2 space-y-1">
                         <Link
                           to="/dashboard"
@@ -207,17 +206,16 @@ export default function NewNav() {
                     key={item.to}
                     to={item.to}
                     className={({ isActive }) =>
-                      `flex items-center px-4 py-3 text-base font-medium rounded-xl transition-colors ${
-                        isActive 
-                          ? "bg-blue-600/10 text-blue-400" 
-                          : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      `flex items-center px-4 py-3 text-base font-medium rounded-xl transition-colors ${isActive
+                        ? "bg-blue-600/10 text-blue-400"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
                       }`
                     }
                   >
                     {item.label}
                   </NavLink>
                 ))}
-                
+
                 {!user && (
                   <div className="mt-6 space-y-3 pt-6 border-t border-white/5">
                     <Link to="/login" className="block w-full text-center py-3 text-base font-semibold text-white bg-white/5 rounded-xl border border-white/10">

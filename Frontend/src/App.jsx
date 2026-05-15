@@ -7,7 +7,7 @@ import ProblemPage from "./views/problemPage/ProblemPage";
 import Dashboard from "./views/dashboard/DashBoard";
 import UserDashboard from "./views/dashboard/UserDashboard";
 import Problems from "./views/problems/problems";
-import NewProblem from "./views/newProblem/NewProblem";
+import CreateProblem from "./views/newProblem/NewProblem";
 import ContestListPage from "./views/contest/ContestListPage";
 import ContestCreatePage from "./views/contest/ContestCreatePage";
 import ContestLobbyAndRun from "./views/contest/ContestLobbyAndRun";
@@ -50,11 +50,11 @@ export default function App() {
             <Route path="/problems" element={<Problems />} />
             <Route path="/problems/:id" element={<ProblemPage />} />
             <Route
-              path="/newproblem"
+              path="/createproblem"
               element={
                 <ProtectedRoute>
                   <RequireRole allowed={["ADMIN", "AUTHOR"]}>
-                    <NewProblem />
+                    <CreateProblem />
                   </RequireRole>
                 </ProtectedRoute>
               }
