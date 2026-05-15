@@ -15,10 +15,10 @@ export const createProblemSchema = yup.object({
     constraints: yup.string().required("Constraints is required"),
     timeLimit: yup.number().required("Time Limit is required"),
     memoryLimit: yup.number().required("Memory Limit is required"),
-    editorialContent: yup.string().required("Editorial is required"),
-    editorialLink: yup.string().required("Editorial Link is required"),
+    editorialContent: yup.string().optional().default(""),
+    editorialLink: yup.string().optional().default(""),
     solution: yup.string().required("Solution is required"),
-    tags: yup.array().of(yup.string()).required("Tags is required"),
+    tags: yup.array().of(yup.string()).optional().default([]),
     testcases: yup.number().required(),
     sampleTestcases: yup.number().required()
 });
