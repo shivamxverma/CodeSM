@@ -1,0 +1,41 @@
+# Stage 1: Build & Dependencies
+FROM node:22-bookworm AS builder
+WORKDIR /app
+
+# Copy shared package and workers folder
+COPY db-schema ./db-schema
+COPY workers ./workers
+
+# Build db-schema
+WORKDIR /app/db-schema
+RUN npm install
+RUN npx tsc
+
+# Install worker dependencies
+WORKDIR /app/workers
+RUN npm install --omit=dev
+
+# Stage 2: Final worker runner with Docker CLI pre-installed
+FROM node:22-bookworm-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Install Docker CLI static binary so the worker container can orchestrate host Docker engine
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl dumb-init && \
+    ARCH="$(uname -m)" && \
+    case "$ARCH" in aarch64|arm64) D_ARCH=aarch64 ;; x86_64|amd64) D_ARCH=x86_64 ;; *) echo "unsupported arch: $ARCH"; exit 1 ;; esac && \
+    curl -fsSL "https://download.docker.com/linux/static/stable/${D_ARCH}/docker-27.4.1.tgz" \
+      | tar -xz --strip-components=1 -C /usr/local/bin docker/docker && \
+    apt-get purge -y --auto-remove curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy build files
+COPY --from=builder /app/db-schema /app/db-schema
+COPY --from=builder /app/workers /app/workers
+
+WORKDIR /app/workers
+USER root
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["npx", "tsx", "src/worker.js"]

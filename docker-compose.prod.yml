@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database
+  postgres:
+    image: postgres:17-alpine
+    container_name: codesm-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: codesm_prod
+      POSTGRES_USER: codesm_admin
+      POSTGRES_PASSWORD: supersecretpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codesm_admin -d codesm_prod"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Redis Cache & BullMQ Queue Manager
+  redis:
+    image: redis:7-alpine
+    container_name: codesm-redis-prod
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "redis_secure_pass_123", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_secure_pass_123", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 3. CodeSM REST API Backend
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.prod
+    container_name: codesm-backend-prod
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - backend/.env.production
+    environment:
+      - REDIS_URL=redis://:redis_secure_pass_123@redis:6379
+      - DATABASE_URL=postgresql://codesm_admin:supersecretpassword@postgres:5432/codesm_prod
+    ports:
+      - "8000:8000"
+
+  # 4. CodeSM Background Worker
+  worker:
+    build:
+      context: .
+      dockerfile: workers/Dockerfile.prod
+    container_name: codesm-worker-prod
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - workers/.env.production
+    environment:
+      - REDIS_URL=redis://:redis_secure_pass_123@redis:6379
+      - DATABASE_URL=postgresql://codesm_admin:supersecretpassword@postgres:5432/codesm_prod
+      - RUNNER_IMAGE=codesm-sandbox-runner:latest
+    volumes:
+      # Mount the host docker engine socket to allow spawning ephemeral code sandbox containers
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
