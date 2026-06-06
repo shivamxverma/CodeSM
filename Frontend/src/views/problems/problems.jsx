@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-
 import { getAllProblems } from "@/api/api";
+import { Search } from "lucide-react";
 
 export default function ProblemPage() {
-
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,14 +23,11 @@ export default function ProblemPage() {
     try {
       if (!cursor) {
         setLoading(true);
-
       } else {
         setPaginationLoading(true);
       }
       setError("");
       const res = await getAllProblems(10, cursor);
-      
-      // Fix: Use res.data.data which contains { problems, nextCursor }
       const { problems: newProblems, nextCursor: newCursor } = res.data.data;
       
       if (!cursor) {
@@ -131,46 +127,48 @@ export default function ProblemPage() {
 
   const diffPill = (difficulty) => {
     const d = String(difficulty || "").toLowerCase();
-    let colors = "bg-muted text-muted-foreground ring-border";
+    let colors = "bg-canvas-soft-2 text-body border-hairline";
     if (d.includes("easy") || d.includes("800") || d.includes("1200")) {
-      colors = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-emerald-500/20";
+      colors = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/15";
     } else if (d.includes("medium") || d.includes("1300") || d.includes("1700")) {
-      colors = "bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-amber-500/20";
+      colors = "bg-warning-soft text-warning-deep border-warning/15";
     } else if (d.includes("hard") || d.includes("1800")) {
-      colors = "bg-rose-500/10 text-rose-600 dark:text-rose-400 ring-rose-500/20";
+      colors = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/15";
     }
-    return `inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${colors}`;
+    return `inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase border ${colors}`;
   };
 
   return (
-    <div className="min-h-screen bg-background py-10 text-foreground">
+    <div className="min-h-screen bg-canvas-soft py-10 text-ink">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Problems</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Search, filter by difficulty, and sort by rating.</p>
+            <h1 className="text-2xl font-bold tracking-tight text-ink">Problems</h1>
+            <p className="mt-1 text-sm text-body">Search, filter by difficulty, and sort by rating.</p>
           </div>
         </div>
 
         <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">🔎</span>
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-mute">
+              <Search size={14} aria-hidden="true" />
+            </span>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search title, description, tags…"
-              className="w-full rounded-xl border border-border bg-card px-9 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+              className="form-input pl-9"
             />
           </div>
 
-          <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-1">
+          <div className="flex items-center gap-1 rounded-sm border border-hairline bg-canvas-soft p-1 shadow-2xs">
             {["All", "Easy", "Medium", "Hard"].map((d) => (
               <button
                 key={d}
                 onClick={() => setDifficulty(d)}
-                className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm transition ${difficulty === d
-                  ? "bg-primary text-primary-foreground ring-1 ring-primary/30"
-                  : "text-muted-foreground hover:bg-muted"
+                className={`flex-1 rounded-sm py-1 text-xs sm:text-sm font-medium transition-colors duration-150 cursor-pointer ${difficulty === d
+                  ? "bg-canvas text-ink border border-hairline shadow-2xs font-semibold"
+                  : "text-body hover:text-ink hover:bg-canvas-soft-2/50"
                   }`}
                 title={
                   d === "Easy"
@@ -191,7 +189,7 @@ export default function ProblemPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+              className="form-input"
             >
               <option value="A-Z">Sort: A–Z</option>
               <option value="Z-A">Sort: Z–A</option>
@@ -202,7 +200,7 @@ export default function ProblemPage() {
         </div>
 
         {error && (
-          <div className="mb-6 rounded-xl border border-rose-400/20 bg-rose-500/10 p-4 text-rose-700 dark:text-rose-100">
+          <div className="mb-6 rounded-md border border-rose-500/20 bg-rose-500/10 p-4 text-rose-600 dark:text-rose-400 text-sm">
             {error}
           </div>
         )}
@@ -210,18 +208,18 @@ export default function ProblemPage() {
         {loading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="animate-pulse rounded-2xl border border-border bg-card p-5">
-                <div className="mb-3 h-5 w-2/3 rounded bg-muted" />
-                <div className="mb-6 h-3 w-1/3 rounded bg-muted" />
-                <div className="h-10 w-28 rounded bg-muted" />
+              <div key={i} className="animate-pulse rounded-md border border-hairline bg-canvas p-5.5">
+                <div className="mb-3 h-5 w-2/3 rounded bg-canvas-soft-2" />
+                <div className="mb-6 h-3.5 w-1/3 rounded bg-canvas-soft-2" />
+                <div className="h-9 w-24 rounded bg-canvas-soft-2" />
               </div>
             ))}
           </div>
         ) : filteredSorted.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-10 text-center">
-            <div className="mx-auto mb-3 size-12 rounded-full bg-muted" />
-            <div className="text-lg font-medium text-foreground">No problems found</div>
-            <div className="mt-1 text-sm text-muted-foreground">Try changing filters or create a new one.</div>
+          <div className="rounded-md border border-hairline bg-canvas p-12 text-center shadow-xs">
+            <div className="mx-auto mb-4 size-10 rounded-full bg-canvas-soft-2 border border-hairline/60 flex items-center justify-center text-mute" />
+            <div className="text-base font-semibold text-ink">No problems found</div>
+            <div className="mt-1.5 text-sm text-body">Try changing filters or create a new problem.</div>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -230,58 +228,55 @@ export default function ProblemPage() {
               return (
                 <div
                   key={item.id}
-                  className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                  className="group relative overflow-hidden rounded-md border border-hairline bg-canvas p-5.5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-sm duration-200"
                 >
-                  <div className="pointer-events-none absolute -right-10 -top-10 size-24 rounded-full bg-primary/10 blur-2xl transition group-hover:bg-primary/20" />
                   <div className="mb-3 flex items-start justify-between gap-3">
-                    <h2 className="text-lg font-semibold leading-tight text-foreground">
+                    <h2 className="text-base font-semibold leading-tight text-ink group-hover:text-link transition-colors duration-150">
                       {item?.title || "Untitled"}
                     </h2>
                     <span className={diffPill(item?.difficulty)}>
                       {item?.difficulty || "—"}
                     </span>
                   </div>
-                  <div className="mb-2 text-xs text-muted-foreground">
+                  <div className="mb-2 font-mono text-[10px] text-mute">
                     {Number.isFinite(rating) ? `Rating: ${rating}` : "Rating: —"}
                   </div>
                   {item?.description ? (
-                    <p className="mb-6 text-sm text-muted-foreground">
-                      {String(item.description).length > 120
-                        ? `${String(item.description).slice(0, 120)}…`
-                        : String(item.description)}
+                    <p className="mb-5.5 text-sm text-body line-clamp-3 leading-relaxed">
+                      {String(item.description)}
                     </p>
                   ) : (
-                    <p className="mb-6 text-sm text-muted-foreground">No description provided.</p>
+                    <p className="mb-5.5 text-sm text-mute italic">No description provided.</p>
                   )}
                   <div className="flex items-center justify-between">
                     <Link
                       to={`/problems/${item.id}`}
-                      className="inline-flex items-center gap-1 rounded-xl border border-border bg-muted px-3 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
+                      className="inline-flex items-center gap-1 rounded-sm border border-hairline bg-canvas hover:bg-canvas-soft-2 px-3 py-1.5 text-xs font-semibold text-ink transition-colors h-8 cursor-pointer"
                     >
                       Solve Now
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="ml-1">
-                        <path d="M9 18l6-6-6-6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="ml-0.5">
+                        <path d="M9 18l6-6-6-6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </Link>
                     {Array.isArray(item?.tags) && item.tags.length > 0 ? (
-                      <div className="hidden flex-wrap gap-1.5 sm:flex">
-                        {item.tags.filter(Boolean).slice(0, 3).map((t) => {
+                      <div className="hidden flex-wrap gap-1 sm:flex max-w-[60%] justify-end">
+                        {item.tags.filter(Boolean).slice(0, 2).map((t) => {
                           const cleaned = formatTag(t);
                           return (
                             <span
                               key={t}
-                              className="rounded-lg bg-secondary/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-secondary-foreground ring-1 ring-border/50"
+                              className="rounded-sm bg-canvas-soft-2 border border-hairline/60 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-mute"
                             >
                               {cleaned}
                             </span>
                           );
                         })}
-                        {item.tags.length > 3 && (
-                          <span className="text-[10px] font-medium text-muted-foreground">+{item.tags.length - 3}</span>
+                        {item.tags.length > 2 && (
+                          <span className="text-[9px] font-medium text-mute self-center">+{item.tags.length - 2}</span>
                         )}
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground" />
+                      <span className="text-xs text-mute" />
                     )}
                   </div>
                 </div>
@@ -295,12 +290,12 @@ export default function ProblemPage() {
             <button
               onClick={() => fetchProblems(nextCursor)}
               disabled={paginationLoading}
-              className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-8 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-50"
+              className="btn-secondary h-10 px-8 text-sm font-semibold tracking-wide"
             >
               {paginationLoading ? (
                 <>
-                  <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  Loading...
+                  <div className="size-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
+                  Loading…
                 </>
               ) : (
                 "Load More Problems"

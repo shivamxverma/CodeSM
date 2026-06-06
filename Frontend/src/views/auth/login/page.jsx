@@ -87,18 +87,17 @@ function LoginCard() {
   };
 
 
-  const inputClass =
-    "mt-1.5 w-full px-3.5 py-3 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition";
+  const inputClass = "form-input mt-1.5";
 
   return (
     <AuthSplitLayout>
-      <div className="rounded-2xl border border-gray-200/80 bg-white/90 backdrop-blur-sm shadow-xl shadow-gray-200/50 p-8 sm:p-9">
+      <div className="rounded-md border border-hairline bg-canvas p-8 sm:p-10 shadow-xs">
           <div className="text-center mb-8">
-            <p className="text-sm font-medium text-blue-600 mb-1">CodeSM</p>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+            <p className="font-caption-mono text-link mb-2">CodeSM</p>
+            <h1 className="text-2xl font-bold text-ink tracking-tight">
               Welcome back
             </h1>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-body">
               Sign in to continue to your account
             </p>
           </div>
@@ -106,25 +105,25 @@ function LoginCard() {
           {error && (
             <div
               role="alert"
-              className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              className="mb-5 flex items-start gap-2.5 rounded-sm border border-rose-500/15 bg-rose-500/10 px-4 py-3 text-sm text-rose-600 dark:text-rose-400"
             >
-              <span className="mt-0.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
+              <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
               <span>{error}</span>
             </div>
           )}
           {success && (
             <div
               role="status"
-              className="mb-5 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+              className="mb-5 flex items-start gap-2.5 rounded-sm border border-emerald-500/15 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600 dark:text-emerald-400"
             >
-              <span className="mt-0.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+              <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
               <span>{success}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-body">
                 Email
               </label>
               <input
@@ -132,6 +131,7 @@ function LoginCard() {
                 type="email"
                 name="email"
                 autoComplete="email"
+                spellCheck={false}
                 value={formData.email}
                 onChange={handleChange}
                 className={inputClass}
@@ -142,12 +142,12 @@ function LoginCard() {
 
             <div>
               <div className="flex items-center justify-between gap-2">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-body">
                   Password
                 </label>
                 <Link
                   to="/forgot-password"
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                  className="text-xs font-medium text-link hover:text-link-deep transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -168,23 +168,20 @@ function LoginCard() {
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className={`w-full py-3.5 px-4 rounded-xl text-white text-base font-semibold shadow-sm transition
-                ${
-                  loading || googleLoading
-                    ? "bg-blue-400 cursor-not-allowed shadow-none"
-                    : "bg-blue-600 hover:bg-blue-700 hover:shadow-md active:scale-[0.99]"
-                }`}
+              className={`w-full h-10 mt-2 btn-primary font-semibold text-sm rounded-sm flex items-center justify-center cursor-pointer ${
+                loading || googleLoading ? "opacity-50 cursor-not-allowed shadow-none" : ""
+              }`}
             >
               {loading ? "Signing in…" : "Sign in"}
             </button>
           </form>
 
           <div className="relative my-7">
-            <div className="absolute inset-0 flex items-center" aria-hidden>
-              <span className="w-full border-t border-gray-200" />
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <span className="w-full border-t border-hairline" />
             </div>
-            <div className="relative flex justify-center text-xs font-medium uppercase tracking-wide">
-              <span className="bg-white px-3 text-gray-400">Or continue with</span>
+            <div className="relative flex justify-center text-[10px] font-semibold uppercase tracking-wider">
+              <span className="bg-canvas px-3 text-mute">Or continue with</span>
             </div>
           </div>
 
@@ -195,9 +192,9 @@ function LoginCard() {
             disabled={loading}
           />
 
-          <p className="text-sm text-center text-gray-500 mt-8">
+          <p className="text-sm text-center text-body mt-8">
             Don&apos;t have an account?{" "}
-            <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-700 hover:underline underline-offset-2">
+            <Link to="/signup" className="font-medium text-link hover:text-link-deep hover:underline underline-offset-2">
               Create one
             </Link>
           </p>

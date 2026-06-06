@@ -360,19 +360,19 @@ export default function ProblemPage() {
 
   const { label: diffLabel, style: diffClass } = getDifficultyFromRating(problem?.difficulty);
   const statusClass = useMemo(() => {
-    if (statusBadge?.type === "success") return "bg-[#0e2a1d] border-[#1e5d3b] text-green-300";
-    if (statusBadge?.type === "warn") return "bg-[#3a2a0e] border-[#6a531e] text-yellow-300";
-    if (statusBadge?.type === "error") return "bg-[#2a1313] border-[#5d1e1e] text-red-300";
-    return "bg-[#182432] border-[#233046] text-gray-300";
+    if (statusBadge?.type === "success") return "bg-emerald-500/10 border-emerald-500/25 text-emerald-600 dark:text-emerald-400";
+    if (statusBadge?.type === "warn") return "bg-warning-soft border-warning/25 text-warning-deep dark:text-warning";
+    if (statusBadge?.type === "error") return "bg-rose-500/10 border-rose-500/25 text-rose-600 dark:text-rose-400";
+    return "bg-canvas-soft-2 border-hairline text-body";
   }, [statusBadge]);
 
   const embedUrl = getYouTubeEmbed(problem?.editorialLink);
 
   return (
-    <div ref={rootRef} className="flex w-full flex-col xl:flex-row overflow-y-auto xl:overflow-hidden bg-[#0b0f13] text-gray-200 font-sans" style={{ height: "calc(100dvh - 56px)" }}>
+    <div ref={rootRef} className="flex w-full flex-col xl:flex-row overflow-y-auto xl:overflow-hidden bg-canvas-soft text-ink font-sans border-t border-hairline" style={{ height: "calc(100dvh - 64px)" }}>
       {/* LEFT PANEL */}
       {!isEditorFullscreen && (
-        <div className="hidden xl:flex flex-col border-r border-[#1b2330] shadow-2xl bg-[#0d1117] shrink-0 overflow-hidden" style={{ width: `${leftWidthPct}%` }}>
+        <div className="hidden xl:flex flex-col border-r border-hairline bg-canvas shrink-0 overflow-hidden" style={{ width: `${leftWidthPct}%` }}>
           <ProblemDescriptionPanel
             activeTab={activeTab} setActiveTab={setActiveTab} problem={problem} problemId={problemId} embedUrl={embedUrl}
             submissions={submissions} refetchSubmissions={refetchSubmissions} hints={hints} hintsLoading={hintsLoading}
@@ -384,7 +384,7 @@ export default function ProblemPage() {
       <Resizer direction="horizontal" onMouseDown={onHorizontalDragStart} onTouchStart={onHorizontalDragStart} />
 
       {/* RIGHT PANEL */}
-      <div ref={rightColRef} className="relative flex-1 flex flex-col min-h-0 overflow-hidden bg-[#0d1117]">
+      <div ref={rightColRef} className="relative flex-1 flex flex-col min-h-0 overflow-hidden bg-canvas">
         <ProblemHeader
           problem={problem} statusBadge={statusBadge} statusClass={statusClass} diffLabel={diffLabel} diffClass={diffClass}
           language={language} setLanguage={setLanguage} isRunning={isRunning} isSubmitting={isSubmitting}
@@ -393,7 +393,7 @@ export default function ProblemPage() {
 
         {/* Mobile Tabs */}
         {!isEditorFullscreen && (
-          <div className="xl:hidden bg-[#0f141b] border-b border-[#1b2330] max-h-[40vh] overflow-hidden flex flex-col">
+          <div className="xl:hidden bg-canvas border-b border-hairline max-h-[40vh] overflow-hidden flex flex-col">
             <ProblemDescriptionPanel
               activeTab={activeTab} setActiveTab={setActiveTab} problem={problem} problemId={problemId} embedUrl={embedUrl}
               submissions={submissions} refetchSubmissions={refetchSubmissions} hints={hints} hintsLoading={hintsLoading}
@@ -402,7 +402,7 @@ export default function ProblemPage() {
           </div>
         )}
 
-        <div className="flex-1 flex flex-col min-h-0" style={{ flex: `0 0 ${editorHeightPct}%` }}>
+        <div className="flex-1 flex flex-col min-h-0 bg-canvas-soft-2" style={{ flex: `0 0 ${editorHeightPct}%` }}>
           <EditorPanel language={language} monacoLanguage={monacoLanguage} code={code} handleEditorChange={handleEditorChange} onEditorMount={onEditorMount} />
         </div>
 

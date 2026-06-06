@@ -71,22 +71,19 @@ export default function NewNav() {
 
   return (
     <div className="sticky top-0 z-50">
-      <div className="h-0.5 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
-
-      <nav className="border-b border-white/10 bg-slate-900/80 backdrop-blur-md shadow-lg transition-all duration-300">
+      <nav className="border-b border-hairline bg-canvas/80 backdrop-blur-md shadow-xs transition-colors duration-200">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
 
           {/* Logo */}
           <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-2 group">
+            <Link to="/" className="flex items-center gap-2.5 group">
               <div className="relative">
-                <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 opacity-75 blur transition group-hover:opacity-100" />
-                <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white font-bold text-xl border border-white/10 shadow-xl group-hover:scale-105 transition-transform">
+                <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-primary text-primary-foreground font-semibold text-lg shadow-sm group-hover:scale-102 transition-transform duration-200">
                   C
                 </div>
               </div>
-              <span className="hidden sm:block text-2xl font-bold tracking-tight text-white">
-                Code<span className="text-blue-500">SM</span>
+              <span className="hidden sm:block text-xl font-semibold tracking-tight text-ink">
+                Code<span className="text-mute font-normal">SM</span>
               </span>
             </Link>
 
@@ -97,9 +94,9 @@ export default function NewNav() {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `px-4 py-2 text-sm font-medium transition-all duration-200 rounded-lg ${isActive
-                      ? "bg-white/10 text-white shadow-inner"
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                    `px-3 py-1.5 text-sm font-medium transition-colors duration-200 rounded-md ${isActive
+                      ? "bg-canvas-soft-2 text-ink"
+                      : "text-body hover:text-ink hover:bg-canvas-soft-2/50"
                     }`
                   }
                 >
@@ -109,14 +106,14 @@ export default function NewNav() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+              className="p-2 text-body hover:text-ink rounded-full hover:bg-canvas-soft-2 border border-hairline bg-canvas shadow-xs transition-colors duration-200 cursor-pointer"
               aria-label="Toggle theme"
             >
-              {isDark ? <Sun size={20} /> : <Moon size={20} />}
+              {isDark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
 
             {/* Auth section */}
@@ -124,43 +121,44 @@ export default function NewNav() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group"
+                  className="flex items-center gap-1.5 p-1 rounded-full bg-canvas-soft border border-hairline hover:bg-canvas-soft-2 transition-colors duration-200 cursor-pointer group"
                 >
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-md group-hover:rotate-12 transition-transform">
-                    {user?.username?.charAt(0).toUpperCase() || <User size={16} />}
+                  <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold shadow-xs">
+                    {user?.username?.charAt(0).toUpperCase() || <User size={12} />}
                   </div>
-                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={14} className={`text-body transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 <AnimatePresence>
                   {isDropdownOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-3 w-64 origin-top-right rounded-2xl border border-white/10 bg-slate-900/95 p-2 shadow-2xl backdrop-blur-xl ring-1 ring-white/5 z-[60]"
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2.5 w-60 origin-top-right rounded-md border border-hairline bg-canvas p-1.5 shadow-lg z-[60]"
                     >
-                      <div className="px-4 py-3 border-b border-white/5 overflow-hidden">
-                        <p className="text-sm font-semibold text-white truncate">{user?.username || 'User'}</p>
-                        <p className="text-xs text-slate-400 truncate mt-0.5">{user?.email}</p>
-                        <span className="inline-flex mt-2 items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-400 border border-blue-500/20 uppercase tracking-wider">
+                      <div className="px-3.5 py-2.5 border-b border-hairline overflow-hidden">
+                        <p className="text-sm font-semibold text-ink truncate">{user?.username || 'User'}</p>
+                        <p className="text-xs text-body truncate mt-0.5">{user?.email}</p>
+                        <span className="inline-flex mt-2 items-center rounded-full bg-link-bg-soft px-2 py-0.5 text-[10px] font-medium text-link border border-link/10 uppercase tracking-wider">
                           {userRole || 'Learner'}
                         </span>
                       </div>
 
-                      <div className="mt-2 space-y-1">
+                      <div className="mt-1.5 space-y-0.5">
                         <Link
                           to="/dashboard"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-sm transition-colors"
                         >
-                          <LayoutDashboard size={16} className="text-slate-500" />
+                          <LayoutDashboard size={14} className="text-mute" />
                           Dashboard
                         </Link>
                         <button
                           onClick={handleLogout}
-                          className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-colors"
+                          className="flex w-full items-center gap-2.5 px-3 py-2 text-sm font-medium text-rose-500 hover:bg-rose-500/5 rounded-sm transition-colors cursor-pointer"
                         >
-                          <LogOut size={16} />
+                          <LogOut size={14} />
                           Sign out
                         </button>
                       </div>
@@ -169,12 +167,12 @@ export default function NewNav() {
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <Link to="/login" className="hidden sm:block text-sm font-semibold text-slate-300 hover:text-white transition-colors">
+              <div className="flex items-center gap-2">
+                <Link to="/login" className="px-3 py-1.5 text-xs font-semibold border border-hairline rounded-sm hover:bg-canvas-soft bg-canvas text-ink transition-colors flex items-center justify-center h-8">
                   Login
                 </Link>
                 <Link to="/signup">
-                  <button className="relative inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-blue-900/20 transition-all hover:bg-blue-500 hover:shadow-blue-500/25 active:scale-95">
+                  <button className="px-3 py-1.5 text-xs font-semibold rounded-sm bg-primary text-primary-foreground hover:opacity-90 transition-opacity flex items-center justify-center h-8 cursor-pointer">
                     Sign Up
                   </button>
                 </Link>
@@ -184,9 +182,10 @@ export default function NewNav() {
             {/* Mobile Toggle */}
             <button
               onClick={() => setIsMobileOpen(!isMobileOpen)}
-              className="lg:hidden p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+              className="lg:hidden p-2 text-body hover:text-ink rounded-md hover:bg-canvas-soft-2 transition-colors cursor-pointer"
+              aria-label="Toggle navigation menu"
             >
-              {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
+              {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
@@ -198,17 +197,17 @@ export default function NewNav() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="lg:hidden border-t border-white/10 bg-slate-900 overflow-hidden"
+              className="lg:hidden border-t border-hairline bg-canvas overflow-hidden"
             >
-              <div className="p-4 space-y-1">
+              <div className="p-4 space-y-1 bg-canvas-soft">
                 {navItems.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     className={({ isActive }) =>
-                      `flex items-center px-4 py-3 text-base font-medium rounded-xl transition-colors ${isActive
-                        ? "bg-blue-600/10 text-blue-400"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      `flex items-center px-4 py-2.5 text-sm font-medium rounded-md transition-colors ${isActive
+                        ? "bg-canvas-soft-2 text-ink font-semibold"
+                        : "text-body hover:bg-canvas-soft-2/50 hover:text-ink"
                       }`
                     }
                   >
@@ -217,11 +216,11 @@ export default function NewNav() {
                 ))}
 
                 {!user && (
-                  <div className="mt-6 space-y-3 pt-6 border-t border-white/5">
-                    <Link to="/login" className="block w-full text-center py-3 text-base font-semibold text-white bg-white/5 rounded-xl border border-white/10">
+                  <div className="mt-4 space-y-2 pt-4 border-t border-hairline">
+                    <Link to="/login" className="block w-full text-center py-2 text-sm font-semibold text-ink bg-canvas rounded-md border border-hairline">
                       Login
                     </Link>
-                    <Link to="/signup" className="block w-full text-center py-3 text-base font-bold text-white bg-blue-600 rounded-xl">
+                    <Link to="/signup" className="block w-full text-center py-2 text-sm font-semibold text-primary-foreground bg-primary rounded-md">
                       Sign Up
                     </Link>
                   </div>

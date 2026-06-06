@@ -5,7 +5,7 @@ const HERO_SRC = "/svg/competitive_programming_hero_svg.svg";
  */
 export default function AuthSplitLayout({ children }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/60">
+    <div className="min-h-screen bg-canvas-soft text-ink">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col lg:flex-row lg:items-center lg:justify-between lg:gap-10 xl:gap-14">
         <section className="flex w-full flex-1 items-center justify-center px-4 py-10 sm:px-6 lg:justify-end lg:py-12 lg:pl-8 lg:pr-4 xl:pl-12">
           <div className="w-full max-w-md">{children}</div>
