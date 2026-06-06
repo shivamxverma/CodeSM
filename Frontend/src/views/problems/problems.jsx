@@ -238,16 +238,9 @@ export default function ProblemPage() {
                       {item?.difficulty || "—"}
                     </span>
                   </div>
-                  <div className="mb-2 font-mono text-[10px] text-mute">
+                  <div className="mb-4 font-mono text-[10px] text-mute">
                     {Number.isFinite(rating) ? `Rating: ${rating}` : "Rating: —"}
                   </div>
-                  {item?.description ? (
-                    <p className="mb-5.5 text-sm text-body line-clamp-3 leading-relaxed">
-                      {String(item.description)}
-                    </p>
-                  ) : (
-                    <p className="mb-5.5 text-sm text-mute italic">No description provided.</p>
-                  )}
                   <div className="flex items-center justify-between">
                     <Link
                       to={`/problems/${item.id}`}
