@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "tsx": "^4.20.6",
     "@aws-sdk/client-s3": "^3.864.0",
     "bullmq": "^5.76.1",
     "db-schema": "file:../db-schema",
@@ -27,7 +28,5 @@
     "winston-daily-rotate-file": "^5.0.0",
     "yup": "^1.7.1"
   },
-  "devDependencies": {
-    "tsx": "^4.20.6"
-  }
+  "devDependencies": {}
 }
