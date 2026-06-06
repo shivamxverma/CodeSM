@@ -230,7 +230,7 @@ export default function ProblemPage() {
                   key={item.id}
                   className="group relative overflow-hidden rounded-md border border-hairline bg-canvas p-5.5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-sm duration-200"
                 >
-                  <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="mb-4 flex items-start justify-between gap-3">
                     <h2 className="text-base font-semibold leading-tight text-ink group-hover:text-link transition-colors duration-150">
                       {item?.title || "Untitled"}
                     </h2>
@@ -238,9 +238,11 @@ export default function ProblemPage() {
                       {item?.difficulty || "—"}
                     </span>
                   </div>
-                  <div className="mb-4 font-mono text-[10px] text-mute">
-                    {Number.isFinite(rating) ? `Rating: ${rating}` : "Rating: —"}
-                  </div>
+                  {Number.isFinite(rating) && (
+                    <div className="mb-4 font-mono text-[10px] text-mute">
+                      Rating: {rating}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <Link
                       to={`/problems/${item.id}`}

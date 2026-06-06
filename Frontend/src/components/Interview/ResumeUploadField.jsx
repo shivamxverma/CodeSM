@@ -60,33 +60,33 @@ export function ResumeUploadField({ resumeText, onParsed, onClear, isParsing, se
     return (
         <div className="space-y-2.5">
             {/* Label row */}
-            <div className="flex items-center gap-2.5 text-[13px] font-medium text-gray-300 mb-2.5">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-white/[0.05] border border-white/[0.08] text-[10px] shadow-inner">
+            <div className="flex items-center gap-2.5 text-[13px] font-medium text-body mb-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-canvas-soft-2 border border-hairline text-[10px] shadow-sm">
                     📄
                 </div>
                 <span className="tracking-wide">Resume</span>
-                <span className="ml-1 text-[11px] font-normal text-gray-500 rounded-full border border-white/[0.06] bg-white/[0.02] px-2 py-0.5">
+                <span className="ml-1 text-[11px] font-normal text-mute rounded-full border border-hairline bg-canvas-soft px-2 py-0.5">
                     optional
                 </span>
             </div>
 
             {hasResume ? (
                 /* ── Parsed state ─────────────────────────────────────── */
-                <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] px-4 py-3.5 flex items-start gap-3 shadow-[0_4px_24px_-10px_rgba(16,185,129,0.25)]">
+                <div className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-4 py-3.5 flex items-start gap-3 shadow-sm">
                     <div className="mt-0.5 shrink-0 h-8 w-8 rounded-lg bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-sm">
                         ✅
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-semibold text-emerald-300 truncate" title={fileName}>
+                        <div className="text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 truncate" title={fileName}>
                             {fileName || 'Resume loaded'}
                         </div>
-                        <div className="text-[11px] text-gray-400 mt-0.5">
-                            {charCount.toLocaleString()} characters extracted
+                        <div className="text-[11px] text-body mt-0.5">
+                            {charCount.toLocaleString()}&nbsp;characters extracted
                             {truncated && (
-                                <span className="ml-1.5 text-amber-400">· Preview capped for token efficiency</span>
+                                <span className="ml-1.5 text-amber-600 dark:text-amber-400">· Preview capped for token efficiency</span>
                             )}
                         </div>
-                        <div className="text-[11px] text-gray-500 mt-1">
+                        <div className="text-[11px] text-mute mt-1">
                             Questions will be tailored to your resume
                         </div>
                     </div>
@@ -94,7 +94,7 @@ export function ResumeUploadField({ resumeText, onParsed, onClear, isParsing, se
                         type="button"
                         onClick={handleClear}
                         title="Remove resume"
-                        className="shrink-0 mt-0.5 rounded-lg p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                        className="shrink-0 mt-0.5 rounded-md p-1.5 text-mute hover:text-red-500 hover:bg-red-500/10 transition-colors duration-200"
                     >
                         <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
@@ -107,10 +107,10 @@ export function ResumeUploadField({ resumeText, onParsed, onClear, isParsing, se
                     role="button"
                     tabIndex={0}
                     aria-label="Upload resume — drag and drop or click to browse"
-                    className={`relative w-full rounded-xl border-2 border-dashed transition-all duration-300 cursor-pointer group
+                    className={`relative w-full rounded-md border-2 border-dashed transition-all duration-200 cursor-pointer group
                         ${dragOver
-                            ? 'border-cyan-400/60 bg-cyan-400/[0.06] shadow-[0_0_0_4px_rgba(34,211,238,0.08)]'
-                            : 'border-white/[0.08] bg-white/[0.02] hover:border-cyan-400/30 hover:bg-cyan-400/[0.03]'
+                            ? 'border-ring bg-canvas-soft-2 shadow-[0_0_0_3px_rgba(80,227,194,0.08)]'
+                            : 'border-hairline bg-canvas hover:border-ring hover:bg-canvas-soft-2'
                         }
                         ${isParsing ? 'pointer-events-none opacity-60' : ''}
                     `}
@@ -123,25 +123,25 @@ export function ResumeUploadField({ resumeText, onParsed, onClear, isParsing, se
                     <div className="py-7 px-5 flex flex-col items-center gap-3 text-center">
                         {isParsing ? (
                             <>
-                                <div className="h-9 w-9 rounded-full border-2 border-cyan-400/30 border-t-cyan-400 animate-spin" />
-                                <p className="text-[13px] text-cyan-300 font-medium">Parsing resume…</p>
-                                <p className="text-[11px] text-gray-500">Extracting text client-side</p>
+                                <div className="h-9 w-9 rounded-full border-2 border-ring/25 border-t-ring animate-spin" />
+                                <p className="text-[13px] text-ring font-medium">Parsing resume…</p>
+                                <p className="text-[11px] text-mute">Extracting text client-side</p>
                             </>
                         ) : (
                             <>
-                                <div className="h-12 w-12 rounded-2xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center text-2xl group-hover:border-cyan-400/25 group-hover:bg-cyan-400/[0.05] group-hover:scale-110 transition-all duration-300 shadow-inner">
+                                <div className="h-12 w-12 rounded-xl border border-hairline bg-canvas-soft-2 flex items-center justify-center text-2xl group-hover:border-ring/25 group-hover:bg-ring/10 group-hover:scale-105 transition-all duration-200 shadow-sm">
                                     📤
                                 </div>
                                 <div>
-                                    <p className="text-[13px] text-gray-300 font-medium group-hover:text-white transition-colors duration-200">
+                                    <p className="text-[13px] text-body font-medium group-hover:text-ink transition-colors duration-200">
                                         Drop your resume or{' '}
-                                        <span className="text-cyan-400 underline decoration-dashed underline-offset-2">
+                                        <span className="text-link underline decoration-dashed underline-offset-2">
                                             browse
                                         </span>
                                     </p>
-                                    <p className="text-[11px] text-gray-500 mt-1">PDF or TXT · max 10 MB</p>
+                                    <p className="text-[11px] text-mute mt-1">PDF or TXT · max 10&nbsp;MB</p>
                                 </div>
-                                <div className="text-[10px] text-gray-600 border border-white/[0.06] bg-white/[0.02] rounded-full px-3 py-1 font-medium tracking-wide">
+                                <div className="text-[10px] text-mute border border-hairline bg-canvas-soft-2 rounded-full px-3 py-1 font-medium tracking-wide">
                                     🔒 Parsed locally — nothing uploaded to a server
                                 </div>
                             </>
@@ -161,14 +161,14 @@ export function ResumeUploadField({ resumeText, onParsed, onClear, isParsing, se
             )}
 
             {parseError && (
-                <div className="flex items-start gap-2 rounded-xl border border-red-500/25 bg-red-500/[0.07] px-3 py-2.5 text-[12px] text-red-300">
+                <div className="flex items-start gap-2 rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-[12px] text-red-600 dark:text-red-400">
                     <span className="mt-0.5 shrink-0">⚠️</span>
                     <span>{parseError}</span>
                 </div>
             )}
 
             {!hasResume && !parseError && (
-                <p className="text-[11px] text-gray-600">
+                <p className="text-[11px] text-mute">
                     Upload your resume to get interview questions tailored to your actual experience and skills.
                 </p>
             )}

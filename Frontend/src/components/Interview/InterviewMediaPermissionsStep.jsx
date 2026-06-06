@@ -110,26 +110,25 @@ export function InterviewMediaPermissionsStep({ onGranted, onCancel, isLoading, 
     const hasStream = streamReady && !error;
 
     return (
-        <div className="bg-background text-foreground min-h-screen p-6 flex flex-col items-center justify-center">
-            <div className="w-full max-w-lg space-y-6">
+        <div className="bg-canvas-soft text-ink min-h-screen p-6 flex flex-col items-center justify-center font-sans">
+            <div className="w-full max-w-lg space-y-6 bg-canvas border border-hairline p-6 sm:p-8 rounded-2xl shadow-md relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan/20 to-transparent opacity-50" />
+
                 <div>
-                    <h1 className="text-2xl font-semibold">Camera & microphone</h1>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <h1 className="text-2xl font-bold tracking-tight text-ink">Camera & microphone.</h1>
+                    <p className="text-sm text-body mt-1.5 leading-relaxed">
                         We need access for your picture-in-picture preview during the technical interview. Nothing is
                         uploaded automatically.
                     </p>
                 </div>
 
-                <div
-                    className="rounded-xl border border-border overflow-hidden bg-black aspect-video max-h-[220px] shadow-lg"
-                    style={{ borderRadius: 12 }}
-                >
+                <div className="rounded-md border border-hairline overflow-hidden bg-black aspect-video max-h-[220px] shadow-sm">
                     <video ref={videoRef} className="w-full h-full object-cover" playsInline muted autoPlay />
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Mic level</span>
-                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-mute shrink-0">Mic level</span>
+                    <div className="flex-1 h-2.5 rounded-full bg-canvas-soft-2 border border-hairline overflow-hidden">
                         <div
                             className="h-full rounded-full bg-emerald-500 transition-[width] duration-75"
                             style={{ width: `${Math.min(100, micLevel * 200)}%` }}
@@ -137,21 +136,31 @@ export function InterviewMediaPermissionsStep({ onGranted, onCancel, isLoading, 
                     </div>
                 </div>
 
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                {apiError && <p className="text-sm text-destructive">{apiError}</p>}
+                {error && (
+                    <div className="flex items-start gap-2 rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-400">
+                        <span>⚠️</span>
+                        <span>{error}</span>
+                    </div>
+                )}
+                {apiError && (
+                    <div className="flex items-start gap-2 rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-400">
+                        <span>⚠️</span>
+                        <span>{apiError}</span>
+                    </div>
+                )}
 
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
                     <button
                         type="button"
                         onClick={() => void startPreview()}
-                        className="flex-1 rounded-lg border border-border bg-card py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors"
+                        className="btn-secondary flex-1 py-2 h-10 text-sm font-medium"
                     >
                         Retry access
                     </button>
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors"
+                        className="btn-secondary flex-1 py-2 h-10 text-sm font-medium"
                     >
                         Back
                     </button>
@@ -161,10 +170,10 @@ export function InterviewMediaPermissionsStep({ onGranted, onCancel, isLoading, 
                     type="button"
                     onClick={handleContinue}
                     disabled={!hasStream || isLoading}
-                    className={`w-full rounded-lg py-3 text-sm font-semibold text-white transition-colors ${
+                    className={`w-full btn-primary py-3 text-sm font-bold transition-all ${
                         !hasStream || isLoading
-                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                            : 'bg-indigo-600 hover:bg-indigo-700'
+                            ? 'opacity-40 cursor-not-allowed bg-canvas border-hairline text-mute'
+                            : ''
                     }`}
                 >
                     {isLoading ? 'Starting interview…' : 'Continue to interview'}

@@ -68,58 +68,58 @@ export function TechnicalProblemPanel({
 
     return (
         <section
-            className="flex flex-col rounded-2xl border border-border bg-card overflow-hidden shadow-sm min-h-0 max-h-[calc(100vh-8rem)] lg:max-h-[calc(100vh-6rem)]"
+            className="flex flex-col rounded-2xl border border-hairline bg-canvas overflow-hidden shadow-sm min-h-0 max-h-[calc(100vh-8rem)] lg:max-h-[calc(100vh-6rem)]"
             style={{ borderRadius: 12 }}
         >
-            <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-card/95 backdrop-blur-sm px-4 py-3">
+            <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b border-hairline bg-canvas/95 backdrop-blur-sm px-4 py-3">
                 <div className="flex flex-wrap items-center gap-2 min-w-0">
                     <span
-                        className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
+                        className={`text-xs font-medium px-2.5 py-0.5 rounded-full shrink-0 border ${
                             isSpeaking
-                                ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                                : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                                ? 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
+                                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                         }`}
                     >
                         {isSpeaking ? 'Interviewer speaking' : 'Your turn'}
                     </span>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${levelClass}`}>
+                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border capitalize ${levelClass.replace('/20', '/10 border border-current/25')}`}>
                         {interviewLevel}
                     </span>
                 </div>
             </div>
 
-            <div className="aspect-video max-h-[200px] shrink-0 bg-black/90 flex items-center justify-center border-b border-border">
+            <div className="aspect-video max-h-[200px] shrink-0 bg-black/95 flex items-center justify-center border-b border-hairline">
                 {isSpeaking ? (
                     <video src="/video.mp4" autoPlay muted loop className="h-full w-full object-cover" />
                 ) : (
-                    <p className="text-muted-foreground text-sm px-4 text-center">
+                    <p className="text-mute text-xs px-4 text-center">
                         Read the formatted question description below, then start coding.
                     </p>
                 )}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 min-h-0 space-y-6">
                 {questionTitle && (
-                    <h2 className="text-lg font-semibold text-foreground mb-3 leading-snug">{questionTitle}</h2>
+                    <h2 className="text-lg font-bold text-ink leading-snug">{questionTitle}</h2>
                 )}
-                <div className="space-y-5">
+                <div className="space-y-6">
                     {description ? (
                         <div>
-                            <h3 className="font-semibold mb-2 text-blue-300">Description</h3>
-                            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground/90 [&_pre]:bg-muted [&_pre]:rounded-lg [&_code]:text-sm">
+                            <h3 className="text-xs font-semibold uppercase tracking-wider text-mute mb-2">Description</h3>
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-body [&_pre]:bg-canvas-soft-2 [&_pre]:border [&_pre]:border-hairline [&_pre]:rounded-md [&_code]:text-sm [&_code]:font-mono">
                                 <ReactMarkdown>{description}</ReactMarkdown>
                             </div>
                         </div>
                     ) : (
-                        <div className="prose prose-sm dark:prose-invert max-w-none text-foreground/90">
+                        <div className="prose prose-sm dark:prose-invert max-w-none text-body [&_pre]:bg-canvas-soft-2 [&_pre]:border [&_pre]:border-hairline [&_pre]:rounded-md [&_code]:text-sm [&_code]:font-mono">
                             <ReactMarkdown>{questionText || '_Loading…_'}</ReactMarkdown>
                         </div>
                     )}
 
                     {inputFormat && (
                         <div>
-                            <h3 className="font-semibold mb-2 text-blue-300">Input Format</h3>
-                            <pre className="rounded border border-border bg-muted/20 p-3 text-sm overflow-x-auto whitespace-pre-wrap">
+                            <h3 className="text-xs font-semibold uppercase tracking-wider text-mute mb-2">Input Format</h3>
+                            <pre className="rounded-md border border-hairline bg-canvas-soft-2 p-3 text-sm overflow-x-auto whitespace-pre-wrap font-mono text-ink">
                                 {inputFormat}
                             </pre>
                         </div>
@@ -127,8 +127,8 @@ export function TechnicalProblemPanel({
 
                     {outputFormat && (
                         <div>
-                            <h3 className="font-semibold mb-2 text-blue-300">Output Format</h3>
-                            <pre className="rounded border border-border bg-muted/20 p-3 text-sm overflow-x-auto whitespace-pre-wrap">
+                            <h3 className="text-xs font-semibold uppercase tracking-wider text-mute mb-2">Output Format</h3>
+                            <pre className="rounded-md border border-hairline bg-canvas-soft-2 p-3 text-sm overflow-x-auto whitespace-pre-wrap font-mono text-ink">
                                 {outputFormat}
                             </pre>
                         </div>

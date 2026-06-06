@@ -114,28 +114,28 @@ export function TechnicalInterviewLayout({
     const canRecordSession = Boolean(mediaStream && pickRecorderMime());
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col pb-44">
+        <div className="min-h-screen bg-canvas-soft text-ink flex flex-col pb-44 font-sans">
             <header
-                className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md"
+                className="sticky top-0 z-40 border-b border-hairline bg-canvas/95 backdrop-blur-md"
                 style={{ borderRadius: 0 }}
             >
                 <div className="max-w-[1600px] mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-4 min-w-0">
-                        <div className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2 tabular-nums">
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <div className="flex items-center gap-2.5 rounded-md border border-hairline bg-canvas px-3 py-1.5">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-mute">
                                 Time
                             </span>
-                            <span className="text-lg font-bold text-foreground">{formatElapsed(interviewElapsedSeconds)}</span>
+                            <span className="text-lg font-bold text-ink tabular-nums">{formatElapsed(interviewElapsedSeconds)}</span>
                         </div>
                         <div className="min-w-0">
-                            <p className="text-xs text-muted-foreground">Candidate</p>
-                            <p className="text-sm font-medium truncate max-w-[200px] sm:max-w-xs">{candidateLabel}</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-mute">Candidate</p>
+                            <p className="text-sm font-semibold text-ink truncate max-w-[200px] sm:max-w-xs">{candidateLabel}</p>
+                            <p className="text-[11px] text-mute mt-0.5">
                                 Question {currentQuestionIndex + 1} of {questionsLength}
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                                 <span className="relative flex h-2 w-2">
                                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40" />
                                     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
@@ -143,7 +143,7 @@ export function TechnicalInterviewLayout({
                                 Live
                             </span>
                             {sessionRecording && (
-                                <span className="rounded-full bg-red-600/90 px-2.5 py-1 text-[11px] font-bold text-white">
+                                <span className="rounded-full bg-red-500/10 border border-red-500/20 px-2.5 py-0.5 text-[11px] font-bold text-red-600 dark:text-red-400">
                                     REC
                                 </span>
                             )}
@@ -154,10 +154,10 @@ export function TechnicalInterviewLayout({
                             <button
                                 type="button"
                                 onClick={toggleSessionRecording}
-                                className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-200 cursor-pointer ${
                                     sessionRecording
                                         ? 'bg-red-600 text-white hover:bg-red-700'
-                                        : 'border border-border bg-card hover:bg-muted/50'
+                                        : 'border border-hairline bg-canvas text-ink hover:bg-canvas-soft-2'
                                 }`}
                             >
                                 {sessionRecording ? 'Stop recording' : 'Record session'}
@@ -165,24 +165,24 @@ export function TechnicalInterviewLayout({
                         )}
                         <button
                             type="button"
-                            className="rounded-lg border border-destructive/50 bg-destructive/10 text-destructive px-4 py-2 text-sm font-medium hover:bg-destructive/20 transition-colors"
+                            className="rounded-md border border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-1.5 text-sm font-medium hover:bg-red-500/20 transition-colors duration-200 cursor-pointer"
                             onClick={onEndInterview}
                         >
                             End interview
                         </button>
                     </div>
                 </div>
-                <div className="max-w-[1600px] mx-auto px-4 pb-2 w-full">
+                <div className="max-w-[1600px] mx-auto px-4 pb-2.5 w-full">
                     <InterviewProgressBar progressPct={progressPct} />
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                        Shortcuts: <kbd className="px-1 rounded bg-muted">⌘/Ctrl</kbd>+<kbd className="px-1 rounded bg-muted">Enter</kbd> run
-                        hint · <kbd className="px-1 rounded bg-muted">⌘/Ctrl</kbd>+<kbd className="px-1 rounded bg-muted">⇧</kbd>+
-                        <kbd className="px-1 rounded bg-muted">Enter</kbd> submit
+                    <p className="text-[11px] text-mute mt-1.5">
+                        Shortcuts: <kbd className="px-1.5 py-0.5 rounded border border-hairline bg-canvas-soft-2 font-mono text-[10px]">Ctrl/⌘</kbd>+<kbd className="px-1.5 py-0.5 rounded border border-hairline bg-canvas-soft-2 font-mono text-[10px]">Enter</kbd> run
+                        hint · <kbd className="px-1.5 py-0.5 rounded border border-hairline bg-canvas-soft-2 font-mono text-[10px]">Ctrl/⌘</kbd>+<kbd className="px-1.5 py-0.5 rounded border border-hairline bg-canvas-soft-2 font-mono text-[10px]">⇧</kbd>+
+                        <kbd className="px-1.5 py-0.5 rounded border border-hairline bg-canvas-soft-2 font-mono text-[10px]">Enter</kbd> submit
                     </p>
                 </div>
             </header>
 
-            <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 md:p-6 grid lg:grid-cols-2 gap-6 min-h-0 items-stretch">
+            <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 md:p-6 grid lg:grid-cols-2 gap-6 min-h-0 items-stretch bg-canvas-soft">
                 <TechnicalProblemPanel
                     questionTitle={questionTitle}
                     questionText={questionText}
@@ -191,11 +191,11 @@ export function TechnicalInterviewLayout({
                 />
                 <div className="flex flex-col min-h-[480px]">
                     {runNotice && (
-                        <p className="mb-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+                        <div className="mb-3 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
                             Practice mode: there is no automated judge. Refine your solution in the editor, then use{' '}
-                            <strong>Submit</strong> (or <kbd className="px-1 rounded bg-muted">Ctrl+Shift+Enter</kbd>
+                            <strong>Submit</strong> (or <kbd className="px-1 rounded bg-canvas-soft-2 border border-hairline">Ctrl+Shift+Enter</kbd>
                             ).
-                        </p>
+                        </div>
                     )}
                     <CodingAnswerPanel
                         codeLanguages={codeLanguages}

@@ -3,23 +3,21 @@ import { roundUsesCodeEditor } from './interviewConstants';
 import { ResumeUploadField } from './ResumeUploadField';
 
 const controlBase =
-    'w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 text-sm text-gray-100 shadow-sm backdrop-blur-xl transition-all duration-300 outline-none hover:bg-white/[0.06] hover:border-white/20';
-const controlFocus =
-    'focus:border-cyan-400/50 focus:bg-white/[0.08] focus:ring-4 focus:ring-cyan-400/10 focus:shadow-[0_0_20px_rgba(34,211,238,0.15)]';
+    'w-full rounded-md border border-hairline bg-canvas px-4 py-2.5 text-sm text-ink transition-all duration-200 outline-none hover:bg-canvas-soft-2 hover:border-hairline-strong focus:border-ring focus:ring-2 focus:ring-ring/20';
 
-const labelClass = 'flex items-center gap-2.5 text-[13px] font-medium text-gray-300 mb-2.5 group-hover:text-gray-100 transition-colors duration-200';
-const hintClass = 'text-[11px] text-gray-500 mt-1.5 leading-relaxed';
+const labelClass = 'flex items-center gap-2.5 text-[13px] font-medium text-body mb-2 transition-colors duration-200';
+const hintClass = 'text-[11px] text-mute mt-1.5 leading-relaxed';
 
 function Field({ id, icon, label, hint, children }) {
     return (
         <div className="group flex flex-col">
             <label className={labelClass} htmlFor={id}>
-                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-white/[0.05] border border-white/[0.08] text-[10px] shadow-inner transition-transform duration-300 group-hover:scale-110 group-hover:bg-white/[0.1] group-hover:border-white/20">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-canvas-soft-2 border border-hairline text-[10px] shadow-sm transition-transform duration-300 group-hover:scale-105">
                     {icon}
                 </div>
                 <span className="tracking-wide">{label}</span>
             </label>
-            <div className="relative transform transition-all duration-300">
+            <div className="relative">
                 {children}
             </div>
             {hint ? <div className={hintClass}>{hint}</div> : null}
@@ -32,13 +30,13 @@ function Select({ id, value, onChange, children }) {
         <div className="relative group">
             <select
                 id={id}
-                className={`${controlBase} ${controlFocus} appearance-none pr-11 cursor-pointer`}
+                className={`${controlBase} appearance-none pr-11 cursor-pointer`}
                 value={value}
                 onChange={onChange}
             >
                 {children}
             </select>
-            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.03] border border-white/[0.05] text-gray-400 transition-all duration-300 group-hover:bg-cyan-500/10 group-hover:text-cyan-300 group-hover:border-cyan-500/20">
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-md bg-canvas-soft-2 border border-hairline text-mute transition-colors duration-200 group-hover:text-ink">
                 <svg
                     className="h-3.5 w-3.5"
                     viewBox="0 0 20 20"
@@ -60,14 +58,14 @@ function SectionHeader({ title, subtitle, step }) {
     return (
         <div className="flex items-center justify-between gap-3 mb-5">
             <div className="flex items-center gap-3">
-                <div className="flex h-8 w-1.5 rounded-full bg-gradient-to-b from-cyan-400 to-purple-500 shadow-[0_0_10px_rgba(34,211,238,0.4)]" />
+                <div className="flex h-8 w-1 rounded-full bg-primary" />
                 <div>
-                    <div className="text-[15px] font-semibold text-white tracking-wide">{title}</div>
-                    <div className="text-[12px] text-gray-400 mt-0.5">{subtitle}</div>
+                    <h2 className="text-[15px] font-semibold text-ink tracking-tight">{title}</h2>
+                    <p className="text-[12px] text-mute mt-0.5">{subtitle}</p>
                 </div>
             </div>
             {step && (
-                <div className="flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[10px] font-medium tracking-widest text-gray-400 uppercase shadow-inner">
+                <div className="flex items-center justify-center rounded-full border border-hairline bg-canvas-soft-2 px-3 py-1 text-[10px] font-semibold tracking-widest text-mute uppercase shadow-sm">
                     {step}
                 </div>
             )}
@@ -106,16 +104,13 @@ export function InterviewSelectionStep({
     onContinue,
 }) {
     return (
-        <div className="min-h-screen text-white px-4 sm:px-6 py-12 flex items-center justify-center relative overflow-hidden bg-[#03060c] font-sans selection:bg-cyan-500/30">
-            {/* Rich Ambient Background */}
+        <div className="min-h-screen text-ink px-4 sm:px-6 py-12 flex items-center justify-center relative overflow-hidden bg-canvas-soft font-sans selection:bg-cyan/30">
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[-20%] left-[-10%] h-[60vh] w-[60vw] rounded-full bg-cyan-600/10 blur-[120px] mix-blend-screen animate-pulse duration-[10000ms]" />
-                <div className="absolute bottom-[-10%] right-[-10%] h-[70vh] w-[60vw] rounded-full bg-purple-600/10 blur-[130px] mix-blend-screen animate-pulse duration-[7000ms] delay-1000" />
-                <div className="absolute top-[40%] left-[60%] h-[40vh] w-[40vw] rounded-full bg-blue-600/10 blur-[100px] mix-blend-screen animate-pulse duration-[5000ms]" />
+                <div className="absolute top-[-20%] left-[-10%] h-[60vh] w-[60vw] rounded-full bg-cyan/5 dark:bg-cyan/10 blur-[120px] mix-blend-screen" />
+                <div className="absolute bottom-[-10%] right-[-10%] h-[70vh] w-[60vw] rounded-full bg-violet/5 dark:bg-violet/10 blur-[130px] mix-blend-screen" />
                 
-                {/* SVG Noise Overlay */}
                 <div 
-                    className="absolute inset-0 opacity-[0.03] mix-blend-overlay"
+                    className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03] mix-blend-overlay"
                     style={{
                         backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27160%27 height=%27160%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.8%27 numOctaves=%272%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27160%27 height=%27160%27 filter=%27url(%23n)%27 opacity=%270.9%27/%3E%3C/svg%3E")'
                     }}
@@ -123,55 +118,50 @@ export function InterviewSelectionStep({
             </div>
 
             <div className="relative w-full max-w-2xl mx-auto z-10">
-                {/* Premium Card Container */}
-                <div className="relative rounded-[32px] bg-[#0a0f18]/80 backdrop-blur-3xl border border-white/[0.08] shadow-[0_0_80px_-20px_rgba(0,0,0,1)] overflow-hidden transition-all duration-500 hover:border-white/[0.12]">
-                    
-                    {/* Inner glowing accent line at the top */}
-                    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent opacity-50" />
+                <div className="relative rounded-2xl bg-canvas border border-hairline shadow-md overflow-hidden transition-all duration-300">
+                    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan/30 to-transparent opacity-50" />
 
                     <div className="p-8 sm:p-10">
-                        {/* Header Section */}
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-10">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-8">
                             <div>
-                                <div className="inline-flex items-center gap-2.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-semibold text-cyan-300 uppercase tracking-widest shadow-[0_0_20px_rgba(34,211,238,0.15)] mb-4">
+                                <div className="inline-flex items-center gap-2 rounded-full border border-cyan/20 bg-cyan/10 px-3 py-1 text-[10px] font-semibold text-cyan-deep dark:text-cyan uppercase tracking-widest mb-4">
                                     <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan"></span>
                                     </span>
-                                    Premium Session Setup
+                                    Session setup
                                 </div>
-                                <h1 className="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white via-gray-200 to-gray-500">
-                                    AI Interview
+                                <h1 className="text-3xl font-extrabold tracking-tight text-ink">
+                                    AI Interview.
                                 </h1>
-                                <p className="mt-3 text-[14px] leading-relaxed text-gray-400 max-w-md">
+                                <p className="mt-3 text-[14px] leading-relaxed text-body max-w-md">
                                     Configure your targeted technical or behavioral interview. Our AI will conduct a realistic session and provide crisp, actionable feedback.
                                 </p>
                             </div>
-                            <div className="hidden sm:flex shrink-0 items-center justify-center h-16 w-16 rounded-2xl border border-white/10 bg-white/[0.03] shadow-inner">
+                            <div className="hidden sm:flex shrink-0 items-center justify-center h-16 w-16 rounded-xl border border-hairline bg-canvas-soft-2 shadow-sm">
                                 <span className="text-3xl">🧠</span>
                             </div>
                         </div>
 
-                        <div className="w-full h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent mb-10" />
+                        <div className="w-full h-px bg-hairline mb-8" />
 
-                        <div className="space-y-10">
-                            {/* Basics Section */}
+                        <div className="space-y-8">
                             <section className="relative">
                                 <SectionHeader 
                                     title="Candidate Profile" 
                                     subtitle="Define the role and experience level" 
                                     step="Step 1"
                                 />
-                                <div className="space-y-5 bg-white/[0.015] border border-white/[0.03] rounded-[24px] p-5 sm:p-7 transition-colors duration-300 hover:bg-white/[0.025]">
+                                <div className="space-y-5 bg-canvas-soft border border-hairline rounded-xl p-5 sm:p-6">
                                     <Field id="interview-role" icon="🎯" label="Target Role">
                                         <Select
                                             id="interview-role"
                                             value={selectedRole}
                                             onChange={(e) => setSelectedRole(e.target.value)}
                                         >
-                                            <option value="" className="bg-[#0f172a] text-gray-400">Select a role...</option>
+                                            <option value="" className="bg-canvas text-ink">Select a role…</option>
                                             {roles.map((role) => (
-                                                <option key={role.id} value={role.id} className="bg-[#0f172a]">
+                                                <option key={role.id} value={role.id} className="bg-canvas text-ink">
                                                     {role.name}
                                                 </option>
                                             ))}
@@ -185,9 +175,9 @@ export function InterviewSelectionStep({
                                                 value={selectedExperience}
                                                 onChange={(e) => setSelectedExperience(e.target.value)}
                                             >
-                                                <option value="" className="bg-[#0f172a] text-gray-400">Select level...</option>
+                                                <option value="" className="bg-canvas text-ink">Select level…</option>
                                                 {experienceLevels.map((level) => (
-                                                    <option key={level.id} value={level.id} className="bg-[#0f172a]">
+                                                    <option key={level.id} value={level.id} className="bg-canvas text-ink">
                                                         {level.name} ({level.years})
                                                     </option>
                                                 ))}
@@ -201,7 +191,7 @@ export function InterviewSelectionStep({
                                                 onChange={(e) => setInterviewRound(e.target.value)}
                                             >
                                                 {interviewRounds.map((r) => (
-                                                    <option key={r.id} value={r.id} className="bg-[#0f172a]">
+                                                    <option key={r.id} value={r.id} className="bg-canvas text-ink">
                                                         {r.name}
                                                     </option>
                                                 ))}
@@ -211,13 +201,13 @@ export function InterviewSelectionStep({
                                 </div>
                             </section>
 
-                            {/* Interview Setup Section */}
                             <section className="relative">
                                 <SectionHeader 
                                     title="Interview Parameters" 
                                     subtitle="Customize difficulty and structure" 
+                                    step="Step 2"
                                 />
-                                <div className="space-y-5 bg-white/[0.015] border border-white/[0.03] rounded-[24px] p-5 sm:p-7 transition-colors duration-300 hover:bg-white/[0.025]">
+                                <div className="space-y-5 bg-canvas-soft border border-hairline rounded-xl p-5 sm:p-6">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                         {roundUsesCodeEditor(interviewRound) ? (
                                             <Field
@@ -232,16 +222,16 @@ export function InterviewSelectionStep({
                                                     onChange={(e) => setCodingLanguage(e.target.value)}
                                                 >
                                                     {codeLanguages.map((lang) => (
-                                                        <option key={lang.id} value={lang.id} className="bg-[#0f172a]">
+                                                        <option key={lang.id} value={lang.id} className="bg-canvas text-ink">
                                                             {lang.name}
                                                         </option>
                                                     ))}
                                                 </Select>
                                             </Field>
                                         ) : (
-                                            <div className="sm:col-span-1 flex flex-col justify-end mb-[22px]">
-                                                <div className="flex h-[46px] items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 text-[13px] text-gray-400 shadow-inner">
-                                                    <span className="opacity-60 text-base">📝</span>
+                                            <div className="sm:col-span-1 flex flex-col justify-end mb-4">
+                                                <div className="flex h-10 items-center gap-2 rounded-md border border-hairline bg-canvas-soft-2 px-3 text-[13px] text-body shadow-sm">
+                                                    <span className="text-base">📝</span>
                                                     <span>No IDE required for this round</span>
                                                 </div>
                                             </div>
@@ -254,7 +244,7 @@ export function InterviewSelectionStep({
                                                 onChange={(e) => setInterviewLevel(e.target.value)}
                                             >
                                                 {interviewLevels.map((lvl) => (
-                                                    <option key={lvl.id} value={lvl.id} className="bg-[#0f172a]">
+                                                    <option key={lvl.id} value={lvl.id} className="bg-canvas text-ink">
                                                         {lvl.name}
                                                     </option>
                                                 ))}
@@ -269,7 +259,7 @@ export function InterviewSelectionStep({
                                             onChange={(e) => setQuestionCount(Number(e.target.value))}
                                         >
                                             {questionCountOptions.map((n) => (
-                                                <option key={n} value={String(n)} className="bg-[#0f172a]">
+                                                <option key={n} value={String(n)} className="bg-canvas text-ink">
                                                     {n} Questions
                                                 </option>
                                             ))}
@@ -278,13 +268,13 @@ export function InterviewSelectionStep({
                                 </div>
                             </section>
 
-                            {/* Resume Section */}
                             <section className="relative">
                                 <SectionHeader
                                     title="Resume"
-                                    subtitle="Upload your resume for personalised questions (optional)"
+                                    subtitle="Upload your resume for personalized questions (optional)"
+                                    step="Step 3"
                                 />
-                                <div className="bg-white/[0.015] border border-white/[0.03] rounded-[24px] p-5 sm:p-7 transition-colors duration-300 hover:bg-white/[0.025]">
+                                <div className="bg-canvas-soft border border-hairline rounded-xl p-5 sm:p-6">
                                     <ResumeUploadField
                                         resumeText={resumeText}
                                         onParsed={onResumeParsed}
@@ -295,13 +285,13 @@ export function InterviewSelectionStep({
                                 </div>
                             </section>
 
-                            {/* Focus Areas Section */}
                             <section className="relative">
                                 <SectionHeader 
                                     title="Custom Focus" 
                                     subtitle="Add specific topics to emphasize (optional)" 
+                                    step="Step 4"
                                 />
-                                <div className="bg-white/[0.015] border border-white/[0.03] rounded-[24px] p-5 sm:p-7 transition-colors duration-300 hover:bg-white/[0.025]">
+                                <div className="bg-canvas-soft border border-hairline rounded-xl p-5 sm:p-6">
                                     <Field
                                         id="custom-req"
                                         icon="✨"
@@ -310,8 +300,8 @@ export function InterviewSelectionStep({
                                     >
                                         <textarea
                                             id="custom-req"
-                                            className={`${controlBase} ${controlFocus} min-h-[110px] resize-y placeholder:text-gray-600 leading-relaxed`}
-                                            placeholder="What should the interviewer specifically evaluate?"
+                                            className={`${controlBase} min-h-[110px] resize-y placeholder:text-mute leading-relaxed`}
+                                            placeholder="What should the interviewer specifically evaluate? e.g. System design tradeoffs…"
                                             value={customRequirements}
                                             onChange={(e) => setCustomRequirements(e.target.value)}
                                         />
@@ -321,42 +311,37 @@ export function InterviewSelectionStep({
                         </div>
                     </div>
 
-                    {/* Footer / CTA Section */}
-                    <div className="relative p-8 sm:p-10 bg-white/[0.015] border-t border-white/[0.05]">
+                    <div className="relative p-8 sm:p-10 bg-canvas-soft-2 border-t border-hairline">
                         <button
                             type="button"
                             onClick={onContinue}
                             disabled={!selectionComplete}
-                            className={`group relative w-full overflow-hidden rounded-xl py-4 text-[15px] font-bold tracking-wide transition-all duration-300 ${
+                            className={`group relative w-full overflow-hidden rounded-md py-3 text-[15px] font-bold tracking-wide transition-all duration-200 cursor-pointer ${
                                 !selectionComplete
-                                    ? 'bg-white/[0.05] text-gray-500 cursor-not-allowed border border-white/5'
-                                    : 'text-white border border-transparent shadow-[0_0_40px_-10px_rgba(34,211,238,0.4)] hover:shadow-[0_0_60px_-15px_rgba(34,211,238,0.6)] hover:-translate-y-0.5 active:translate-y-0'
+                                    ? 'bg-canvas text-mute border border-hairline cursor-not-allowed'
+                                    : 'bg-primary text-primary-foreground border border-transparent shadow-sm hover:opacity-90 active:scale-[0.98]'
                             }`}
                         >
-                            {selectionComplete && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 transition-opacity duration-300" />
-                            )}
-                            
                             <span className="relative flex items-center justify-center gap-2">
                                 {isLoading ? (
                                     <>
-                                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        Initializing Session...
+                                        Initializing Session…
                                     </>
                                 ) : (
                                     <>
-                                        Start Interview
-                                        <svg className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                                        Start interview
+                                        <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
                                             <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
                                         </svg>
                                     </>
                                 )}
                             </span>
                         </button>
-                        <p className="mt-5 text-center text-[12px] text-gray-500 font-medium">
+                        <p className="mt-4 text-center text-[12px] text-mute font-medium">
                             Ready when you are. The interviewer awaits your setup.
                         </p>
                     </div>

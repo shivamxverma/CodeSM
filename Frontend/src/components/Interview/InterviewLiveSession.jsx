@@ -70,29 +70,31 @@ export function InterviewLiveSession({
     }
 
     return (
-        <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
+        <div className="bg-canvas-soft text-ink min-h-screen p-4 md:p-8 font-sans">
             <header className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center text-lg shrink-0">
+                    <div className="h-10 w-10 rounded-md bg-canvas border border-hairline flex items-center justify-center text-lg shrink-0 shadow-sm">
                         🎙️
                     </div>
                     <div className="min-w-0">
-                        <h1 className="font-semibold text-lg truncate">Live interview</h1>
-                        <p className="text-xs text-muted-foreground">
+                        <h1 className="font-bold text-lg text-ink truncate">Live interview.</h1>
+                        <p className="text-xs text-mute">
                             Question {currentQuestionIndex + 1} of {questionsLength} · Voice
                         </p>
                     </div>
                 </div>
                 <button
                     type="button"
-                    className="shrink-0 rounded-lg border border-destructive/50 bg-destructive/10 text-destructive px-4 py-2 text-sm font-medium hover:bg-destructive/20 transition-colors"
+                    className="rounded-md border border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-2 text-sm font-medium hover:bg-red-500/20 transition-colors duration-200 cursor-pointer"
                     onClick={onEndInterview}
                 >
                     End interview
                 </button>
             </header>
 
-            <InterviewProgressBar progressPct={progressPct} />
+            <div className="max-w-6xl mx-auto mb-6">
+                <InterviewProgressBar progressPct={progressPct} />
+            </div>
 
             <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-6">
                 <InterviewerQuestionPanel isSpeaking={isSpeaking} questionText={questionText} />

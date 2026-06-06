@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import Editor from '@monaco-editor/react';
 
 const selectClass =
-    'rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500';
+    'rounded-md border border-hairline bg-canvas px-3 py-1.5 text-sm text-ink outline-none transition-colors hover:bg-canvas-soft-2 focus:border-ring focus:ring-2 focus:ring-ring/20 cursor-pointer';
 
 export function CodingAnswerPanel({
     codeLanguages,
@@ -55,20 +55,20 @@ export function CodingAnswerPanel({
     }, [userAnswer, storageKey]);
 
     return (
-        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col gap-4">
+        <section className="rounded-2xl border border-hairline bg-canvas p-6 shadow-sm flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
                 <div>
-                    <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-mute mb-1">
                         Your solution
                     </h2>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-body">
                         {roundLabel === 'technical'
                             ? 'Write working code or a clear solution for this DSA-style problem.'
                             : 'Model classes, interfaces, and structure in code — focus on clarity and APIs.'}
                     </p>
                 </div>
                 <div className="flex flex-col gap-1 shrink-0">
-                    <label className="text-xs font-medium text-muted-foreground" htmlFor="interview-code-lang">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-mute" htmlFor="interview-code-lang">
                         Language
                     </label>
                     <select
@@ -78,7 +78,7 @@ export function CodingAnswerPanel({
                         onChange={(e) => setCodingLanguage(e.target.value)}
                     >
                         {codeLanguages.map((lang) => (
-                            <option key={lang.id} value={lang.id}>
+                            <option key={lang.id} value={lang.id} className="bg-canvas text-ink">
                                 {lang.name}
                             </option>
                         ))}
@@ -86,7 +86,7 @@ export function CodingAnswerPanel({
                 </div>
             </div>
 
-            <div className="rounded-xl border border-border overflow-hidden min-h-[280px] h-[min(50vh,420px)]">
+            <div className="rounded-md border border-hairline overflow-hidden min-h-[280px] h-[min(50vh,420px)] shadow-sm">
                 <Editor
                     height="100%"
                     language={monacoLang}
@@ -98,7 +98,7 @@ export function CodingAnswerPanel({
                             editorRef.current = editor;
                         }
                     }}
-                    loading={<div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading editor…</div>}
+                    loading={<div className="flex h-full items-center justify-center text-sm text-mute bg-[#1e1e1e]">Loading editor…</div>}
                     options={{
                         minimap: { enabled: false },
                         fontSize: 14,
@@ -114,16 +114,21 @@ export function CodingAnswerPanel({
                 type="button"
                 onClick={onSubmitAnswer}
                 disabled={!canSubmit}
-                className={`w-full rounded-xl py-3 px-4 font-semibold text-white transition-colors ${
+                className={`w-full py-3 px-4 font-bold text-sm rounded-md transition-all duration-200 cursor-pointer text-center flex items-center justify-center ${
                     !canSubmit
-                        ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                        : 'bg-emerald-600 hover:bg-emerald-700'
+                        ? 'bg-canvas text-mute border border-hairline cursor-not-allowed'
+                        : 'bg-emerald-600 border border-emerald-600 text-white hover:bg-emerald-700 hover:border-emerald-700 active:scale-[0.98]'
                 }`}
             >
                 {isLastQuestion ? 'Submit & finish' : 'Submit & next'}
             </button>
-            {startError && <p className="text-sm text-destructive">{startError}</p>}
-            <p className="text-xs text-muted-foreground">
+            {startError && (
+                <div className="flex items-start gap-2 rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-400">
+                    <span>⚠️</span>
+                    <span>{startError}</span>
+                </div>
+            )}
+            <p className="text-xs text-mute leading-relaxed">
                 Submit when your code or pseudocode reflects your answer. Feedback uses your selected language and round
                 type.
             </p>
