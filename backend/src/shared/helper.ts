@@ -8,8 +8,7 @@ export const jwtCookieOptions = (origin: string, isRefreshToken: boolean) => {
     return {
       httpOnly: true,
       secure: true,
-      sameSite: 'lax',
-      domain: '.verlyai.xyz',
+      sameSite: 'none', // Allow cross-origin requests (e.g. from Vercel to EC2 domain)
       maxAge: isRefreshToken
         ? JWT_TOKEN_MAX_AGE.REFRESH_TOKEN
         : JWT_TOKEN_MAX_AGE.ACCESS_TOKEN,

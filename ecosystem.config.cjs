@@ -6,8 +6,8 @@ module.exports = {
       interpreter: 'node',
       interpreter_args: '--import tsx',
       cwd: './backend',
-      instances: 'max',       // Run in cluster mode across all CPU cores
-      exec_mode: 'cluster',
+      instances: 1,           // Run as 1 instance in fork mode to support tsx loader
+      exec_mode: 'fork',
       env: {
         NODE_ENV: 'production'
       }
