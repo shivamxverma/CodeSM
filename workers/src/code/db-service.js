@@ -1,6 +1,6 @@
 import { db } from "../../loaders/postgres.js";
 import { eq, and } from "drizzle-orm";
-import { schema } from "../../db/index.ts";
+import { schema } from 'db-schema';
 import fs from "fs/promises";
 import { redisClient } from "../../loaders/redis.js";
 

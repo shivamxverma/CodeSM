@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getDrizzleClient, db } from '../loaders/postgres';
-import { user as userTable, problem as problemTable, submission as submissionTable } from '../db/schema';
+import { user as userTable, problem as problemTable, submission as submissionTable } from 'db-schema';
 import env from '../config/index';
 import { eq } from 'drizzle-orm';
 import fs from 'fs/promises';

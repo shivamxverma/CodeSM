@@ -7,7 +7,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import env from "../config/index.js";
 import { Readable } from "stream";
 import { db } from "../loaders/postgres";
-import { problem as problemTable } from "../db/schema";
+import { problem as problemTable } from 'db-schema';
 import { eq } from "drizzle-orm";
 
 const s3Client = new S3Client({

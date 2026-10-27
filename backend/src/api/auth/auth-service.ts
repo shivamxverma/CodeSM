@@ -3,7 +3,7 @@ import { db } from '../../loaders/postgres';
 import {
     authMethod as authMethodTable,
     user as userTable
-} from '../../db/schema';
+} from 'db-schema';
 import { eq,and } from 'drizzle-orm';
 import ApiError from 'src/utils/ApiError';
 import { hashPassword, comparePassword,handleNewOauthUser, verifyGoogleCredentials } from './auth-helper';

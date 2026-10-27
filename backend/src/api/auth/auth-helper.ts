@@ -11,7 +11,7 @@ import httpStatus from 'http-status';
 import { uniqueUsernameGenerator } from 'unique-username-generator';
 import { usernameGeneratorConfig } from '../../utils/constants';
 import { db } from '../../loaders/postgres';
-import { authMethod as authMethodTable, user as userTable } from '../../db/schema';
+import { authMethod as authMethodTable, user as userTable } from 'db-schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { generateTokenPair } from '../../shared/jwt';

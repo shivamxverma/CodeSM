@@ -1,7 +1,7 @@
 import { ICreateProblemRequest, ICreateProblemResponse, IFinalizeProblemResponse, IProblem, IGetProblemsResponse, IAProblem, IProblemEditorialResponse, IHint } from "./problem-types";
 import { verifyProblemCreationPermission } from './problem-helper';
 import { db } from '../../loaders/postgres';
-import { problem, editorial, tag, problemTag, testcase, hint } from '../../db/schema';
+import { problem, editorial, tag, problemTag, testcase, hint } from 'db-schema';
 import { eq, desc, inArray, and, lt, or } from 'drizzle-orm';
 import ApiError from "../../utils/ApiError";
 import httpStatus from "http-status";

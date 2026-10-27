@@ -1,4 +1,4 @@
-import { schema } from '../db/index.ts';
+import { schema } from 'db-schema';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import logger from './logger.js';

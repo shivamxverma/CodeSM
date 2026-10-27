@@ -1,5 +1,5 @@
 import { IGetSubmissionResponse, IGetSubmissionResultsResponse } from './submission-types';
-import { submission, executionResult, user, problem } from '../../db/schema';
+import { submission, executionResult, user, problem } from 'db-schema';
 import { db } from '../../loaders/postgres';
 import redis from '../../loaders/redis';
 import { eq, and, desc, count, sql } from 'drizzle-orm';

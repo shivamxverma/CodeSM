@@ -5,7 +5,7 @@ import {
 import env from "../config/index.js";
 import { redisClient } from "../loaders/redis.js";
 import { db } from "../loaders/postgres.js";
-import { schema } from "../db/index.ts";
+import { schema } from 'db-schema';
 import { eq } from "drizzle-orm";
 
 const s3Client = new S3Client({

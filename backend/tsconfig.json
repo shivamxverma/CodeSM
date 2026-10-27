@@ -2,8 +2,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "pg": ["./node_modules/@types/pg"],
-      "db-schema": ["../db-schema/dist"]
+      "pg": ["./node_modules/@types/pg"]
     },
     "target": "es2017",
     "allowSyntheticDefaultImports": true,

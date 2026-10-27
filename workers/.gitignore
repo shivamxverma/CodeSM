@@ -21,3 +21,6 @@ coverage/
 .DS_Store
 .vscode/
 .idea/
+
+# Temp folders the worker creates for each submission
+code/

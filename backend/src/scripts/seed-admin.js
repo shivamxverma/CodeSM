@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { user } from "../db/schema.ts";
+import { user } from 'db-schema';
 import env from '../config/index.ts'
 
 export async function seedAdmin() {

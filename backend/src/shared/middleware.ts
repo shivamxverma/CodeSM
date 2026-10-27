@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { UserJwtPayload, jwtReq } from '../types';
 import httpStatus from 'http-status';
-import { user as userTable } from '../db/schema';
+import { user as userTable } from 'db-schema';
 import { eq } from 'drizzle-orm';
 import { db } from '../loaders/postgres';
 import env from '../config';

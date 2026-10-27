@@ -1,5 +1,5 @@
 import { db } from '../../loaders/postgres';
-import { user } from '../../db/schema';
+import { user } from 'db-schema';
 import { eq } from 'drizzle-orm';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import env from '../../config';

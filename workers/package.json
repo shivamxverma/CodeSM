@@ -5,10 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node src/worker.js",
-    "dev": "node --watch src/worker.js",
-    "compose:up": "docker compose -f docker-compose.worker.yml --env-file .env up -d --build",
-    "compose:down": "docker compose -f docker-compose.worker.yml --env-file .env down",
-    "compose:logs": "docker compose -f docker-compose.worker.yml --env-file .env logs -f worker"
+    "dev": "node --watch src/worker.js"
   },
   "keywords": [],
   "author": "",

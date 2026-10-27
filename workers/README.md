@@ -33,10 +33,8 @@ This runs `node src/worker.js`, which registers a Bull processor on the `job-que
 
 ## Docker
 
-- `Dockerfile` builds a minimal image for compiling and running C++ user code (`g++`, `input.txt`).
-- `python/Dockerfile` exists for Python-oriented execution if you extend the worker similarly.
-
-Run these images as needed for your sandbox; the Node worker orchestrates jobs and may spawn containers depending on `runCode.js` behavior.
+- `docker/sandbox-runner/Dockerfile` is the sandbox image user code runs in. The worker builds it automatically if it's missing.
+- `Dockerfile.prod` builds the worker itself (used by `docker-compose.prod.yml` at the repo root).
 
 ## Backend coordination
 
